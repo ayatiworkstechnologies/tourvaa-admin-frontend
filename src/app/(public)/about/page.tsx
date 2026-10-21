@@ -544,7 +544,7 @@ export default function AboutPage() {
                     <h3 className="text-base font-bold leading-tight text-slate-950 transition-colors duration-300 group-hover:text-white group-focus-visible:text-white font-heading">
                       {v.title}
                     </h3>
-                    <p className="mt-2 text-xs font-normal leading-relaxed text-slate-600 transition-colors duration-300 group-hover:text-white/90 group-focus-visible:text-white/90">
+                    <p className="mt-2 text-xs font-normal leading-relaxed text-slate-600 transition-colors duration-300 group-hover:!text-white group-focus-visible:!text-white">
                       {v.desc}
                     </p>
                   </div>

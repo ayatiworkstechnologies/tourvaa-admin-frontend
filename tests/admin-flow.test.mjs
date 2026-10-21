@@ -187,7 +187,8 @@ const bookingActions = read("src/components/bookings/BookingActionMenu.tsx");
 const bookingList = read("src/app/admin/bookings/page.tsx");
 check(
   "admin confirms cancellation requests through the cancellation workflow",
-  bookingActions.includes('bookingStatus === "cancellation_requested"') &&
+  bookingActions.includes('normalizedStatus === "cancellation_requested"') &&
+    bookingActions.includes("isCancellationRequested && onApproveCancellation") &&
     bookingActions.includes("onApproveCancellation") &&
     bookingList.includes("approveBookingCancellation") &&
     bookingService.includes("/cancellation-request/approve"),

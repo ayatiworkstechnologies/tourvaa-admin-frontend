@@ -17,7 +17,7 @@ describe("ElfsightTranslator", () => {
 
     await waitFor(() => {
       const style = shadowRoot.getElementById("tourvaa-translator-elevation");
-      expect(style?.textContent).toContain("0 3px 10px rgba(15, 23, 42, 0.14)");
+      expect(style?.textContent).toContain("0 2px 7px rgba(15, 23, 42, 0.13)");
     });
   });
 });

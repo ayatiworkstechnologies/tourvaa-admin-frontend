@@ -34,14 +34,12 @@ type AuthContextValue = {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-// /customer, /agent, /supplier, and /affiliate are self-guarded by their own
-// layout.tsx (each redirects to /login itself when unauthenticated), and
-// every other route is genuinely public (marketing pages, /tours, /wishlist,
-// /compare, /booking, and any future public page) - only /admin/* has no
-// layout-level guard of its own, so it's the one prefix this global redirect
-// still needs to protect. An explicit allowlist of "public" paths goes stale
-// the moment a new public page is added (this is exactly what happened with
-// /wishlist and /compare).
+// Every portal route needs its cookie-backed identity restored on a hard
+// refresh. Treating partner/customer pages as public caused restoration to be
+// skipped when no JavaScript token existed, after which the login flow fell
+// back to the role dashboard instead of returning to the requested page.
+const AUTHENTICATED_ROUTE_PREFIXES = ["/admin", "/customer", "/supplier", "/agent", "/affiliate"];
+const AUTH_ROUTE_EXCEPTIONS = ["/admin/login"];
 
 // Dev/QA-only tool for capturing documentation screenshots without a real
 // login. Must never be reachable in a production bundle: process.env.NODE_ENV
@@ -83,8 +81,19 @@ const docsCaptureDashboard = {
 } as DashboardData;
 
 function isPublicRoute(pathname: string) {
-  if (pathname === "/admin/login" || pathname.startsWith("/admin/login/")) return true;
-  return !pathname.startsWith("/admin");
+  if (AUTH_ROUTE_EXCEPTIONS.some((path) => pathname === path || pathname.startsWith(`${path}/`))) return true;
+  return !AUTHENTICATED_ROUTE_PREFIXES.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+  );
+}
+
+function loginPathFor(pathname: string) {
+  if (pathname.startsWith("/admin")) return "/admin/login";
+  const loginPath = pathname.startsWith("/supplier") ? "/supplier-portal/login"
+    : pathname.startsWith("/agent") ? "/agent-portal/login"
+    : pathname.startsWith("/affiliate") ? "/affiliate-portal/login"
+    : "/login";
+  return `${loginPath}?redirect=${encodeURIComponent(pathname)}`;
 }
 
 function permissionAliases(permission: string) {
@@ -274,7 +283,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const isPublic = isPublicRoute(pathname);
 
     if (!token && !isPublic) {
-      router.replace(pathname.startsWith("/admin") ? "/admin/login" : "/login");
+      router.replace(loginPathFor(pathname));
       return;
     }
 

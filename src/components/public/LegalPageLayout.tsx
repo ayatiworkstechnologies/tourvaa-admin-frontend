@@ -10,9 +10,12 @@ import {
   LuPrinter as Printer,
   LuSearch as Search,
   LuShieldCheck as ShieldCheck,
+  LuArrowLeft as ArrowLeft,
   LuArrowUp as ArrowUp,
   LuMail as Mail,
 } from "react-icons/lu";
+import { useAuthContext } from "@/providers/AuthProvider";
+import { getDashboardPath } from "@/lib/utils/dashboardPath";
 
 export type LegalSection = {
   id: string;
@@ -51,11 +54,15 @@ export default function LegalPageLayout({
   lastUpdated?: string;
   showMetadata?: boolean;
 }) {
+  const { isLoggedIn, user } = useAuthContext();
   const [activeId, setActiveId] = useState(sections[0]?.id ?? "");
   const [searchQuery, setSearchQuery] = useState("");
   const [copied, setCopied] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
   const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
+  const dashboardHref = isLoggedIn && user
+    ? user.dashboard_route || getDashboardPath(user.role?.slug || "")
+    : null;
 
   // Reading progress tracker
   useEffect(() => {
@@ -131,7 +138,17 @@ export default function LegalPageLayout({
               Home
             </Link>
             <span>/</span>
-            <span className="text-slate-400">Legal &amp; Trust</span>
+            {dashboardHref ? (
+              <Link
+                href={dashboardHref}
+                className="inline-flex items-center gap-1 font-bold text-slate-600 transition-colors hover:text-pub-secondary"
+              >
+                <ArrowLeft size={13} aria-hidden="true" />
+                Back to Dashboard
+              </Link>
+            ) : (
+              <span className="text-slate-400">Legal &amp; Trust</span>
+            )}
             <span>/</span>
             <span className="text-pub-secondary font-bold">{title}</span>
           </nav>

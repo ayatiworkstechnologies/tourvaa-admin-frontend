@@ -34,7 +34,7 @@ import {
   LuBadgePercent as BadgePercent,
   LuCamera as Camera,
   LuTicket as Ticket,
-  LuDownload as Download,
+  LuFileText as FileText,
   LuCheckCheck as CheckCheck,
   LuCar as Car,
   LuArrowLeftRight as ArrowLeftRight,
@@ -392,12 +392,10 @@ function LightboxModal({
 
 function ItineraryPdfPreview({
   previewUrl,
-  downloadUrl,
   fallbackUrl,
   onClose,
 }: {
   previewUrl: string;
-  downloadUrl: string;
   fallbackUrl?: string;
   onClose: () => void;
 }) {
@@ -442,8 +440,6 @@ function ItineraryPdfPreview({
     return () => controller.abort();
   }, [fallbackUrl, previewUrl]);
 
-  const activeDownloadUrl = resolvedPreviewUrl === fallbackUrl ? fallbackUrl : downloadUrl;
-
   return createPortal(
     <div
       role="dialog"
@@ -458,7 +454,6 @@ function ItineraryPdfPreview({
             <p className="text-sm font-black text-slate-900">Itinerary &amp; trip notes</p>
             <p className="text-xs text-slate-500">Preview the supplier-provided PDF.</p>
           </div>
-          <a href={activeDownloadUrl} className="hidden rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 sm:inline-flex">Download PDF</a>
           <button type="button" onClick={onClose} aria-label="Close itinerary preview" className="inline-flex h-9 w-9 items-center justify-center rounded-full text-slate-600 hover:bg-slate-100"><X size={20} /></button>
         </div>
         {resolvedPreviewUrl ? (
@@ -468,7 +463,6 @@ function ItineraryPdfPreview({
         ) : (
           <div className="flex min-h-0 flex-1 items-center justify-center p-6 text-sm font-semibold text-slate-500">Loading itinerary PDF…</div>
         )}
-        <a href={activeDownloadUrl} className="shrink-0 border-t border-slate-200 px-4 py-3 text-center text-sm font-bold text-blue-700 underline sm:hidden">Download PDF</a>
       </div>
     </div>,
     document.body,
@@ -775,7 +769,6 @@ export default function TourDetailExperience({
 
   const destination = tour.country_name || tour.city_name || "Destination";
   const itineraryPreviewUrl = tour.brochure_pdf ? `/api/public/tours/${tour.id}/brochure?inline=1` : `/api/public/tours/${tour.id}/itinerary`;
-  const itineraryDownloadUrl = tour.brochure_pdf ? `/api/public/tours/${tour.id}/brochure` : `/api/public/tours/${tour.id}/itinerary?download=1`;
   const itineraryFallbackUrl = tour.brochure_pdf && (/^https:\/\/res\.cloudinary\.com\//i.test(tour.brochure_pdf) || tour.brochure_pdf.startsWith("/storage/")) ? tour.brochure_pdf : undefined;
   const city = tour.city_name || "";
   const title = tour.title || "Tour Experience";
@@ -1722,7 +1715,6 @@ export default function TourDetailExperience({
       {itineraryPreviewOpen && (
         <ItineraryPdfPreview
           previewUrl={itineraryPreviewUrl}
-          downloadUrl={itineraryDownloadUrl}
           fallbackUrl={itineraryFallbackUrl}
           onClose={() => setItineraryPreviewOpen(false)}
         />
@@ -1922,10 +1914,9 @@ export default function TourDetailExperience({
 
           {(tour.brochure_pdf || tour.itineraries?.length > 0) && (
             <div className="mt-6 flex max-w-4xl flex-wrap items-center gap-3 rounded-2xl border border-blue-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 sm:px-5">
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white text-[#173f70] shadow-sm"><Download size={16} /></span>
-              <span className="mr-auto">Need a copy? View or download the supplier-provided itinerary and trip notes.</span>
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white text-[#173f70] shadow-sm"><FileText size={16} /></span>
+              <span className="mr-auto">View the supplier-provided itinerary and trip notes.</span>
               <button type="button" onClick={() => setItineraryPreviewOpen(true)} className="font-bold text-blue-700 underline">Open itinerary</button>
-              <a href={itineraryFallbackUrl || itineraryDownloadUrl} className="font-bold text-blue-700 underline">Download PDF</a>
             </div>
           )}
         </section>

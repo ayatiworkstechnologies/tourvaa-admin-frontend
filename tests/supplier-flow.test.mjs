@@ -75,7 +75,7 @@ check("dashboard excludes reserved ledger rows from available payout", dashboard
 check("dashboard loads supplier-scoped tour totals instead of missing summary fields", dashboard.includes('api.get("/tours", { params: { limit: 1 } })') && dashboard.includes('status: "published"'));
 check("dashboard shows the monthly payout schedule without a request action", dashboard.includes("Next payout date") && dashboard.includes("end of every month") && !dashboard.includes("Request Payout"));
 check("dashboard highlights bookings awaiting supplier decisions", dashboard.includes("Booking decisions are waiting") && dashboard.includes("/supplier/bookings?status=pending_supplier_acceptance"));
-check("dashboard retains date and status filtering", dashboard.includes("<DatePicker") && dashboard.includes("bookingParams.booking_status = filters.status"));
+check("dashboard retains date-range and status filtering", dashboard.includes("<DateRangePicker") && dashboard.includes("bookingParams.booking_status = filters.status"));
 check("dashboard provides loading and filtered empty states", dashboard.includes("BookingSkeleton") && dashboard.includes("No bookings match these filters"));
 
 const bookingDetail = read("src/app/supplier/bookings/[id]/page.tsx");
@@ -212,7 +212,7 @@ check("supplier message history is connected", messages.includes('PortalMessageT
 check("supplier support compose is connected", portalMessageThread.includes("sendOwnMessage(portal") && messagingService.includes("api.post(OWN_MESSAGES_PATH[portal]"));
 check(
   "supplier messages route customer and agent communication through Tourvaa",
-  messages.includes('label: "Booking Support"') &&
+  messages.includes('PortalMessageThread portal="supplier"') &&
     messages.includes("Tourvaa manages all customer and agent communication.") &&
     !messages.includes("Customers & Agents") &&
     messagingService.includes("Supplier <-> Tourvaa Admin"),

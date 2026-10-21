@@ -77,6 +77,14 @@ check("public layout loads settings once for all public contact surfaces", publi
 check("public contact surfaces use configured support details", publicContactSources.includes("usePublicSettings") || publicContactSources.includes("ConfiguredSupportEmail"));
 check("public contact surfaces contain no hardcoded Tourvaa contact links", !publicContactSources.includes("mailto:hello@tourvaa.com") && !publicContactSources.includes("mailto:support@tourvaa.com") && !publicContactSources.includes("tel:+919876543210"));
 const contactPage = read("src/app/(public)/contact/page.tsx");
+const legalPageLayout = read("src/components/public/LegalPageLayout.tsx");
+check(
+  "legal pages return authenticated users to their role dashboard",
+  legalPageLayout.includes("getDashboardPath(user.role?.slug") &&
+    legalPageLayout.includes("user.dashboard_route ||") &&
+    legalPageLayout.includes("Back to Dashboard") &&
+    legalPageLayout.includes("href={dashboardHref}"),
+);
 check(
   "public contact combines a selected country code with a country-validated local mobile number",
   contactPage.includes("<CountryPhoneInput") &&

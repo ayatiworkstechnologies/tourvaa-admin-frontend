@@ -70,7 +70,7 @@ check(
     detailExperience.includes("day.travelTime"),
 );
 check(
-  "public tour itinerary opens or downloads supplier-authored itinerary days instead of a brochure",
+  "public tour itinerary previews supplier-authored itinerary days without a download action",
   detailExperience.includes("/brochure?inline=1") &&
     detailExperience.includes("/itinerary") &&
     detailExperience.includes("Open itinerary") &&
@@ -78,7 +78,7 @@ check(
     detailExperience.includes('title="Itinerary PDF preview"') &&
     detailExperience.includes("fallbackUrl") &&
     detailExperience.includes("Loading itinerary PDF") &&
-    detailExperience.includes("Download PDF") &&
+    !detailExperience.includes("Download PDF") &&
     !detailExperience.includes("download the trip notes"),
 );
 check("tour detail booking CTA has no cart actions", !detailExperience.includes("addToCart") && !detailExperience.includes("ShoppingCart"));
@@ -349,7 +349,17 @@ check("wishlist falls back to local storage for guests", wishlistStore.includes(
 check("compare list still uses local storage (by design, unlike wishlist for logged-in users)", wishlistStore.includes("COMPARE_STORAGE_KEY") && wishlistStore.includes("window.localStorage"));
 check("public wishlist page renders the store directly instead of redirecting", legacyWishlist.includes("useTravelStore") && !legacyWishlist.includes("redirect("));
 check("retired cart route permanently redirects to tours", retiredCart.includes('permanentRedirect("/tours")'));
-check("supplier contact context uses supplier operations content and workspace actions", contactPage.includes("SUPPLIER_HERO") && contactPage.includes("SUPPLIER_SUPPORT_CARDS") && contactPage.includes('href={isSupplierInquiry ? "/supplier/bookings" : "/profile/bookings"}') && contactPage.includes('href="/supplier/messages"'));
+check(
+  "supplier contact context uses supplier operations content and valid workspace actions",
+  contactPage.includes("SUPPLIER_HERO") &&
+    contactPage.includes("SUPPLIER_SUPPORT_CARDS") &&
+    contactPage.includes('const bookingSupportHref = isSupplierInquiry') &&
+    contactPage.includes('? "/supplier/bookings"') &&
+    contactPage.includes('const messageSupportHref = isSupplierInquiry') &&
+    contactPage.includes('? "/supplier/messages"') &&
+    contactPage.includes("href={bookingSupportHref}") &&
+    contactPage.includes("href={messageSupportHref}"),
+);
 check("country and catalogue cards show active discount badges", countryToursSection.includes('variant="search"') && (publicTourCard.match(/\{discounted && <DiscountCardBadge percentage=\{tour\.discount_percentage!\} \/>\}/g) || []).length >= 3);
 
 const login = read("src/app/(public)/login/page.tsx");
