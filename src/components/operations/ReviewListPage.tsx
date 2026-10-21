@@ -45,6 +45,15 @@ function agentProgress(row: ReviewRecord) {
   return { docs, hasBusiness, hasLocation, hasInvoicing, completeCount };
 }
 
+function affiliateProgress(row: ReviewRecord) {
+  const docs = row.documents?.length ?? 0;
+  const hasMarketing = Boolean(row.marketing_info && Object.values(row.marketing_info).some(Boolean));
+  const hasInvoicing = Boolean(row.invoicing && Object.values(row.invoicing).some(Boolean));
+  const hasLocation = Boolean(row.country_name);
+
+  return { docs, hasMarketing, hasInvoicing, hasLocation };
+}
+
 function MiniCheck({ ok, label }: { ok: boolean; label: string }) {
   return (
     <span className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-bold ${ok ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"}`}>
@@ -68,8 +77,9 @@ export default function ReviewListPage({ module, title, requiredPermission }: Pr
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [statusView, setStatusView] = useState<"all" | "pending" | "approved" | "inactive">("all");
-  const supportsStatusView = module === "suppliers" || module === "agents";
+  const supportsStatusView = module === "suppliers" || module === "agents" || module === "affiliates";
   const supportsDirectoryFilters = supportsStatusView || module === "affiliates";
+  const supportsBulkActions = module === "suppliers" || module === "agents";
   // Richer filters (country/date range/sort) match Customer Management's
   // filter set for consistency across every partner directory.
   const [countryFilter, setCountryFilter] = useState("");
@@ -128,8 +138,8 @@ export default function ReviewListPage({ module, title, requiredPermission }: Pr
   }
 
   const canCreate = hasPermission(`${module}.create`) || (module === "affiliates" && hasPermission("affiliates.approve"));
-  const canBulkApprove = supportsStatusView && hasPermission(`${module}.approve`);
-  const canBulkReject = supportsStatusView && hasPermission(`${module}.reject`);
+  const canBulkApprove = supportsBulkActions && hasPermission(`${module}.approve`);
+  const canBulkReject = supportsBulkActions && hasPermission(`${module}.reject`);
 
   function toggleSelected(id: number) {
     setSelectedIds((current) => {
@@ -140,7 +150,7 @@ export default function ReviewListPage({ module, title, requiredPermission }: Pr
     });
   }
 
-  const entityLabel = module === "agents" ? "agent" : "supplier";
+  const entityLabel = module === "agents" ? "agent" : module === "affiliates" ? "affiliate" : "supplier";
 
   async function handleBulkApprove() {
     if (selectedIds.size === 0) return;
@@ -400,7 +410,57 @@ export default function ReviewListPage({ module, title, requiredPermission }: Pr
     },
   ];
 
-  const columns = module === "suppliers" ? supplierColumns : module === "agents" ? agentColumns : defaultColumns;
+  const affiliateColumns: DataTableColumn<ReviewRecord>[] = [
+    serialColumn,
+    { key: "code", header: "ID", className: "w-24", render: (row) => row.affiliate_code || row.id },
+    {
+      key: "name",
+      header: "Affiliate",
+      render: (row) => (
+        <div>
+          <p className="font-bold text-dash-text">{row.name || "-"}</p>
+          <p className="mt-0.5 text-xs text-dash-muted">{row.email || row.business_type || "Profile pending"}</p>
+        </div>
+      ),
+    },
+    {
+      key: "location",
+      header: "Location",
+      render: (row) => (
+        <div className="text-sm">
+          <p className="font-semibold text-dash-text">{row.country_name || "Country missing"}</p>
+          <p className="text-xs text-dash-muted">{row.city_name || ""}</p>
+        </div>
+      ),
+    },
+    {
+      key: "readiness",
+      header: "Readiness",
+      render: (row) => {
+        const progress = affiliateProgress(row);
+        return (
+          <div className="flex flex-wrap gap-1.5">
+            <MiniCheck ok={progress.hasLocation} label="Profile" />
+            <MiniCheck ok={progress.hasMarketing} label="Marketing" />
+            <MiniCheck ok={progress.hasInvoicing} label="Payouts" />
+            <MiniCheck ok={progress.docs > 0} label={`${progress.docs} docs`} />
+          </div>
+        );
+      },
+    },
+    { key: "status", header: "Status", render: (row) => <StatusBadge value={row.status} /> },
+    { key: "approval_status", header: "Approval", render: (row) => <StatusBadge value={row.approval_status} /> },
+    {
+      key: "commission",
+      header: "Commission",
+      render: (row) => {
+        const resolved = row.commission_percentage != null ? Number(row.commission_percentage) : defaultCommissions.affiliate;
+        return <span className="font-bold text-dash-text">{resolved}%</span>;
+      },
+    },
+  ];
+
+  const columns = module === "suppliers" ? supplierColumns : module === "agents" ? agentColumns : module === "affiliates" ? affiliateColumns : defaultColumns;
 
   return (
     <ModuleWrapper title={title} requiredPermission={requiredPermission}>
@@ -408,10 +468,10 @@ export default function ReviewListPage({ module, title, requiredPermission }: Pr
         <section className="flex flex-col gap-4 rounded-xl border border-dash-border bg-white p-6 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <h2 className="text-2xl font-bold text-dash-text">{title}</h2>
-            <p className="mt-1 text-sm text-dash-muted">{module === "suppliers" ? "Review supplier registration, business data, documents, vehicles, approval status, and markup setup." : module === "agents" ? "Review agent registration, business data, documents, invoicing, approval status, and discount setup." : "Review operational accounts, approval status, and commercial controls."}</p>
+            <p className="mt-1 text-sm text-dash-muted">{module === "suppliers" ? "Review supplier registration, business data, documents, vehicles, approval status, and markup setup." : module === "agents" ? "Review agent registration, business data, documents, invoicing, approval status, and discount setup." : "Review affiliate profile readiness, approval status, documents, referral performance, and commission setup."}</p>
           </div>
           <div className="flex flex-wrap gap-2">
-            {supportsStatusView && (
+            {module !== "affiliates" && (
               <button type="button" disabled={exporting} onClick={() => void handleExport()} className="inline-flex items-center gap-2 rounded-xl border border-dash-border px-4 py-2.5 text-sm font-bold text-dash-text hover:bg-dash-bg disabled:opacity-60">
                 <Download size={16} /> {exporting ? "Exporting..." : "Export"}
               </button>

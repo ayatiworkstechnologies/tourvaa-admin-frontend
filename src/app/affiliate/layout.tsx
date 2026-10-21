@@ -23,7 +23,7 @@ const NAV = [
   { href: "/affiliate/commissions", icon: Coins, label: "Commissions", section: "Earnings" },
   { href: "/affiliate/wallet", icon: Wallet, label: "Wallet", section: "Earnings" },
   { href: "/affiliate/payouts", icon: HandCoins, label: "Payouts", section: "Earnings" },
-  { href: "/affiliate/support", icon: LifeBuoy, label: "Support", placement: "bottom" as const },
+  { href: "/affiliate/messages", icon: LifeBuoy, label: "Messages", placement: "bottom" as const },
   { href: "/affiliate/profile", icon: User, label: "My Profile", placement: "bottom" as const },
 ];
 
@@ -35,7 +35,7 @@ const PAGE_TITLES: Record<string, string> = {
   "/affiliate/commissions": "Commissions",
   "/affiliate/wallet": "Wallet",
   "/affiliate/payouts": "Payouts",
-  "/affiliate/support": "Support",
+  "/affiliate/messages": "Messages",
   "/affiliate/profile": "My Profile",
 };
 

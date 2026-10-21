@@ -6,6 +6,7 @@ import {
   LuArrowRight as ArrowRight,
   LuBanknote as Banknote,
   LuCircleAlert as AlertCircle,
+  LuCircleCheckBig as CheckCircle2,
   LuCoins as Coins,
   LuFileCheck as FileCheck,
   LuHeadphones as Headphones,
@@ -16,6 +17,7 @@ import {
   LuMegaphone as Megaphone,
   LuMousePointerClick as MousePointerClick,
   LuPlus as Plus,
+  LuWalletCards as WalletCards,
   LuTrendingUp as TrendingUp,
 } from "react-icons/lu";
 import api from "@/lib/api/client";
@@ -23,7 +25,7 @@ import { useAuthContext } from "@/providers/AuthProvider";
 import { useCurrency } from "@/hooks/useCurrency";
 import { affiliateApprovalStatus, isApprovedAffiliate } from "@/lib/auth/affiliateAccess";
 
-type Summary = { total_conversions?: number; total_commission?: string; pending_commission?: string; currency?: string };
+type Summary = { total_conversions?: number; total_commission?: string; pending_commission?: string; available_commission?: string; currency?: string };
 type AffLink = { id: number; ref_code: string; label: string; destination_url: string; is_active: boolean; total_clicks?: number; total_conversions?: number };
 type Conversion = { id: number; booking_code?: string; commission_amount: string; currency: string; status: string; converted_at?: string };
 
@@ -101,7 +103,7 @@ function PendingAffiliateDashboard() {
             <div className="mt-5 flex flex-col gap-3 sm:flex-row">
               <Link href="/affiliate/profile" className="inline-flex items-center justify-center gap-2 rounded-xl bg-purple-600 px-5 py-3 text-sm font-bold text-white"><Megaphone size={16} /> Complete profile</Link>
               <Link href="/affiliate/profile?tab=documents" className="inline-flex items-center justify-center gap-2 rounded-xl border border-purple-200 px-5 py-3 text-sm font-bold text-purple-700"><FileCheck size={16} /> Upload documents</Link>
-              <Link href="/affiliate/messages" className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 px-5 py-3 text-sm font-bold text-slate-700"><Headphones size={16} /> Contact support</Link>
+              <Link href="/affiliate/messages" className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 px-5 py-3 text-sm font-bold text-slate-700"><Headphones size={16} /> Message Tourvaa</Link>
             </div>
           </section>
 
@@ -162,8 +164,11 @@ function ApprovedAffiliateDashboard() {
     { label: "Total Clicks", value: links.reduce((total, link) => total + Number(link.total_clicks || 0), 0), icon: MousePointerClick, color: "text-blue-600 bg-blue-50" },
     { label: "Conversions", value: summary.total_conversions ?? conversions.length, icon: TrendingUp, color: "text-emerald-600 bg-emerald-50" },
     { label: "Total Commission", value: formatCompact(summary.total_commission, summary.currency || "USD"), icon: Coins, color: "text-purple-600 bg-purple-50" },
-    { label: "Pending Payout", value: formatCompact(summary.pending_commission, summary.currency || "USD"), icon: Banknote, color: "text-amber-600 bg-amber-50" },
+    { label: "Available to Payout", value: formatCompact(summary.available_commission, summary.currency || "USD"), icon: WalletCards, color: "text-amber-600 bg-amber-50" },
   ];
+  const totalClicks = links.reduce((total, link) => total + Number(link.total_clicks || 0), 0);
+  const activeLinks = links.filter((link) => link.is_active).length;
+  const conversionRate = totalClicks > 0 ? ((Number(summary.total_conversions ?? conversions.length) / totalClicks) * 100).toFixed(1) : "0.0";
 
   if (loading) {
     return (
@@ -179,9 +184,17 @@ function ApprovedAffiliateDashboard() {
 
   return (
     <div className="p-6 md:p-8">
-      <div className="mb-6">
-        <h1 className="text-2xl font-black text-dash-text">Affiliate Dashboard</h1>
-        <p className="mt-1 text-sm text-dash-muted">Track your referrals, clicks, conversions, and commissions.</p>
+      <div className="mb-6 overflow-hidden rounded-2xl border border-purple-100 bg-gradient-to-r from-white via-[#FBF7FF] to-[#F3E8FD] p-6">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <p className="text-xs font-black uppercase tracking-[.16em] text-purple-700">Affiliate workspace</p>
+            <h1 className="mt-2 text-2xl font-black text-dash-text">Grow every referral into earnings</h1>
+            <p className="mt-1 max-w-2xl text-sm text-dash-muted">See link performance, conversion progress, and the commission that is ready for your next payout.</p>
+          </div>
+          <Link href="/affiliate/referral-links" className="inline-flex items-center justify-center gap-2 rounded-xl bg-purple-700 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-purple-800">
+            <Plus size={16} /> Create referral link
+          </Link>
+        </div>
       </div>
 
       <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -207,6 +220,27 @@ function ApprovedAffiliateDashboard() {
           <Banknote size={16} /> Payout History
         </Link>
       </div>
+
+      <section className="mb-6 grid gap-4 lg:grid-cols-[1.2fr_.8fr]">
+        <div className="rounded-2xl border border-dash-border bg-white p-5 shadow-sm">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <p className="text-xs font-black uppercase tracking-wide text-dash-subtle">Referral health</p>
+              <h2 className="mt-1 text-lg font-black text-dash-text">Your current performance</h2>
+            </div>
+            <span className="rounded-full bg-purple-50 px-3 py-1 text-xs font-bold text-purple-700">{activeLinks} active link{activeLinks === 1 ? "" : "s"}</span>
+          </div>
+          <div className="mt-5 grid gap-3 sm:grid-cols-3">
+            <div className="rounded-xl bg-dash-bg p-4"><p className="text-xs font-bold uppercase text-dash-subtle">Click-throughs</p><p className="mt-1 text-xl font-black text-dash-text">{totalClicks}</p></div>
+            <div className="rounded-xl bg-dash-bg p-4"><p className="text-xs font-bold uppercase text-dash-subtle">Conversion rate</p><p className="mt-1 text-xl font-black text-dash-text">{conversionRate}%</p></div>
+            <div className="rounded-xl bg-dash-bg p-4"><p className="text-xs font-bold uppercase text-dash-subtle">Pending review</p><p className="mt-1 text-xl font-black text-dash-text">{formatCompact(summary.pending_commission, summary.currency || "USD")}</p></div>
+          </div>
+        </div>
+        <div className="rounded-2xl border border-purple-100 bg-[#FCFAFF] p-5 shadow-sm">
+          <div className="flex items-start gap-3"><span className="mt-0.5 rounded-lg bg-purple-100 p-2 text-purple-700"><CheckCircle2 size={18} /></span><div><p className="font-black text-dash-text">Next best action</p><p className="mt-1 text-sm leading-6 text-dash-muted">{activeLinks === 0 ? "Create your first referral link, then share it with your audience." : "Review your strongest link and use a campaign label to compare where your conversions come from."}</p></div></div>
+          <Link href={activeLinks === 0 ? "/affiliate/referral-links" : "/affiliate/conversions"} className="mt-4 inline-flex items-center gap-1.5 text-sm font-bold text-purple-700 hover:underline">{activeLinks === 0 ? "Create a link" : "Review conversions"}<ArrowRight size={14} /></Link>
+        </div>
+      </section>
 
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="rounded-xl border border-dash-border bg-white p-5 shadow-sm">

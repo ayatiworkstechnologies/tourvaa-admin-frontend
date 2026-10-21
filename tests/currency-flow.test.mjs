@@ -22,6 +22,7 @@ const publicPortalHeader = read("src/components/public/portal/PortalPublicHeader
 const affiliateDashboard = read("src/app/affiliate/dashboard/page.tsx");
 const affiliateConversions = read("src/app/affiliate/conversions/page.tsx");
 const affiliateCommissions = read("src/app/affiliate/commissions/page.tsx");
+const customerTable = read("src/components/customers/CustomerTable.tsx");
 const listing = read("src/components/public/CountryTourListing.tsx");
 check("country-search tour cards display active discount badges on images", listing.includes("DiscountCardBadge") && listing.includes("hasActiveDiscount({"));
 const detailExperience = read("src/components/public/TourDetailExperience.tsx");
@@ -47,6 +48,7 @@ check("public partner portal header uses the shared dynamic currency selector", 
 check("affiliate dashboard converts commissions from their source currency", affiliateDashboard.includes('format(c.commission_amount, c.currency || "USD")') && affiliateDashboard.includes('formatCompact(summary.total_commission, summary.currency || "USD")'));
 check("affiliate conversion totals and rows follow the selected display currency", affiliateConversions.includes("convert(conversion.commission_amount, conversion.currency || \"USD\")") && affiliateConversions.includes('format(c.booking_amount, c.currency || "USD")') && affiliateConversions.includes("shown in ${displayCurrency}"));
 check("affiliate commission summary follows the selected display currency", affiliateCommissions.includes('format(value, summary.currency || "USD")'));
+check("admin customer payment summaries follow the selected display currency", customerTable.includes("const { format: money } = useCurrency()") && !customerTable.includes("formatExact: money"));
 check("tour listing converts from each tour currency", listing.includes("format(t.price_start_per_person, t.currency)"));
 check("tour details convert price and add-ons", detailExperience.includes('format(totalAmount, pricingCurrency)') && detailExperience.includes('format(displayedPerPersonPrice, pricingCurrency)'));
 check("booking review converts display amounts", booking.includes("const { code: displayCurrency, format, formatExact }") && booking.includes("format(Number(priceEstimate.final_amount), priceEstimate.currency)"));

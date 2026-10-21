@@ -40,7 +40,10 @@ export default function CustomerTable({
   onUnblock,
   onReset,
 }: Props) {
-  const { formatExact: money } = useCurrency();
+  // Customer paid/pending values are roll-up dashboard summaries rather than
+  // settlement records. They should therefore follow the admin's selected
+  // display currency, just as the customer detail page does.
+  const { format: money } = useCurrency();
   const columns: DataTableColumn<Customer>[] = [
     {
       key: "no",
