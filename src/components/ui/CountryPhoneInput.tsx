@@ -111,8 +111,8 @@ export default function CountryPhoneInput({
               <ChevronDown size={14} className={`shrink-0 text-dash-subtle transition-transform ${open ? "rotate-180" : ""}`} />
             </button>
           ) : (
-            <span className="flex shrink-0 items-center gap-1.5 border-r border-dash-border bg-dash-bg px-3 py-2.5 text-sm font-semibold text-dash-text">
-              {selected ? <span className="h-3.5 w-5 shrink-0 overflow-hidden rounded-[2px]"><FlagIcon countryCode={selected.iso} /></span> : null}
+            <span className="flex shrink-0 items-center gap-2 border-r border-dash-border bg-dash-bg px-3 py-2.5 text-sm font-semibold text-dash-text">
+              {selected ? <span className="flex h-5 w-7 shrink-0 items-center overflow-hidden rounded border border-slate-200 bg-white p-px"><FlagIcon countryCode={selected.iso} /></span> : null}
               <span>{selected?.dialCode || "—"}</span>
             </span>
           )}

@@ -45,7 +45,7 @@ export default function RegistrationCountrySelect({ value, onChange }: Registrat
   }, [open]);
 
   return (
-    <div className="relative block" ref={containerRef}>
+    <div className="relative mb-4 block" ref={containerRef}>
       <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Country</span>
       <button
         type="button"
@@ -56,9 +56,9 @@ export default function RegistrationCountrySelect({ value, onChange }: Registrat
         className="flex w-full items-center gap-3 rounded-xl border border-dash-border bg-white px-3 py-2.5 text-left text-sm text-dash-text outline-none transition hover:border-slate-300 focus:border-dash-brand focus:ring-4 focus:ring-sky-100 active:translate-y-px"
       >
         {selected ? (
-          <span className="h-4 w-6 shrink-0 overflow-hidden rounded-sm ring-1 ring-slate-200"><FlagIcon countryCode={selected.iso} /></span>
+          <span className="flex h-6 w-9 shrink-0 items-center overflow-hidden rounded-md border border-slate-200 bg-slate-50 p-0.5 shadow-sm"><FlagIcon countryCode={selected.iso} /></span>
         ) : (
-          <span className="h-4 w-6 shrink-0 rounded-sm border border-dashed border-slate-300 bg-slate-50" />
+          <span className="h-6 w-9 shrink-0 rounded-md border border-dashed border-slate-300 bg-slate-50" />
         )}
         <span className={`min-w-0 flex-1 truncate ${selected ? "font-medium" : "text-slate-400"}`}>
           {selected ? selected.name : "Select country"}
@@ -97,7 +97,7 @@ export default function RegistrationCountrySelect({ value, onChange }: Registrat
                   }}
                   className={`flex w-full items-center gap-3 rounded-lg px-2.5 py-2 text-left text-sm transition hover:bg-sky-50 ${country.iso === value ? "bg-sky-50 font-semibold text-dash-brand" : "text-dash-text"}`}
                 >
-                  <span className="h-4 w-6 shrink-0 overflow-hidden rounded-sm ring-1 ring-slate-200"><FlagIcon countryCode={country.iso} /></span>
+                  <span className="flex h-5 w-7 shrink-0 items-center overflow-hidden rounded border border-slate-200 bg-white p-px"><FlagIcon countryCode={country.iso} /></span>
                   <span className="min-w-0 flex-1 truncate">{country.name}</span>
                   <span className="shrink-0 text-xs text-dash-subtle">{country.dialCode}</span>
                   <span className="w-4 shrink-0 text-dash-brand">{country.iso === value ? <Check size={15} /> : null}</span>
