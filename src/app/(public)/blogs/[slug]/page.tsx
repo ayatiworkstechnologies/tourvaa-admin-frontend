@@ -48,8 +48,8 @@ export default async function BlogDetailPage({ params }: { params: Promise<{ slu
               alt={post.banner_alt || post.title}
               className="h-full w-full object-cover object-center scale-105 transition-transform duration-1000"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/95 via-slate-950/50 to-slate-950/30" />
-            <div className="absolute inset-0 bg-radial-[circle_at_top,_var(--tw-gradient-stops)] from-transparent via-slate-950/20 to-slate-950/80" />
+            <div className="absolute inset-0 bg-gradient-to-r from-slate-950/95 via-slate-950/80 to-slate-950/45" />
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-transparent to-slate-950/25" />
           </div>
 
           {/* Top Row: Back button & Breadcrumb capsule */}
@@ -72,7 +72,7 @@ export default async function BlogDetailPage({ params }: { params: Promise<{ slu
           </div>
 
           {/* Bottom Banner Content */}
-          <div className="relative z-10 mx-auto w-full max-w-4xl pt-12 pb-2">
+          <div className="relative z-10 w-full max-w-5xl pb-2 pt-12 sm:pl-2">
             <div className="flex flex-wrap items-center gap-2.5">
               <span className="inline-flex items-center rounded-full bg-pub-accent px-3.5 py-1 text-[11px] font-black uppercase tracking-wider text-white shadow-xs">
                 {category}
@@ -84,7 +84,7 @@ export default async function BlogDetailPage({ params }: { params: Promise<{ slu
               )}
             </div>
 
-            <h1 className="mt-4 text-3xl font-black text-white tracking-tight drop-shadow-[0_2px_12px_rgba(0,0,0,0.6)] sm:text-4xl md:text-5xl lg:text-[54px] lg:leading-[1.15]">
+            <h1 className="mt-4 max-w-4xl text-3xl font-black leading-[1.08] tracking-tight text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.45)] sm:text-4xl md:text-5xl lg:text-[52px]">
               {post.banner_title || post.title}
             </h1>
 
@@ -118,9 +118,9 @@ export default async function BlogDetailPage({ params }: { params: Promise<{ slu
       </div>
 
       {/* ── 2. Article Content ── */}
-      <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 sm:py-12">
+      <div className="mx-auto max-w-[820px] px-5 py-8 sm:px-8 sm:py-12">
         <article
-          className="prose prose-slate max-w-none space-y-6 text-base leading-relaxed text-slate-700 [&_h2]:mt-10 [&_h2]:mb-4 [&_h2]:text-2xl sm:[&_h2]:text-3xl [&_h2]:font-black [&_h2]:tracking-tight [&_h2]:text-slate-950 [&_h3]:mt-8 [&_h3]:mb-3 [&_h3]:text-xl sm:[&_h3]:text-2xl [&_h3]:font-bold [&_h3]:text-slate-950 [&_h4]:text-lg [&_h4]:font-bold [&_h4]:text-slate-900 [&_p]:leading-relaxed [&_a]:text-pub-secondary [&_a]:font-bold [&_a]:underline hover:[&_a]:text-pub-secondary/80 [&_strong]:text-slate-950 [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:space-y-2 [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:space-y-2 [&_blockquote]:border-l-4 [&_blockquote]:border-pub-secondary [&_blockquote]:bg-slate-100/70 [&_blockquote]:p-4 [&_blockquote]:rounded-r-2xl [&_blockquote]:italic [&_blockquote]:text-slate-800 [&_details]:my-4 [&_details]:rounded-2xl [&_details]:border [&_details]:border-slate-200/90 [&_details]:bg-white [&_details]:p-4 [&_details]:shadow-2xs [&_details[open]]:border-sky-300 [&_details[open]]:bg-sky-50/20 [&_summary]:font-bold [&_summary]:text-slate-900 [&_summary]:cursor-pointer [&_summary]:select-none"
+          className="prose prose-slate max-w-none text-[16px] leading-7 text-slate-700 [&_h2]:mb-4 [&_h2]:mt-11 [&_h2]:text-2xl [&_h2]:font-black [&_h2]:tracking-tight [&_h2]:text-slate-950 sm:[&_h2]:text-3xl [&_h3]:mb-3 [&_h3]:mt-9 [&_h3]:text-xl [&_h3]:font-bold [&_h3]:text-slate-950 sm:[&_h3]:text-2xl [&_h4]:text-lg [&_h4]:font-bold [&_h4]:text-slate-900 [&_p]:my-5 [&_p]:leading-7 [&_a]:font-bold [&_a]:text-pub-secondary [&_a]:underline hover:[&_a]:text-pub-secondary/80 [&_strong]:text-slate-950 [&_ul]:my-5 [&_ul]:list-disc [&_ul]:space-y-2 [&_ul]:pl-6 [&_ol]:my-5 [&_ol]:list-decimal [&_ol]:space-y-2 [&_ol]:pl-6 [&_blockquote]:rounded-r-2xl [&_blockquote]:border-l-4 [&_blockquote]:border-pub-secondary [&_blockquote]:bg-slate-100/70 [&_blockquote]:p-5 [&_blockquote]:italic [&_blockquote]:text-slate-800"
           dangerouslySetInnerHTML={{ __html: formattedHtml }}
         />
 

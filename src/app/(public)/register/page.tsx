@@ -15,10 +15,10 @@ import {
   LuHeart as Heart,
 } from "react-icons/lu";
 import api from "@/lib/api/client";
-import { normalizeEmail, validateEmail } from "@/lib/utils/validators";
+import { normalizeEmail, registrationEmailValidationError } from "@/lib/utils/validators";
 import CountryPhoneInput from "@/components/ui/CountryPhoneInput";
 import RegistrationCountrySelect from "@/components/ui/RegistrationCountrySelect";
-import { dialCodeForIso, validatePhoneForCountry } from "@/lib/utils/phoneCountries";
+import { dialCodeForIso, phoneValidationError } from "@/lib/utils/phoneCountries";
 import { useCurrency } from "@/hooks/useCurrency";
 import { useGeoCountries } from "@/hooks/useGeo";
 import type { CountryCode } from "libphonenumber-js/min";
@@ -137,11 +137,13 @@ export default function RegisterPage() {
     const selectedCountry = countries.find(
       (country) => country.code.toUpperCase() === phoneIso,
     );
-    if (!validateEmail(form.email)) return setError("Enter a valid email address.");
+    const emailError = registrationEmailValidationError(form.email);
+    if (emailError) return setError(emailError);
     if (!phoneIso) return setError("Select your country before entering your mobile number.");
     if (countriesLoading) return setError("Countries are still loading. Please try again.");
     if (!selectedCountry) return setError("Select a valid country.");
-    if (!validatePhoneForCountry(phoneIso, form.mobile_number)) return setError("Enter a valid mobile number for the selected country.");
+    const phoneError = phoneValidationError(phoneIso, form.mobile_number);
+    if (phoneError) return setError(phoneError);
     if (!form.accepted_terms) return setError("Accept the Terms and Privacy Policy to continue.");
 
     setLoading(true);

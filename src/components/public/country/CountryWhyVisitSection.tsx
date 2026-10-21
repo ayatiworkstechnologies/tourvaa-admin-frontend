@@ -40,9 +40,7 @@ export default function CountryWhyVisitSection({ info }: CountryWhyVisitSectionP
         {reasons.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
             {reasons.map((reason, idx) => {
-              const fallbackImg =
-                "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=800&auto=format&fit=crop&q=80";
-              const imgSrc = reason.image && reason.image.trim().length > 0 ? reason.image : fallbackImg;
+              const imgSrc = reason.image?.trim();
 
               return (
                 <div
@@ -51,7 +49,7 @@ export default function CountryWhyVisitSection({ info }: CountryWhyVisitSectionP
                 >
                   <div>
                     {/* Visual Photo */}
-                    <div className="relative h-48 w-full overflow-hidden rounded-xl bg-slate-100">
+                    {imgSrc && <div className="relative h-48 w-full overflow-hidden rounded-xl bg-slate-100">
                       <img
                         src={imgSrc}
                         alt={reason.title}
@@ -64,7 +62,7 @@ export default function CountryWhyVisitSection({ info }: CountryWhyVisitSectionP
                           </span>
                         </div>
                       )}
-                    </div>
+                    </div>}
 
                     {/* Content */}
                     <h3 className="mt-4 text-base sm:text-lg font-bold text-slate-900 tracking-tight group-hover:text-pub-accent transition">

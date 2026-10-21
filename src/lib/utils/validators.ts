@@ -10,6 +10,32 @@ export function validateEmail(value: string) {
   return emailPattern.test(normalizeEmail(value));
 }
 
+const PLACEHOLDER_EMAIL_LOCAL_PARTS = new Set([
+  "abc", "asdf", "demo", "dummy", "email", "example", "fake", "mail",
+  "na", "none", "null", "qwerty", "sample", "temp", "temporary", "test",
+  "testing", "user", "username", "xyz",
+]);
+
+const NON_REGISTRATION_EMAIL_DOMAINS = new Set([
+  "example.com", "example.net", "example.org", "mailinator.com", "test.com",
+]);
+
+export function registrationEmailValidationError(value: string): string | null {
+  const email = normalizeEmail(value);
+  if (!validateEmail(email)) return "Enter a valid email address.";
+
+  const [localPart, domain] = email.split("@");
+  const normalizedLocalPart = localPart.replace(/[._+-]/g, "");
+  if (
+    PLACEHOLDER_EMAIL_LOCAL_PARTS.has(normalizedLocalPart) ||
+    NON_REGISTRATION_EMAIL_DOMAINS.has(domain)
+  ) {
+    return "Enter a real email address. Placeholder or disposable emails are not allowed.";
+  }
+
+  return null;
+}
+
 export function validateSlug(value: string) {
   return slugPattern.test(value.trim());
 }

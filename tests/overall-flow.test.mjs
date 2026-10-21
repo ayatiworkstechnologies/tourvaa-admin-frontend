@@ -78,6 +78,12 @@ check("public contact surfaces use configured support details", publicContactSou
 check("public contact surfaces contain no hardcoded Tourvaa contact links", !publicContactSources.includes("mailto:hello@tourvaa.com") && !publicContactSources.includes("mailto:support@tourvaa.com") && !publicContactSources.includes("tel:+919876543210"));
 const contactPage = read("src/app/(public)/contact/page.tsx");
 check(
+  "public contact combines a selected country code with a country-validated local mobile number",
+  contactPage.includes("<CountryPhoneInput") &&
+    contactPage.includes("phoneValidationError(phoneCountryIso, form.phone)") &&
+    contactPage.includes("combinePhone(dialCodeForIso(phoneCountryIso), form.phone)"),
+);
+check(
   "partner cards use live supplier, agent, and contact destinations",
   contactPage.includes('href="/supplier-portal/login?tab=register"') &&
     contactPage.includes('href="/agent-portal/login?tab=register"') &&

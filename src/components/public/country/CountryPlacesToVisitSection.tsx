@@ -76,9 +76,7 @@ export default function CountryPlacesToVisitSection({
           className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
           {places.slice(0, 8).map((place, idx) => {
-            const fallbackImg =
-              "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=800&auto=format&fit=crop&q=80";
-            const imgSrc = place.image && place.image.trim().length > 0 ? place.image : fallbackImg;
+            const imgSrc = place.image?.trim();
 
             return (
               <div
@@ -88,13 +86,13 @@ export default function CountryPlacesToVisitSection({
               >
                 <div>
                   {/* Photo with clean rounded-xl */}
-                  <div className="relative h-44 sm:h-48 w-full overflow-hidden rounded-xl bg-slate-100">
+                  {imgSrc && <div className="relative h-44 sm:h-48 w-full overflow-hidden rounded-xl bg-slate-100">
                     <img
                       src={imgSrc}
                       alt={place.name}
                       className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                     />
-                  </div>
+                  </div>}
 
                   {/* Title & Description below photo */}
                   <h3 className="mt-3.5 text-base font-semibold text-slate-900 tracking-tight group-hover:text-pub-accent transition">

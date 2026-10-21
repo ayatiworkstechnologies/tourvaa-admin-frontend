@@ -99,6 +99,7 @@ const DEFAULT_VALUES = [
     desc: "Direct operator partnerships guarantee authentic local pricing with zero hidden platform markups or surprise fees at checkout.",
     icon: ShieldCheck,
     badge: "Direct Pricing",
+    image: "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?auto=format&fit=crop&w=800&q=85",
   },
   {
     number: "02",
@@ -106,7 +107,7 @@ const DEFAULT_VALUES = [
     desc: "Every expedition is led by certified, bilingual local insiders who bring their home heritage, hidden eateries, and legends to life.",
     icon: Users,
     badge: "Certified Insiders",
-    featured: true,
+    image: "https://images.unsplash.com/photo-1552832230-c0197dd311b5?auto=format&fit=crop&w=800&q=85",
   },
   {
     number: "03",
@@ -114,6 +115,7 @@ const DEFAULT_VALUES = [
     desc: "Expertly balanced pacing combining iconic bucket-list sights with generous leisure time and intimate boutique accommodations.",
     icon: CalendarDays,
     badge: "Artisan Pacing",
+    image: "https://images.unsplash.com/photo-1526778548025-fa2f459cd5c1?auto=format&fit=crop&w=800&q=85",
   },
   {
     number: "04",
@@ -121,6 +123,7 @@ const DEFAULT_VALUES = [
     desc: "We cap our group sizes at 12–16 adventurers to foster lifelong friendships without the noise of commercial tour buses.",
     icon: Sparkles,
     badge: "Max 12-16 Guests",
+    image: "https://images.unsplash.com/photo-1539635278303-d4002c07eae3?auto=format&fit=crop&w=800&q=85",
   },
   {
     number: "05",
@@ -128,6 +131,7 @@ const DEFAULT_VALUES = [
     desc: "Round-the-clock emergency support, rapid re-routing protocols, and comprehensive operator insurance on every continent.",
     icon: Headphones,
     badge: "Always On Call",
+    image: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=800&q=85",
   },
 ];
 
@@ -259,7 +263,7 @@ export default function AboutPage() {
     ? metricsBlock.items.map((it, i) => ({ value: it.value || "", label: it.label || "", sub: it.sub || "", icon: METRIC_ICON_COLOR[i % METRIC_ICON_COLOR.length].icon, color: METRIC_ICON_COLOR[i % METRIC_ICON_COLOR.length].color }))
     : DEFAULT_METRICS;
   const values = valuesHeading.items?.length
-    ? valuesHeading.items.map((it, i) => ({ number: String(i + 1).padStart(2, "0"), title: it.title || "", desc: it.description || "", badge: it.badge || "", icon: VALUE_ICONS[i % VALUE_ICONS.length], featured: i === 1 }))
+    ? valuesHeading.items.map((it, i) => ({ number: String(i + 1).padStart(2, "0"), title: it.title || "", desc: it.description || "", badge: it.badge || "", icon: VALUE_ICONS[i % VALUE_ICONS.length], image: DEFAULT_VALUES[i % DEFAULT_VALUES.length].image }))
     : DEFAULT_VALUES;
   const team = teamHeading.items?.length
     ? teamHeading.items.map((it) => ({ name: it.name || "", role: it.role || "", specialty: it.specialty || "", image: it.photo || "", bio: it.bio || "" }))
@@ -504,74 +508,43 @@ export default function AboutPage() {
           <div className="mt-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5">
             {values.map((v, index) => {
               const Icon = v.icon;
-              const isFeatured = v.featured;
-
-              if (isFeatured) {
-                return (
-                  <div
-                    key={v.number}
-                    data-reveal
-                    style={delay(index * 60)}
-                    tabIndex={0}
-                    className="group relative flex min-h-[300px] flex-col justify-between overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-6 shadow-xs transition-all duration-300 hover:border-slate-700 hover:shadow-lg focus-visible:border-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2"
-                  >
-                    <img
-                      src="https://images.unsplash.com/photo-1552832230-c0197dd311b5?auto=format&fit=crop&w=600&q=80"
-                      alt=""
-                      aria-hidden="true"
-                      className="absolute inset-0 h-full w-full scale-105 object-cover opacity-0 transition duration-500 group-hover:scale-100 group-hover:opacity-100 group-focus-visible:scale-100 group-focus-visible:opacity-100"
-                    />
-                    <div
-                      aria-hidden="true"
-                      className="absolute inset-0 bg-gradient-to-b from-slate-900/70 to-[#0B1F3A]/95 opacity-0 transition-opacity duration-300 group-hover:opacity-100 group-focus-visible:opacity-100"
-                    />
-                    <div className="relative z-10 flex items-center justify-between">
-                      <span className="text-3xl font-black text-slate-300 transition-colors duration-300 group-hover:text-amber-400 group-focus-visible:text-amber-400 font-heading">
-                        {v.number}
-                      </span>
-                      <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-[10px] font-bold text-slate-600 transition-colors duration-300 group-hover:bg-white/20 group-hover:text-white group-focus-visible:bg-white/20 group-focus-visible:text-white group-hover:backdrop-blur-xs group-focus-visible:backdrop-blur-xs">
-                        {v.badge}
-                      </span>
-                    </div>
-                    <div className="relative z-10 mt-auto pt-8">
-                      <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-xl bg-sky-50 text-sky-700 transition-colors duration-300 group-hover:bg-white/20 group-hover:text-white group-focus-visible:bg-white/20 group-focus-visible:text-white group-hover:backdrop-blur-xs group-focus-visible:backdrop-blur-xs">
-                        <Icon size={18} />
-                      </div>
-                      <h3 className="text-base font-bold leading-tight text-slate-950 transition-colors duration-300 group-hover:text-white group-focus-visible:text-white font-heading">
-                        {v.title}
-                      </h3>
-                      <p className="mt-2 text-xs font-normal leading-relaxed text-slate-600 transition-colors duration-300 group-hover:text-white/80 group-focus-visible:text-white/80">
-                        {v.desc}
-                      </p>
-                    </div>
-                  </div>
-                );
-              }
 
               return (
                 <div
                   key={v.number}
                   data-reveal
                   style={delay(index * 60)}
-                  className="group flex flex-col justify-between rounded-2xl border border-slate-200/80 bg-white p-6 shadow-xs min-h-[300px] hover:border-slate-300 hover:shadow-md transition-all duration-200"
+                  tabIndex={0}
+                  className="group relative flex min-h-[300px] flex-col justify-between overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-6 shadow-xs transition-all duration-300 hover:border-slate-700 hover:shadow-lg focus-visible:border-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2"
                 >
-                  <div className="flex items-center justify-between">
-                    <span className="text-3xl font-black text-slate-300 group-hover:text-slate-900 transition-colors font-heading">
+                  <img
+                    src={v.image}
+                    alt=""
+                    aria-hidden="true"
+                    className="absolute inset-0 h-full w-full scale-105 object-cover opacity-0 transition duration-500 group-hover:scale-100 group-hover:opacity-100 group-focus-visible:scale-100 group-focus-visible:opacity-100 motion-reduce:transform-none motion-reduce:transition-none"
+                  />
+                  <div
+                    aria-hidden="true"
+                    className="absolute inset-0 bg-gradient-to-b from-slate-900/65 via-slate-900/70 to-[#0B1F3A]/95 opacity-0 transition-opacity duration-300 group-hover:opacity-100 group-focus-visible:opacity-100 motion-reduce:transition-none"
+                  />
+
+                  <div className="relative z-10 flex items-center justify-between">
+                    <span className="text-3xl font-black text-slate-300 transition-colors duration-300 group-hover:text-orange-400 group-focus-visible:text-orange-400 font-heading">
                       {v.number}
                     </span>
-                    <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-[10px] font-bold text-slate-600">
+                    <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-[10px] font-bold text-slate-600 transition-colors duration-300 group-hover:bg-white/20 group-hover:text-white group-focus-visible:bg-white/20 group-focus-visible:text-white group-hover:backdrop-blur-xs group-focus-visible:backdrop-blur-xs">
                       {v.badge}
                     </span>
                   </div>
 
-                  <div className="mt-auto pt-8">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-sky-50 text-sky-700 mb-3">
+                  <div className="relative z-10 mt-auto pt-8">
+                    <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-xl bg-sky-50 text-sky-700 transition-colors duration-300 group-hover:bg-white/20 group-hover:text-white group-focus-visible:bg-white/20 group-focus-visible:text-white group-hover:backdrop-blur-xs group-focus-visible:backdrop-blur-xs">
                       <Icon size={18} />
                     </div>
-                    <h3 className="text-base font-bold text-slate-950 leading-tight font-heading">
+                    <h3 className="text-base font-bold leading-tight text-slate-950 transition-colors duration-300 group-hover:text-white group-focus-visible:text-white font-heading">
                       {v.title}
                     </h3>
-                    <p className="mt-2 text-xs text-slate-600 leading-relaxed font-normal">
+                    <p className="mt-2 text-xs font-normal leading-relaxed text-slate-600 transition-colors duration-300 group-hover:text-white/90 group-focus-visible:text-white/90">
                       {v.desc}
                     </p>
                   </div>

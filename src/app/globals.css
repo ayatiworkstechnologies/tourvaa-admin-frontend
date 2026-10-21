@@ -805,6 +805,11 @@ button {
    animation states, and forcing background colors to actually print (Chrome
    drops them by default) so badges/highlight chips aren't just outlined
    boxes on the page. */
+@page admin-report {
+  size: A4 landscape;
+  margin: 12mm;
+}
+
 @media print {
   @page {
     margin: 14mm 12mm;
@@ -823,6 +828,72 @@ button {
     box-shadow: none !important;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
+  }
+
+  body:has(.admin-report-print-root) {
+    background: #fff !important;
+    color: #0f172a !important;
+  }
+
+  body:has(.admin-report-print-root) aside,
+  body:has(.admin-report-print-root) main > header,
+  body:has(.admin-report-print-root) [class*="elfsight-app-"] {
+    display: none !important;
+  }
+
+  body:has(.admin-report-print-root) main {
+    height: auto !important;
+    margin: 0 !important;
+    overflow: visible !important;
+  }
+
+  body:has(.admin-report-print-root) main > div {
+    padding: 0 !important;
+  }
+
+  .admin-report-print-root,
+  .admin-report-print-sheet {
+    width: 100% !important;
+  }
+
+  .admin-report-print-root {
+    page: admin-report;
+  }
+
+  .admin-report-print-header {
+    margin-bottom: 8mm;
+  }
+
+  .admin-report-print-table,
+  .admin-report-print-table > div,
+  .admin-report-print-table [class*="overflow-x-auto"] {
+    overflow: visible !important;
+  }
+
+  .admin-report-print-table table {
+    width: 100% !important;
+    min-width: 0 !important;
+    table-layout: auto;
+    font-size: 8pt !important;
+  }
+
+  .admin-report-print-table thead {
+    display: table-header-group;
+  }
+
+  .admin-report-print-table tr {
+    break-inside: avoid;
+  }
+
+  .admin-report-print-table th,
+  .admin-report-print-table td {
+    padding: 5px 6px !important;
+    overflow-wrap: anywhere;
+  }
+
+  .admin-report-print-table button,
+  .admin-report-print-table input {
+    display: none !important;
   }
 }
 

@@ -248,8 +248,41 @@ check("tour review guard matches backend publish permission", tourApproval.inclu
 check("tour approval titles link to the admin tour editor", tourApproval.includes('href={`/admin/tours/${v.tour_id}/edit`}'));
 check("tour approval compares pending submissions with the last approved baseline", tourApproval.includes("function approvedBaseline") && tourApproval.includes('candidate.status === "approved"'));
 
+const adminTours = read("src/app/admin/tours/page.tsx");
+check(
+  "admin tours only offer Publish when the backend marks a tour review-ready",
+  adminTours.includes('row.publish_ready === true && canPublish') &&
+    adminTours.includes('row.status === "pending_approval"') &&
+    adminTours.includes('href="/admin/tour-approval"'),
+);
+check(
+  "tour status failures show the backend workflow message",
+  adminTours.includes("payload?.message || payload?.detail"),
+);
+check(
+  "admin tour View Live uses the canonical country and tour slug URL",
+  adminTours.includes('import { publicTourUrl } from "@/lib/utils/tourUrl"') &&
+    adminTours.includes("const liveUrl = publicTourUrl({") &&
+    adminTours.includes("href={liveUrl}") &&
+    !adminTours.includes('href={`/tours/${row.id}/${row.slug}`}'),
+);
+
 const refunds = read("src/app/admin/refunds/page.tsx");
 check("refund screen uses a permission accepted by cancellation APIs", refunds.includes('requiredPermission="bookings.view"'));
+
+const globalStyles = read("src/app/globals.css");
+check(
+  "admin reports print every result row in a dedicated A4 report view",
+  adminReports.includes("admin-report-print-table") &&
+    adminReports.includes('rows={rows.map((row, index) => ({ ...row, id: index }))}') &&
+    globalStyles.includes("@page admin-report") &&
+    globalStyles.includes("size: A4 landscape"),
+);
+check(
+  "admin report print hides portal chrome",
+  globalStyles.includes("body:has(.admin-report-print-root) aside") &&
+    globalStyles.includes("body:has(.admin-report-print-root) main > header"),
+);
 
 const navigation = read("src/lib/constants/navigation.ts");
 check("admin navigation exposes tour approvals", navigation.includes('href: "/admin/tour-approval"'));

@@ -28,6 +28,7 @@ import {
   fetchContentBlock,
   fetchPopularDestinations,
   fetchPublicCountries,
+  fetchPublicDestinationGuides,
 } from "@/lib/api/publicClient";
 import { mediaUrl } from "@/lib/utils/mediaUrl";
 import { destinationUrl, slugifyTourSegment } from "@/lib/utils/tourUrl";
@@ -486,7 +487,7 @@ export default function DestinationsPage() {
         href: it.href || "/tours",
         icon: STYLE_ICONS[i % STYLE_ICONS.length],
       }))
-    : TRAVEL_STYLES;
+    : [];
   const seasons = seasonItems.length
     ? seasonItems.map((it, i) => ({
         season: it.season || "",
@@ -495,11 +496,9 @@ export default function DestinationsPage() {
         icon: it.icon || "🌍",
         color: SEASON_COLORS[i % SEASON_COLORS.length],
       }))
-    : SEASONS;
-  const [countriesList, setCountriesList] = useState<CountryCardItem[]>(
-    MASTER_DESTINATION_COUNTRIES,
-  );
-  const [loading, setLoading] = useState(false);
+    : [];
+  const [countriesList, setCountriesList] = useState<CountryCardItem[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [selectedRegion, setSelectedRegion] =
     useState<RegionTab>("All Destinations");
@@ -511,8 +510,9 @@ export default function DestinationsPage() {
       fetchPublicCountries(),
       fetchFavouriteCountries(),
       fetchPopularDestinations(),
+      fetchPublicDestinationGuides(),
     ])
-      .then(([publicCountriesRes, favRes, popDestRes]) => {
+      .then(([publicCountriesRes, favRes, popDestRes, guidesRes]) => {
         if (!active) return;
 
         const publicCountries =
@@ -531,14 +531,10 @@ export default function DestinationsPage() {
             ? popDestRes.value.filter((d) => d.is_active !== false)
             : [];
 
-        // Build quick lookup maps
-        const tourCountByName = new Map<string, number>();
-        publicCountries.forEach((c) => {
-          tourCountByName.set(
-            c.country_name.toLowerCase().trim(),
-            c.tour_count || 0,
-          );
-        });
+        const guides =
+          guidesRes.status === "fulfilled" && Array.isArray(guidesRes.value)
+            ? guidesRes.value
+            : [];
 
         const cmsSnippetByName = new Map<string, string>();
         const cmsImageByName = new Map<string, string>();
@@ -563,46 +559,31 @@ export default function DestinationsPage() {
           }
         });
 
-        // Update default master list with CMS / API data
-        setCountriesList((prev) =>
-          // Once the live countries list has loaded, only show countries the
-          // platform actually has; the built-in list only supplies the
-          // region/blurb/image for those (and is the fallback if the API fails).
-          (publicCountries.length > 0
-            ? prev.filter((item) => tourCountByName.has(item.name.toLowerCase().trim()))
-            : prev
-          ).map((item): CountryCardItem => {
-            const key = item.name.toLowerCase().trim();
-            const liveCount = tourCountByName.get(key);
-            const cmsSnippet = cmsSnippetByName.get(key);
-            const cmsImage = cmsImageByName.get(key);
-
-            const updated: CountryCardItem = {
-              ...item,
-              tourCount: liveCount !== undefined ? liveCount : item.tourCount,
-              snippet: cmsSnippet || item.snippet,
-              image: cmsImage || item.image,
-              href: destinationUrl(item.name),
+        // Public countries are the source of truth. CMS records only enrich
+        // those live countries with presentation content; no demo country is
+        // inserted when either source is empty or unavailable.
+        const countryByName = new Map(
+          publicCountries.map((country) => [country.country_name.toLowerCase().trim(), country]),
+        );
+        setCountriesList(
+          guides.map((guide): CountryCardItem => {
+            const guideData = guide.data;
+            const name = guideData.country_name.trim();
+            const key = name.toLowerCase();
+            const country = countryByName.get(key);
+            const curatedRegion = MASTER_DESTINATION_COUNTRIES.find(
+              (item) => item.name.toLowerCase() === key,
+            )?.region;
+            return {
+              name,
+              badge: name,
+              region: curatedRegion || "Other",
+              image: mediaUrl(guideData.hero_image || cmsImageByName.get(key) || ""),
+              snippet: guideData.hero_subtitle || guideData.tagline || cmsSnippetByName.get(key) || "",
+              href: `/destinations/${guide.slug}`,
+              tourCount: country?.tour_count || 0,
             };
-            return updated;
-          })
-          .concat(
-            // Live countries the built-in list doesn't know: shown under
-            // "All Destinations" with whatever the CMS has for them.
-            publicCountries
-              .filter((c) => !prev.some((item) => item.name.toLowerCase().trim() === c.country_name.toLowerCase().trim()))
-              .map((c): CountryCardItem => {
-                const key = c.country_name.toLowerCase().trim();
-                return {
-                  name: c.country_name,
-                  region: "Other",
-                  image: cmsImageByName.get(key) || "",
-                  snippet: cmsSnippetByName.get(key) || "",
-                  href: destinationUrl(c.country_name),
-                  tourCount: c.tour_count || 0,
-                };
-              }),
-          ),
+          }),
         );
       })
       .finally(() => {
@@ -645,6 +626,16 @@ export default function DestinationsPage() {
     return counts;
   }, [countriesList]);
 
+  const totalTours = useMemo(
+    () => countriesList.reduce((total, country) => total + (country.tourCount || 0), 0),
+    [countriesList],
+  );
+
+  const visibleRegions = useMemo(
+    () => REGIONS.filter((region) => region === "All Destinations" || (regionCounts[region] || 0) > 0),
+    [regionCounts],
+  );
+
   return (
     <main className="min-h-screen bg-[#FAFAFB] text-slate-900 pb-24 selection:bg-orange-500 selection:text-white">
       {/* ── 1. Hero Landscape Section ── */}
@@ -666,7 +657,10 @@ export default function DestinationsPage() {
             {/* Pill Badge */}
             <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-1.5 text-[11px] font-bold uppercase tracking-wider text-sky-200 backdrop-blur-md shadow-xs">
               <Sparkles size={13} className="text-orange-400" />
-              <span>Explore 70+ Countries &amp; 2,500+ Curated Adventures</span>
+              <span>
+                Explore {countriesList.length} {countriesList.length === 1 ? "Country" : "Countries"}
+                {totalTours > 0 ? ` & ${totalTours} Curated ${totalTours === 1 ? "Adventure" : "Adventures"}` : ""}
+              </span>
             </div>
 
             {/* Main Headline */}
@@ -716,26 +710,17 @@ export default function DestinationsPage() {
               <span className="text-slate-400 font-semibold text-[11px] mr-1">
                 Trending:
               </span>
-              {[
-                "Morocco",
-                "Egypt",
-                "Iceland",
-                "Sri Lanka",
-                "Turkey",
-                "India",
-                "New Zealand",
-                "Thailand",
-              ].map((chip) => (
+              {countriesList.slice(0, 8).map((country) => (
                 <button
-                  key={chip}
+                  key={country.name}
                   type="button"
                   onClick={() => {
-                    setSearch(chip);
+                    setSearch(country.name);
                     setSelectedRegion("All Destinations");
                   }}
                   className="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[11px] font-medium text-white/90 backdrop-blur-xs transition hover:bg-white/25 hover:text-white cursor-pointer"
                 >
-                  {chip}
+                  {country.name}
                 </button>
               ))}
             </div>
@@ -749,7 +734,7 @@ export default function DestinationsPage() {
               </div>
               <div>
                 <p className="text-base sm:text-lg font-black text-white">
-                  70+ Countries
+                  {countriesList.length} {countriesList.length === 1 ? "Country" : "Countries"}
                 </p>
                 <p className="text-[11px] text-slate-300 font-medium">
                   Worldwide Destinations
@@ -763,7 +748,7 @@ export default function DestinationsPage() {
               </div>
               <div>
                 <p className="text-base sm:text-lg font-black text-white">
-                  2,500+ Tours
+                  {totalTours} {totalTours === 1 ? "Tour" : "Tours"}
                 </p>
                 <p className="text-[11px] text-slate-300 font-medium">
                   Multi-Day Packages
@@ -807,7 +792,7 @@ export default function DestinationsPage() {
         <div className="mx-auto max-w-[1380px] px-5 sm:px-8">
           <div className="flex items-center justify-between gap-4 overflow-x-auto no-scrollbar py-0.5">
             <div className="flex items-center gap-2 shrink-0">
-              {REGIONS.map((region) => {
+              {visibleRegions.map((region) => {
                 const isActive = selectedRegion === region;
                 const count = regionCounts[region] || 0;
 
@@ -958,14 +943,14 @@ export default function DestinationsPage() {
               <MapPin size={28} />
             </div>
             <h3 className="mt-4 text-lg font-bold text-slate-900">
-              No destinations found for &ldquo;{search}&rdquo;
+              {search ? <>No destinations found for &ldquo;{search}&rdquo;</> : "No destinations available yet"}
             </h3>
             <p className="mt-1 text-xs text-slate-500 max-w-md mx-auto">
-              We couldn&apos;t find any country matching your search. Try
-              another query or reset the filters to view all favourite
-              countries.
+              {search
+                ? "We couldn't find a live destination matching your search. Try another query or reset the filters."
+                : "Destinations will appear here when published tours or active CMS destination content are available."}
             </p>
-            <button
+            {search && <button
               type="button"
               onClick={() => {
                 setSearch("");
@@ -974,13 +959,13 @@ export default function DestinationsPage() {
               className="mt-5 rounded-full bg-[#0A1128] px-5 py-2.5 text-xs font-bold text-white hover:bg-slate-800 transition cursor-pointer"
             >
               Reset Filters
-            </button>
+            </button>}
           </div>
         )}
       </section>
 
       {/* ── 4. Explore Destinations by Travel Style ── */}
-      <section className="mx-auto max-w-[1380px] px-5 sm:px-8 pt-16 sm:pt-20">
+      {travelStyles.length > 0 && <section className="mx-auto max-w-[1380px] px-5 sm:px-8 pt-16 sm:pt-20">
         <div className="mb-8">
           <div className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-orange-600">
             <Compass size={14} />
@@ -1048,10 +1033,10 @@ export default function DestinationsPage() {
             );
           })}
         </div>
-      </section>
+      </section>}
 
       {/* ── 5. Seasonal Travel Calendar ── */}
-      <section className="mx-auto max-w-[1380px] px-5 sm:px-8 pt-16 sm:pt-20">
+      {seasons.length > 0 && <section className="mx-auto max-w-[1380px] px-5 sm:px-8 pt-16 sm:pt-20">
         <div className="mb-8">
           <div className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-sky-700">
             <Calendar size={14} />
@@ -1096,7 +1081,7 @@ export default function DestinationsPage() {
             </div>
           ))}
         </div>
-      </section>
+      </section>}
 
       {/* ── 6. Why Book Destinations with Tourvaa ── */}
       <section className="mx-auto max-w-[1380px] px-5 sm:px-8 pt-16 sm:pt-20">
@@ -1121,11 +1106,11 @@ export default function DestinationsPage() {
                   <Globe size={20} />
                 </div>
                 <h3 className="mt-4 text-sm font-bold text-slate-950">
-                  2,500+ Handpicked Tours
+                  {totalTours} Handpicked {totalTours === 1 ? "Tour" : "Tours"}
                 </h3>
                 <p className="mt-1 text-xs text-slate-600 leading-relaxed font-medium">
-                  Compare multi-day group and private itineraries across 70+
-                  destinations from the world&apos;s leading licensed operators.
+                  Compare live multi-day group and private itineraries across {countriesList.length}
+                  {countriesList.length === 1 ? " destination" : " destinations"} from licensed operators.
                 </p>
               </div>
             </div>

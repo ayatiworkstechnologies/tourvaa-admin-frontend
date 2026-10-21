@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { LuChevronDown as ChevronDown, LuCircleCheck as CircleCheck, LuSearch as Search } from "react-icons/lu";
 import type { CountryCode } from "libphonenumber-js/min";
 import FlagIcon from "@/components/ui/FlagIcon";
-import { PHONE_COUNTRIES, dialCodeForIso, formatAsYouType, validatePhoneForCountry } from "@/lib/utils/phoneCountries";
+import { PHONE_COUNTRIES, dialCodeForIso, formatAsYouType, phoneValidationError, validatePhoneForCountry } from "@/lib/utils/phoneCountries";
 import { digitsOnly } from "@/lib/utils/validators";
 
 type CountryPhoneInputProps = {
@@ -81,7 +81,7 @@ export default function CountryPhoneInput({
   const isValid = countryIso && number.length >= 4 ? validatePhoneForCountry(countryIso, number) : null;
   const formatted = countryIso ? formatAsYouType(countryIso, number) : number;
   const validationMessage = errorMessage || (
-    isValid === false ? "Enter a valid mobile number for the selected country." : ""
+    isValid === false && countryIso ? phoneValidationError(countryIso, number) || "" : ""
   );
 
   return (

@@ -19,6 +19,7 @@ import { useDebounce } from "@/hooks/useDebounce";
 import { useToast } from "@/hooks/useToast";
 import { useConfirm } from "@/hooks/useConfirm";
 import { useCurrency } from "@/hooks/useCurrency";
+import { publicTourUrl } from "@/lib/utils/tourUrl";
 
 const PAGE_SIZE = 12;
 
@@ -51,7 +52,8 @@ export default function ToursPage() {
   const debouncedSearch = useDebounce(search, 350);
   const canCreate = hasPermission("tours.create");
   const canEdit = hasPermission("tours.edit");
-  const canToggle = hasPermission("tours.disable");
+  const canPublish = hasPermission("tours.publish");
+  const canDisable = hasPermission("tours.disable");
   // Admin-only (this page itself is admin-only - suppliers manage their own
   // tours at /supplier/tours, which has no delete action at all). Requires
   // the actual delete permission -- the backend's remove_tour only accepts
@@ -178,14 +180,19 @@ export default function ToursPage() {
   };
 
   const toggleStatus = async (row: CmsRecord) => {
+    const nextStatus = row.status === "published" ? "disabled" : "published";
+    if (nextStatus === "published" && row.publish_ready !== true) {
+      toast.error("Submit this supplier tour for review and approve it before publishing.");
+      return;
+    }
     setTogglingId(row.id);
     try {
-      const nextStatus = row.status === "published" ? "disabled" : "published";
       await updateCmsStatus("/tours", row.id, nextStatus);
       toast.success(nextStatus === "published" ? "Tour published." : "Tour disabled.");
       await Promise.all([fetchRows(), fetchStats()]);
-    } catch {
-      toast.error("Could not update tour status.");
+    } catch (error: unknown) {
+      const payload = (error as { response?: { data?: { message?: string; detail?: string } } })?.response?.data;
+      toast.error(payload?.message || payload?.detail || "Could not update tour status.");
     } finally {
       setTogglingId(null);
     }
@@ -297,6 +304,12 @@ export default function ToursPage() {
             {rows.map((row) => {
               const bannerImage = String(row.banner_image || "");
               const location = [row.city_name, row.country_name].filter(Boolean).join(", ");
+              const liveUrl = publicTourUrl({
+                country_name: String(row.country_name || ""),
+                place: String(row.place || ""),
+                title: String(row.title || "Tour"),
+                slug: String(row.slug || ""),
+              });
 
               return (
                 <article
@@ -393,7 +406,7 @@ export default function ToursPage() {
                         <div className="flex shrink-0 items-center gap-1.5">
                           {(row.status === "published" || row.status === "active") && row.slug && (
                             <a
-                              href={`/tours/${row.id}/${row.slug}`}
+                              href={liveUrl}
                               target="_blank"
                               rel="noreferrer"
                               aria-label={`View ${row.title || "tour"} live`}
@@ -428,7 +441,7 @@ export default function ToursPage() {
                         </div>
                       </div>
 
-                      {(canEdit || canToggle) && (
+                      {(canEdit || canPublish || canDisable) && (
                         <div className="flex items-center gap-2">
                           {canEdit && (
                             <Link
@@ -438,7 +451,7 @@ export default function ToursPage() {
                               <Edit size={14} /> Edit
                             </Link>
                           )}
-                          {canToggle && (
+                          {row.status === "published" && canDisable && (
                             <button
                               type="button"
                               disabled={togglingId === row.id}
@@ -447,10 +460,34 @@ export default function ToursPage() {
                             >
                               {togglingId === row.id
                                 ? "Saving…"
-                                : row.status === "published"
-                                ? "Disable"
-                                : "Publish"}
+                                : "Disable"}
                             </button>
+                          )}
+                          {row.status !== "published" && row.publish_ready === true && canPublish && (
+                            <button
+                              type="button"
+                              disabled={togglingId === row.id}
+                              onClick={() => void toggleStatus(row)}
+                              className="inline-flex flex-1 items-center justify-center rounded-lg border border-dash-border px-3 py-2 text-xs font-bold text-dash-muted transition-colors hover:bg-dash-bg disabled:opacity-60"
+                            >
+                              {togglingId === row.id ? "Saving..." : "Publish"}
+                            </button>
+                          )}
+                          {row.status === "pending_approval" && row.publish_ready !== true && Boolean(row.supplier_id) && canPublish && (
+                            <Link
+                              href="/admin/tour-approval"
+                              className="inline-flex flex-1 items-center justify-center rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-bold text-amber-800 transition-colors hover:bg-amber-100"
+                            >
+                              Review
+                            </Link>
+                          )}
+                          {row.status !== "published" && row.status !== "pending_approval" && row.publish_ready !== true && Boolean(row.supplier_id) && canEdit && (
+                            <Link
+                              href={`/admin/tours/${row.id}/edit?step=review`}
+                              className="inline-flex flex-1 items-center justify-center rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-bold text-amber-800 transition-colors hover:bg-amber-100"
+                            >
+                              Review & submit
+                            </Link>
                           )}
                         </div>
                       )}

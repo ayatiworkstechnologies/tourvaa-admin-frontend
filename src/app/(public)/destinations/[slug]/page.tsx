@@ -52,12 +52,14 @@ export default async function DestinationCountryPage({
 
   // Fetch live tours for this country on the server to seed fast initial render
   let initialTours: PublicTour[] = [];
+  let tourCount = 0;
   try {
     const toursRes = await fetchPublicTours({
       country: info.country_name,
       limit: 12,
     });
     initialTours = toursRes?.items || [];
+    tourCount = toursRes?.total || 0;
   } catch {
     // Graceful fallback to client-side fetch in CountryToursSection
     initialTours = [];
@@ -68,6 +70,7 @@ export default async function DestinationCountryPage({
       <CountryDestinationPageContent
         info={info}
         initialTours={initialTours}
+        tourCount={tourCount}
       />
     </main>
   );

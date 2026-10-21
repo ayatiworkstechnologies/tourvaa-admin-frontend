@@ -17,11 +17,13 @@ import ExternalExperiencesSection from "@/components/public/external/ExternalExp
 export interface CountryDestinationPageContentProps {
   info: CountryDestinationInfo;
   initialTours?: PublicTour[];
+  tourCount?: number;
 }
 
 export default function CountryDestinationPageContent({
   info,
   initialTours = [],
+  tourCount = 0,
 }: CountryDestinationPageContentProps) {
   const [selectedPlaceFilter, setSelectedPlaceFilter] = useState<string>("");
   const visible = (section: keyof NonNullable<CountryDestinationInfo["section_visibility"]>) =>
@@ -43,7 +45,7 @@ export default function CountryDestinationPageContent({
     <div className="min-h-screen bg-white text-slate-900">
       {/* ── 1. Hero Banner, Tagline, Introduction & Quick Facts Strip ── */}
       {visible("hero") && (
-        <CountryDestinationHero info={info} tourCount={initialTours?.length || 24} />
+        <CountryDestinationHero info={info} tourCount={tourCount} />
       )}
 
       {/* ── 2. Places to Visit in {Country} (Directly following Hero as in Design Spec) ── */}

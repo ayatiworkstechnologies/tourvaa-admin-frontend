@@ -116,6 +116,15 @@ export interface CountryDestinationInfo extends Record<string, unknown> {
     places: PlaceToVisit[];
   };
   travel_info: TravelAdviceSection;
+  related_destinations?: Array<{
+    name: string;
+    slug: string;
+    region?: string;
+    image?: string;
+    from_price?: string;
+  }>;
+  destination_directory?: Array<{ name: string; slug: string }>;
+  faqs?: Array<{ question: string; answer: string }>;
   /** Per-country display controls. Missing entries default to visible. */
   section_visibility?: Partial<Record<CountryDestinationSectionKey, boolean>>;
   updated_at?: string | null;

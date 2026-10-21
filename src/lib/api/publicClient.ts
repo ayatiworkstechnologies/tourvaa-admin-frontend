@@ -321,6 +321,16 @@ export async function fetchCountryPages() {
   return (res.data.items || []) as CmsCountryPage[];
 }
 
+export type PublicDestinationGuide = {
+  slug: string;
+  data: import("../types/countryDestination").CountryDestinationInfo;
+};
+
+export async function fetchPublicDestinationGuides() {
+  const res = await publicApi.get("/destination-guides");
+  return (res.data.items || []) as PublicDestinationGuide[];
+}
+
 export async function fetchPublicCities(country?: string) {
   const res = await publicApi.get("/cities", { params: country ? { country } : {} });
   return res.data.items as PublicCity[];
@@ -414,63 +424,19 @@ export async function subscribeNewsletter(email: string) {
   await publicApi.post("/newsletter/subscribe", { email });
 }
 
-export async function fetchCountryDestinationInfo(slugOrName: string): Promise<import("../types/countryDestination").CountryDestinationInfo> {
-  const { getCountryDestinationDefault } = await import("../data/countryDestinationDefaults");
+export async function fetchCountryDestinationInfo(slugOrName: string): Promise<import("../types/countryDestination").CountryDestinationInfo | null> {
   const normalizedSlug = slugOrName.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
-  const defaultInfo = getCountryDestinationDefault(normalizedSlug);
 
   try {
-    const blockRes = await fetchContentBlock<import("../types/countryDestination").CountryDestinationInfo>(`country_info_${normalizedSlug}`);
-    if (blockRes?.data && Object.keys(blockRes.data).length > 0) {
-      return {
-        ...defaultInfo,
-        ...blockRes.data,
-        quick_facts: {
-          ...defaultInfo.quick_facts,
-          ...(blockRes.data.quick_facts || {}),
-        },
-        why_visit: {
-          ...defaultInfo.why_visit,
-          ...(blockRes.data.why_visit || {}),
-          reasons: blockRes.data.why_visit?.reasons?.length
-            ? blockRes.data.why_visit.reasons
-            : defaultInfo.why_visit.reasons,
-        },
-        best_time_to_visit: {
-          ...defaultInfo.best_time_to_visit,
-          ...(blockRes.data.best_time_to_visit || {}),
-        },
-        monsoon_info: {
-          ...defaultInfo.monsoon_info,
-          ...(blockRes.data.monsoon_info || {}),
-          regional_variations: blockRes.data.monsoon_info?.regional_variations?.length
-            ? blockRes.data.monsoon_info.regional_variations
-            : defaultInfo.monsoon_info.regional_variations,
-        },
-        temperature_info: {
-          ...defaultInfo.temperature_info,
-          ...(blockRes.data.temperature_info || {}),
-          monthly_weather: blockRes.data.temperature_info?.monthly_weather?.length
-            ? blockRes.data.temperature_info.monthly_weather
-            : defaultInfo.temperature_info.monthly_weather,
-        },
-        best_places_to_visit: {
-          ...defaultInfo.best_places_to_visit,
-          ...(blockRes.data.best_places_to_visit || {}),
-          places: blockRes.data.best_places_to_visit?.places?.length
-            ? blockRes.data.best_places_to_visit.places
-            : defaultInfo.best_places_to_visit.places,
-        },
-        travel_info: {
-          ...defaultInfo.travel_info,
-          ...(blockRes.data.travel_info || {}),
-        },
-      };
+    const response = await publicApi.get(`/destination-guides/${encodeURIComponent(normalizedSlug)}`);
+    const data = response.data?.data?.data as import("../types/countryDestination").CountryDestinationInfo | undefined;
+    if (data?.country_name && Object.keys(data).length > 0) {
+      return data as import("../types/countryDestination").CountryDestinationInfo;
     }
   } catch {
-    // Return default on error
+    return null;
   }
 
-  return defaultInfo;
+  return null;
 }
 

@@ -440,8 +440,8 @@ export default function ReportsPage() {
 
   return (
     <ModuleWrapper title="Reports" requiredPermission="reports.view">
-      <div className="space-y-6">
-        <div>
+      <div className="admin-report-print-root space-y-6">
+        <div className="print:hidden">
           <h1 className="text-[28px] font-black tracking-tight text-dash-text">Reports</h1>
           <p className="mt-1 text-sm font-medium text-dash-muted">Live analytics across bookings, revenue, suppliers and agents.</p>
         </div>
@@ -450,7 +450,7 @@ export default function ReportsPage() {
         {error   && <p className="text-sm text-red-600">{error}</p>}
 
         {!loading && !error && data && (
-          <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_300px]">
+          <div className="grid grid-cols-1 gap-6 print:hidden xl:grid-cols-[1fr_300px]">
 
             {/* left: snapshot cards */}
             <div className="rounded-2xl border border-dash-border-soft bg-white p-6 shadow-[0_1px_4px_0_rgb(0,0,0,0.04)]">
@@ -560,7 +560,20 @@ export default function ReportsPage() {
         )}
 
         {/* detailed / filterable reports */}
-        <section className="rounded-2xl border border-dash-border-soft bg-white p-6 shadow-[0_1px_4px_0_rgb(0,0,0,0.04)] print:border-none print:p-0 print:shadow-none">
+        <section className="admin-report-print-sheet rounded-2xl border border-dash-border-soft bg-white p-6 shadow-[0_1px_4px_0_rgb(0,0,0,0.04)] print:border-none print:p-0 print:shadow-none">
+          <header className="admin-report-print-header hidden print:block">
+            <div className="flex items-end justify-between border-b-2 border-[#132A52] pb-3">
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#52627A]">Tourvaa Admin Report</p>
+                <h1 className="mt-1 text-2xl font-black text-[#0B1F3A]">{reportMeta.label}</h1>
+              </div>
+              <div className="text-right text-[10px] leading-4 text-[#52627A]">
+                <p>Period: {PERIOD_OPTIONS.find((option) => option.value === period)?.label || period}</p>
+                {period === "custom" && customStart && customEnd && <p>{customStart} to {customEnd}</p>}
+                <p>Generated {formatDate(new Date().toISOString())}</p>
+              </div>
+            </div>
+          </header>
           <div className="mb-4 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between print:hidden">
             <div>
               <h2 className="text-lg font-black text-dash-text">Detailed Reports</h2>
@@ -608,7 +621,7 @@ export default function ReportsPage() {
 
           {/* Period filter */}
           {reportMeta.periodAware ? (
-            <div className="mb-5 flex flex-wrap items-center gap-3">
+            <div className="mb-5 flex flex-wrap items-center gap-3 print:hidden">
               <div className="flex flex-wrap gap-1 rounded-xl border border-dash-border bg-white p-1">
                 {PERIOD_OPTIONS.map((p) => (
                   <button
@@ -627,7 +640,7 @@ export default function ReportsPage() {
               {period === "custom" && <DateRangePicker startDate={customStart} endDate={customEnd} className="min-w-[min(100%,26rem)] print:hidden" onChange={(startDate, endDate) => { setCustomStart(startDate); setCustomEnd(endDate); }} />}
             </div>
           ) : (
-            <p className="mb-5 text-xs font-semibold text-dash-subtle">
+            <p className="mb-5 text-xs font-semibold text-dash-subtle print:hidden">
               This report always shows current outstanding records, not a date range.
             </p>
           )}
@@ -770,24 +783,37 @@ export default function ReportsPage() {
             </div>
           )}
 
-          <DataTable
-            ariaLabel={reportMeta.label}
-            columns={columns}
-            rows={rows
-              .map((row, index) => ({ ...row, id: index }))
-              .slice((rowsPage - 1) * rowsPageSize, rowsPage * rowsPageSize)}
-            loading={rowsLoading}
-            page={rowsPage}
-            pageSize={rowsPageSize}
-            total={rows.length}
-            totalPages={Math.max(1, Math.ceil(rows.length / rowsPageSize))}
-            onPageChange={setRowsPage}
-            emptyTitle="No data for this report/period"
-            emptyDescription="Try a different period or report type."
-          />
+          <div className="print:hidden">
+            <DataTable
+              ariaLabel={reportMeta.label}
+              columns={columns}
+              rows={rows
+                .map((row, index) => ({ ...row, id: index }))
+                .slice((rowsPage - 1) * rowsPageSize, rowsPage * rowsPageSize)}
+              loading={rowsLoading}
+              page={rowsPage}
+              pageSize={rowsPageSize}
+              total={rows.length}
+              totalPages={Math.max(1, Math.ceil(rows.length / rowsPageSize))}
+              onPageChange={setRowsPage}
+              emptyTitle="No data for this report/period"
+              emptyDescription="Try a different period or report type."
+            />
+          </div>
+          <div className="admin-report-print-table hidden print:block">
+            <DataTable
+              ariaLabel={`${reportMeta.label} print view`}
+              columns={columns}
+              rows={rows.map((row, index) => ({ ...row, id: index }))}
+              loading={rowsLoading}
+              minWidthClass="min-w-full"
+              emptyTitle="No data for this report/period"
+              emptyDescription="Try a different period or report type."
+            />
+          </div>
         </section>
 
-        <ReportScheduleSection />
+        <div className="print:hidden"><ReportScheduleSection /></div>
       </div>
     </ModuleWrapper>
   );

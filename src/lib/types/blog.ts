@@ -78,6 +78,34 @@ export function extractFaqsFromContent(rawContent: string = ""): {
     }
   }
 
+  // Older editor builds appended the FAQ array directly to the article
+  // without the hidden marker. Recover that trailing JSON so legacy posts do
+  // not expose implementation data on the public page or in the editor.
+  const legacyJsonMatch = contentWithoutMarker.match(/(?:^|\n)\s*(\[\s*\{[\s\S]*?"question"[\s\S]*?"answer"[\s\S]*?\}\s*\])\s*$/);
+  if (legacyJsonMatch) {
+    try {
+      const parsed = JSON.parse(legacyJsonMatch[1]);
+      if (Array.isArray(parsed)) {
+        const recovered = parsed.filter(
+          (item): item is BlogFaqItem =>
+            typeof item?.question === "string" &&
+            item.question.trim().length > 0 &&
+            typeof item?.answer === "string" &&
+            item.answer.trim().length > 0,
+        );
+        if (recovered.length > 0) {
+          recovered.forEach((item) => {
+            const normalized = { question: item.question.trim(), answer: item.answer.trim() };
+            if (!faqs.some((faq) => faq.question === normalized.question)) faqs.push(normalized);
+          });
+          contentWithoutMarker = contentWithoutMarker.slice(0, legacyJsonMatch.index).trim();
+        }
+      }
+    } catch {
+      // It only looked like legacy FAQ JSON; retain it as authored content.
+    }
+  }
+
   // 2. HTML details/summary FAQ blocks extraction
   const detailsRegex = /<details[^>]*>[\s\S]*?<summary[^>]*>([\s\S]*?)<\/summary>[\s\S]*?<p[^>]*>([\s\S]*?)<\/p>[\s\S]*?<\/details>/gi;
   let dMatch;

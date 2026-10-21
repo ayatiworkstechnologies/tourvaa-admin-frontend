@@ -3,6 +3,7 @@
 /* eslint-disable @next/next/no-img-element */
 
 import React, { useEffect, useState } from "react";
+import type { CountryCode } from "libphonenumber-js/min";
 import { usePublicSettings } from "@/providers/PublicSettingsProvider";
 import Link from "next/link";
 import {
@@ -27,7 +28,9 @@ import {
 } from "react-icons/lu";
 import publicApi, { fetchContentBlock } from "@/lib/api/publicClient";
 import { getApiErrorMessage } from "@/lib/utils/errorHandler";
-import { validateEmail, validateMobile } from "@/lib/utils/validators";
+import { combinePhone, validateEmail } from "@/lib/utils/validators";
+import { dialCodeForIso, phoneValidationError } from "@/lib/utils/phoneCountries";
+import CountryPhoneInput from "@/components/ui/CountryPhoneInput";
 import OfficesWorldMap, {
   OFFICES,
 } from "@/components/public/contact/OfficesWorldMap";
@@ -258,6 +261,8 @@ export default function ContactPage({ audience }: { audience?: "supplier" | "age
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [sent, setSent] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
+  const [phoneCountryIso, setPhoneCountryIso] = useState<CountryCode>("IN");
+  const [phoneError, setPhoneError] = useState<string>("");
 
   useEffect(() => {
     const context = audience ?? new URLSearchParams(window.location.search).get("context");
@@ -290,7 +295,9 @@ export default function ContactPage({ audience }: { audience?: "supplier" | "age
   const submitInquiry = async (e: React.FormEvent) => {
     e.preventDefault();
     const email = form.email.trim();
-    const phone = form.phone.trim().replace(/[\s()\-]/g, "");
+    const phone = form.phone
+      ? combinePhone(dialCodeForIso(phoneCountryIso), form.phone)
+      : "";
     if (!form.name.trim() || !form.message.trim()) {
       setError("Enter your name and message.");
       return;
@@ -299,10 +306,12 @@ export default function ContactPage({ audience }: { audience?: "supplier" | "age
       setError("Enter a valid email address.");
       return;
     }
-    if (phone && !validateMobile(phone)) {
-      setError("Enter a valid mobile number in international format, for example +919876543210.");
+    const mobileError = form.phone ? phoneValidationError(phoneCountryIso, form.phone) : null;
+    if (mobileError) {
+      setPhoneError(mobileError);
       return;
     }
+    setPhoneError("");
     setSubmitting(true);
     setError("");
     try {
@@ -680,18 +689,26 @@ export default function ContactPage({ audience }: { audience?: "supplier" | "age
                         />
                       </div>
 
-                      <div>
-                        <label className="block text-xs font-bold text-slate-700">
-                          Phone Number
-                        </label>
-                        <input
-                          type="tel"
-                          value={form.phone}
-                          onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                          placeholder="e.g. +1 (555) 234-5678"
-                          className="mt-1.5 h-11 w-full rounded-xl border border-slate-200 px-3.5 text-xs sm:text-sm outline-none focus:border-pub-secondary focus:ring-1 focus:ring-pub-secondary/20 transition"
-                        />
-                      </div>
+                      <CountryPhoneInput
+                        className="mt-0"
+                        countryIso={phoneCountryIso}
+                        number={form.phone}
+                        onCountryChange={(iso) => {
+                          setPhoneCountryIso(iso);
+                          setPhoneError("");
+                          setError("");
+                        }}
+                        onNumberChange={(phone) => {
+                          setForm({ ...form, phone });
+                          setPhoneError("");
+                          setError("");
+                        }}
+                        label="Phone Number"
+                        countryLabel="Select phone country"
+                        placeholder="e.g. 98765 43210"
+                        helpText="Select the country code, then enter the local mobile number."
+                        errorMessage={phoneError}
+                      />
                     </div>
 
                     {/* Email & Subject Grid */}

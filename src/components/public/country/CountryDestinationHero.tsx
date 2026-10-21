@@ -27,7 +27,7 @@ export interface CountryDestinationHeroProps {
 
 export default function CountryDestinationHero({
   info,
-  tourCount = 24,
+  tourCount = 0,
 }: CountryDestinationHeroProps) {
   const scrollToSection = (id: string) => (event: React.MouseEvent) => {
     event.preventDefault();
@@ -45,9 +45,7 @@ export default function CountryDestinationHero({
     { label: "Driving Side", value: info.quick_facts?.driving_side, icon: Car },
   ].filter((item) => Boolean(item.value));
 
-  const heroImageSrc =
-    info.hero_image ||
-    "https://images.unsplash.com/photo-1524492412937-b28074a5d7da?auto=format&fit=crop&w=1600&q=80";
+  const heroImageSrc = info.hero_image?.trim();
 
   return (
     <section className="bg-white pb-8 pt-4 text-slate-900 border-b border-slate-100">
@@ -116,7 +114,7 @@ export default function CountryDestinationHero({
           </div>
 
           {/* Right Column: Hero Visual Showcase */}
-          <div className="lg:col-span-5">
+          {heroImageSrc && <div className="lg:col-span-5">
             <div className="relative h-[280px] sm:h-[360px] lg:h-[380px] w-full overflow-hidden rounded-[24px] bg-slate-100 shadow-sm border border-slate-100">
               <img
                 src={heroImageSrc}
@@ -124,7 +122,7 @@ export default function CountryDestinationHero({
                 className="h-full w-full object-cover object-center transition-transform duration-700 hover:scale-105"
               />
             </div>
-          </div>
+          </div>}
         </div>
 
         {/* ── Quick Facts Strip (Rendered at Base of Hero) ── */}

@@ -5,6 +5,7 @@ import {
   isValidPhoneNumber,
   type CountryCode,
 } from "libphonenumber-js/min";
+import { parsePhoneNumberFromString } from "libphonenumber-js/max";
 
 export type PhoneCountry = { iso: CountryCode; name: string; dialCode: string };
 
@@ -87,8 +88,27 @@ export function formatAsYouType(iso: CountryCode, nationalDigits: string): strin
 export function validatePhoneForCountry(iso: CountryCode, nationalDigits: string): boolean {
   if (!nationalDigits) return false;
   try {
-    return isValidPhoneNumber(nationalDigits, iso);
+    if (!isValidPhoneNumber(nationalDigits, iso)) return false;
+    const number = parsePhoneNumberFromString(nationalDigits, iso);
+    const type = number?.getType();
+    return type === "MOBILE" || type === "FIXED_LINE_OR_MOBILE";
   } catch {
     return false;
   }
+}
+
+export function phoneValidationError(iso: CountryCode, nationalDigits: string): string | null {
+  const digits = nationalDigits.replace(/\D/g, "");
+  const country = countryForIso(iso);
+  const label = country?.name || iso;
+
+  if (!digits) return `Enter a mobile number for ${label}.`;
+  if (validatePhoneForCountry(iso, digits)) return null;
+
+  if (iso === "IN") {
+    if (digits.length !== 10) return "Indian mobile numbers must contain exactly 10 digits.";
+    if (!/^[6-9]/.test(digits)) return "Indian mobile numbers must start with 6, 7, 8, or 9.";
+  }
+
+  return `Enter a valid mobile number for ${label}.`;
 }
