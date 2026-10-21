@@ -178,6 +178,7 @@ export const PAGE_METADATA: Record<string, PageDefinition> = {
   "/affiliate/payouts": { title: "Affiliate Payouts", description: "Request payouts and review payout history and commission payment status.", index: false },
   "/affiliate/payout-methods": { title: "Payout Methods", description: "Manage bank and PayPal payout methods for receiving affiliate commissions.", index: false },
   "/affiliate/wallet": { title: "Affiliate Wallet", description: "Review pending, available, and paid affiliate commission balances.", index: false },
+  "/affiliate/messages": { title: "Affiliate Messages", description: "Contact the Tourvaa team and review affiliate support conversations.", index: false },
   "/affiliate/support": { title: "Affiliate Support", description: "Chat directly with Tourvaa support about your affiliate account.", index: false },
   "/affiliate/profile": { title: "Affiliate Profile", description: "Manage affiliate contact, promotion, and account information.", index: false },
   "/affiliate/referral-links": { title: "Referral Links", description: "Create and manage trackable Tourvaa affiliate referral links.", index: false },
