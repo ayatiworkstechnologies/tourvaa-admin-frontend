@@ -238,6 +238,7 @@ export type MyBookingRow = {
   adults: number;
   children: number;
   total_amount: string;
+  currency: string;
   booking_status: string;
   payment_status: string;
   special_requests: string | null;

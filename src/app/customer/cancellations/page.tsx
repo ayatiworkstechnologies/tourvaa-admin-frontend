@@ -6,6 +6,7 @@ import { LuFileText as FileText } from "react-icons/lu";
 import api from "@/lib/api/client";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
 import { CustomerPageHeader, CustomerPageShell } from "@/components/customer/CustomerPage";
+import { useCurrency } from "@/hooks/useCurrency";
 
 type Cancellation = {
   id: number;
@@ -28,16 +29,6 @@ function dateText(value?: string) {
   return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString("en-US", { day: "2-digit", month: "short", year: "numeric" });
 }
 
-function refundText(value?: string | number, currency = "USD") {
-  const amount = Number(value);
-  if (!Number.isFinite(amount)) return "-";
-  try {
-    return new Intl.NumberFormat("en-US", { style: "currency", currency, minimumFractionDigits: 2 }).format(amount);
-  } catch {
-    return `${amount.toFixed(2)} ${currency}`;
-  }
-}
-
 function statusClass(status?: string) {
   const value = (status || "").toLowerCase();
   if (["approved", "refund_processed"].includes(value)) return "bg-emerald-50 text-emerald-700 border-emerald-200";
@@ -47,6 +38,7 @@ function statusClass(status?: string) {
 }
 
 export default function CustomerCancellationsPage() {
+  const { format: money } = useCurrency();
   const [rows, setRows] = useState<Cancellation[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
@@ -84,7 +76,7 @@ export default function CustomerCancellationsPage() {
         if (Number.isFinite(amount) && amount === 0 && c.status === "refund_processed") return <span className="font-medium">No refund</span>;
         return (
           <div>
-            <p className="font-semibold text-dash-text">{refundText(c.refund_amount, c.currency)}</p>
+            <p className="font-semibold text-dash-text">{money(c.refund_amount, c.currency || "USD")}</p>
             {c.refund_percentage != null && <p className="text-xs">{c.refund_percentage}% of amount paid</p>}
           </div>
         );

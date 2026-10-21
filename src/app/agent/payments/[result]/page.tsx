@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
-import { LuArrowRight as ArrowRight, LuCircleAlert as AlertCircle, LuCircleCheckBig as CheckCircle2, LuClock3 as Clock3, LuLoaderCircle as Loader2, LuShieldCheck as ShieldCheck } from "react-icons/lu";
+import { LuArrowLeft as ArrowLeft, LuArrowRight as ArrowRight, LuCircleAlert as AlertCircle, LuCircleCheckBig as CheckCircle2, LuClock3 as Clock3, LuLoaderCircle as Loader2, LuShieldCheck as ShieldCheck } from "react-icons/lu";
 import api from "@/lib/api/client";
 import { AgentPageShell } from "@/components/agent/AgentPage";
 
@@ -69,6 +69,9 @@ export default function AgentPaymentResultPage() {
   const failed = state === "failed";
 
   return <AgentPageShell className="flex items-center justify-center"><main className="my-8 w-full max-w-2xl overflow-hidden rounded-[28px] border border-[#DDE7F3] bg-white shadow-[0_18px_55px_rgba(25,62,109,.10)]">
+    <div className="border-b border-[#E7EEF6] px-6 py-3 sm:px-12">
+      <Link href={bookingHref} className="inline-flex items-center gap-2 text-xs font-black text-[#315174] transition hover:text-[#1464F4]"><ArrowLeft size={15} /> Back to booking</Link>
+    </div>
     <section className={`px-6 pb-9 pt-9 text-center sm:px-12 ${verifying ? "bg-[#F2F7FF]" : success ? "bg-[linear-gradient(135deg,#EDFDF5,#F7FFFB,#EEF7FF)]" : "bg-[linear-gradient(135deg,#FFF5F4,#FFFDFC,#FFF8EE)]"}`}>
       <span className={`mx-auto flex h-[76px] w-[76px] items-center justify-center rounded-[26px] border bg-white shadow-sm ${verifying ? "border-blue-100 text-[#1464F4]" : success ? "border-emerald-100 text-[#009A68]" : "border-rose-100 text-[#D64747]"}`}>{verifying ? <Loader2 size={38} className="animate-spin" /> : success ? <CheckCircle2 size={39} /> : <AlertCircle size={38} />}</span>
       <p className={`mt-6 text-[11px] font-black uppercase tracking-[.17em] ${success ? "text-[#008A5B]" : failed ? "text-[#C44747]" : "text-[#2475E8]"}`}>Agent payment {verifying ? "verification" : success ? "authorized" : "not completed"}</p>

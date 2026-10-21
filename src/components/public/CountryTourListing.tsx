@@ -282,6 +282,20 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
         ]
   ), [isIndia]);
 
+  // Keep API filter bounds in the tours' source-currency family, while the
+  // visible labels follow the header's active display currency.
+  const displayBudgetOptions = useMemo(() => {
+    const sourceCurrency = isIndia ? "INR" : "USD";
+    return budgetOptions.map((option) => {
+      const min = option.min === undefined ? null : format(option.min, sourceCurrency);
+      const max = option.max === undefined ? null : format(option.max, sourceCurrency);
+      return {
+        ...option,
+        label: min && max ? `${min} to ${max}` : max ? `Under ${max}` : min ? `Above ${min}` : option.label,
+      };
+    });
+  }, [budgetOptions, format, isIndia]);
+
   // Admin-editable per-country landing page overrides (see admin/cms >
   // Country Pages) - fetched once, matched against the resolved
   // countryName below. Falls back to the algorithmically generated hero/
@@ -800,22 +814,23 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
           </div>
         </div>
 
-        {/* ── 4. Live Horizontal Filter Pills Bar ── */}
-        <div className="mt-5 flex w-full min-w-0 max-w-full items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
-          {/* Main Filter Badge */}
-          <button
-            type="button"
-            onClick={() => {
-              if (activeFiltersCount > 0) clearAllFilters();
-            }}
-            className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-pub-accent px-4 py-2 text-xs font-bold text-white shadow-2xs transition hover:bg-pub-accent/85"
-          >
-            <Sliders size={13} />
-            Filter ({activeFiltersCount})
-          </button>
+        {/* 4. Search, filter, and sort controls. The responsive grid keeps every
+            control reachable instead of hiding controls in a horizontal scroller. */}
+        <section
+          aria-label="Tour filters"
+          className="mt-5 rounded-2xl border border-slate-200/90 bg-slate-50/70 p-3 shadow-xs sm:p-4"
+        >
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+            <div className="inline-flex w-fit items-center gap-2 rounded-xl bg-pub-primary px-3 py-2 text-xs font-bold text-white shadow-2xs">
+              <Sliders size={14} aria-hidden="true" />
+              <span>Filters</span>
+              <span className="rounded-md bg-white/15 px-1.5 py-0.5 tabular-nums">
+                {activeFiltersCount}
+              </span>
+            </div>
 
-          {/* Quick Search Input */}
-          <div className="relative shrink-0 min-w-[200px] sm:min-w-[240px]">
+            {/* Quick Search Input */}
+            <div className="relative min-w-0 flex-1 lg:max-w-xl">
             <input
               type="text"
               placeholder="Search by tour name, country..."
@@ -827,9 +842,10 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
                   handleSearchSubmit(searchTerm);
                 }
               }}
-              className="w-full rounded-full border border-slate-200 bg-white py-2 pl-8 pr-7 text-xs font-semibold text-slate-800 placeholder-slate-400 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100 shadow-2xs"
+              aria-label="Search tours"
+              className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-9 pr-8 text-sm font-medium text-slate-800 placeholder-slate-400 outline-none shadow-2xs transition focus:border-pub-accent focus:ring-2 focus:ring-pub-accent/15"
             />
-            <Search size={13} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             {searchTerm && (
               <button
                 type="button"
@@ -843,36 +859,53 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
                 <X size={12} />
               </button>
             )}
+            </div>
+
+            <button
+              type="button"
+              onClick={handleAvailableOnlyToggle}
+              aria-pressed={availableOnly}
+              className={`inline-flex min-h-10 shrink-0 items-center justify-center rounded-xl px-4 py-2.5 text-sm font-bold transition active:translate-y-px ${
+                availableOnly
+                  ? "bg-pub-accent text-white shadow-sm hover:bg-pub-accent/85"
+                  : "border border-slate-200 bg-white text-slate-700 shadow-2xs hover:border-pub-accent/45 hover:text-pub-primary"
+              }`}
+            >
+              Available departures
+            </button>
           </div>
 
-          {/* Budget Dropdown Pill -- min_price/max_price on GET /api/public/tours */}
-          <div className="relative shrink-0">
+          <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+          {/* Budget Dropdown - min_price/max_price on GET /api/public/tours */}
+          <div className="relative min-w-0">
             <select
               value={selectedBudget}
               onChange={(e) => handleBudgetChange(e.target.value)}
-              className={`appearance-none rounded-full py-2 pl-4 pr-8 text-xs font-semibold outline-none shadow-2xs transition ${
+              aria-label="Budget"
+              className={`w-full appearance-none rounded-xl py-2.5 pl-3 pr-9 text-sm font-semibold outline-none shadow-2xs transition ${
                 selectedBudget
-                  ? "border border-blue-500 bg-blue-50 text-blue-700 font-bold"
-                  : "border border-slate-200 bg-white text-slate-700 hover:border-slate-300"
+                  ? "border border-pub-accent bg-pub-accent/5 text-pub-primary font-bold"
+                  : "border border-slate-200 bg-white text-slate-700 hover:border-pub-accent/45"
               }`}
             >
               <option value="">Budget</option>
-              {budgetOptions.map((opt) => (
+              {displayBudgetOptions.map((opt) => (
                 <option key={opt.value} value={opt.value}>{opt.label}</option>
               ))}
             </select>
             <ChevronDown size={12} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" />
           </div>
 
-          {/* Duration Dropdown Pill */}
-          <div className="relative shrink-0">
+          {/* Duration Dropdown */}
+          <div className="relative min-w-0">
             <select
               value={selectedDuration}
               onChange={(e) => handleDurationChange(e.target.value)}
-              className={`appearance-none rounded-full py-2 pl-4 pr-8 text-xs font-semibold outline-none shadow-2xs transition ${
+              aria-label="Duration"
+              className={`w-full appearance-none rounded-xl py-2.5 pl-3 pr-9 text-sm font-semibold outline-none shadow-2xs transition ${
                 selectedDuration
-                  ? "border border-blue-500 bg-blue-50 text-blue-700 font-bold"
-                  : "border border-slate-200 bg-white text-slate-700 hover:border-slate-300"
+                  ? "border border-pub-accent bg-pub-accent/5 text-pub-primary font-bold"
+                  : "border border-slate-200 bg-white text-slate-700 hover:border-pub-accent/45"
               }`}
             >
               <option value="">Duration</option>
@@ -888,17 +921,18 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
             <ChevronDown size={12} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" />
           </div>
 
-          {/* Category Dropdown Pill -- real TourCategory data, combined
+          {/* Category Dropdown - real TourCategory data, combined
               server-side with the current country filter (see selectCategory) */}
           {categories.length > 0 && (
-            <div className="relative shrink-0">
+            <div className="relative min-w-0">
               <select
                 value={queryCategory}
                 onChange={(e) => selectCategory(e.target.value)}
-                className={`appearance-none rounded-full py-2 pl-4 pr-8 text-xs font-semibold outline-none shadow-2xs transition ${
+                aria-label="Category"
+                className={`w-full appearance-none rounded-xl py-2.5 pl-3 pr-9 text-sm font-semibold outline-none shadow-2xs transition ${
                   queryCategory
-                    ? "border border-blue-500 bg-blue-50 text-blue-700 font-bold"
-                    : "border border-slate-200 bg-white text-slate-700 hover:border-slate-300"
+                    ? "border border-pub-accent bg-pub-accent/5 text-pub-primary font-bold"
+                    : "border border-slate-200 bg-white text-slate-700 hover:border-pub-accent/45"
                 }`}
               >
                 <option value="">Category</option>
@@ -912,17 +946,18 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
             </div>
           )}
 
-          {/* Subcategory Dropdown Pill -- real TourSubcategory data scoped
+          {/* Subcategory Dropdown - real TourSubcategory data scoped
               to the selected Category (see fetchPublicSubcategories) */}
           {subcategories.length > 0 && (
-            <div className="relative shrink-0">
+            <div className="relative min-w-0">
               <select
                 value={selectedSubcategory}
                 onChange={(e) => handleSubcategoryChange(e.target.value)}
-                className={`appearance-none rounded-full py-2 pl-4 pr-8 text-xs font-semibold outline-none shadow-2xs transition ${
+                aria-label="Subcategory"
+                className={`w-full appearance-none rounded-xl py-2.5 pl-3 pr-9 text-sm font-semibold outline-none shadow-2xs transition ${
                   selectedSubcategory
-                    ? "border border-blue-500 bg-blue-50 text-blue-700 font-bold"
-                    : "border border-slate-200 bg-white text-slate-700 hover:border-slate-300"
+                    ? "border border-pub-accent bg-pub-accent/5 text-pub-primary font-bold"
+                    : "border border-slate-200 bg-white text-slate-700 hover:border-pub-accent/45"
                 }`}
               >
                 <option value="">Subcategory</option>
@@ -936,15 +971,16 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
             </div>
           )}
 
-          {/* Destination Dropdown Pill */}
-          <div className="relative shrink-0">
+          {/* Destination Dropdown */}
+          <div className="relative min-w-0">
             <select
               value={selectedDestination}
               onChange={(e) => handleDestinationChange(e.target.value)}
-              className={`appearance-none rounded-full py-2 pl-4 pr-8 text-xs font-semibold outline-none shadow-2xs transition ${
+              aria-label="Destination"
+              className={`w-full appearance-none rounded-xl py-2.5 pl-3 pr-9 text-sm font-semibold outline-none shadow-2xs transition ${
                 selectedDestination
-                  ? "border border-blue-500 bg-blue-50 text-blue-700 font-bold"
-                  : "border border-slate-200 bg-white text-slate-700 hover:border-slate-300"
+                  ? "border border-pub-accent bg-pub-accent/5 text-pub-primary font-bold"
+                  : "border border-slate-200 bg-white text-slate-700 hover:border-pub-accent/45"
               }`}
             >
               <option value="">Destination</option>
@@ -957,15 +993,16 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
             <ChevronDown size={12} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" />
           </div>
 
-          {/* Rating Dropdown Pill */}
-          <div className="relative shrink-0">
+          {/* Rating Dropdown */}
+          <div className="relative min-w-0">
             <select
               value={selectedRating}
               onChange={(e) => handleRatingChange(e.target.value)}
-              className={`appearance-none rounded-full py-2 pl-4 pr-8 text-xs font-semibold outline-none shadow-2xs transition ${
+              aria-label="Rating"
+              className={`w-full appearance-none rounded-xl py-2.5 pl-3 pr-9 text-sm font-semibold outline-none shadow-2xs transition ${
                 selectedRating
-                  ? "border border-blue-500 bg-blue-50 text-blue-700 font-bold"
-                  : "border border-slate-200 bg-white text-slate-700 hover:border-slate-300"
+                  ? "border border-pub-accent bg-pub-accent/5 text-pub-primary font-bold"
+                  : "border border-slate-200 bg-white text-slate-700 hover:border-pub-accent/45"
               }`}
             >
               <option value="">Rating</option>
@@ -976,18 +1013,19 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
             <ChevronDown size={12} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" />
           </div>
 
-          {/* Departure Month Dropdown Pill -- real "YYYY-MM" values sent as
+          {/* Departure Month Dropdown - real "YYYY-MM" values sent as
               departure_month to the backend (routers.public.public_tours),
               which filters to tours with an available calendar date in
               that month. */}
-          <div className="relative shrink-0">
+          <div className="relative min-w-0">
             <select
               value={selectedDepartureMonth}
               onChange={(e) => handleDepartureMonthChange(e.target.value)}
-              className={`appearance-none rounded-full py-2 pl-4 pr-8 text-xs font-semibold outline-none shadow-2xs transition ${
+              aria-label="Departure month"
+              className={`w-full appearance-none rounded-xl py-2.5 pl-3 pr-9 text-sm font-semibold outline-none shadow-2xs transition ${
                 selectedDepartureMonth
-                  ? "border border-blue-500 bg-blue-50 text-blue-700 font-bold"
-                  : "border border-slate-200 bg-white text-slate-700 hover:border-slate-300"
+                  ? "border border-pub-accent bg-pub-accent/5 text-pub-primary font-bold"
+                  : "border border-slate-200 bg-white text-slate-700 hover:border-pub-accent/45"
               }`}
             >
               <option value="">Departure Month</option>
@@ -998,29 +1036,16 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
             <ChevronDown size={12} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" />
           </div>
 
-          {/* Available Now Pill (Toggle) -- available_only param: only
-              tours with an open, unexpired calendar departure. */}
-          <button
-            type="button"
-            onClick={handleAvailableOnlyToggle}
-            className={`shrink-0 rounded-full px-4 py-2 text-xs font-bold transition shadow-2xs ${
-              availableOnly
-                ? "bg-pub-accent text-white hover:bg-pub-accent/85"
-                : "border border-slate-200 bg-white text-slate-700 hover:border-slate-300"
-            }`}
-          >
-            Available Now
-          </button>
-
-          {/* Sort Dropdown Pill -- sort param (newest/price_asc/price_desc/duration_asc) */}
-          <div className="relative shrink-0">
+          {/* Sort Dropdown - sort param (newest/price_asc/price_desc/duration_asc) */}
+          <div className="relative min-w-0">
             <select
               value={sortOrder}
               onChange={(e) => handleSortChange(e.target.value as typeof sortOrder)}
-              className={`appearance-none rounded-full py-2 pl-4 pr-8 text-xs font-semibold outline-none shadow-2xs transition ${
+              aria-label="Sort tours"
+              className={`w-full appearance-none rounded-xl py-2.5 pl-3 pr-9 text-sm font-semibold outline-none shadow-2xs transition ${
                 sortOrder !== "newest"
-                  ? "border border-blue-500 bg-blue-50 text-blue-700 font-bold"
-                  : "border border-slate-200 bg-white text-slate-700 hover:border-slate-300"
+                  ? "border border-pub-accent bg-pub-accent/5 text-pub-primary font-bold"
+                  : "border border-slate-200 bg-white text-slate-700 hover:border-pub-accent/45"
               }`}
             >
               <option value="newest">Sort: Newest</option>
@@ -1030,7 +1055,8 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
             </select>
             <ChevronDown size={12} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" />
           </div>
-        </div>
+          </div>
+        </section>
 
         {/* ── 5. ⭐ Featured Category Showcase Banner Card ── */}
         <section className="mt-8 rounded-3xl border border-slate-200/90 bg-white p-6 sm:p-8 shadow-xs">

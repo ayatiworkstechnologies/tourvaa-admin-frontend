@@ -206,6 +206,24 @@ export default function ContactPage({ audience }: { audience?: "supplier" | "age
   const displayChannels = isSupplierInquiry
     ? { ...DEFAULT_CHANNELS, badge_text: "Supplier Operations Desk", heading: "Talk to the Supplier Team", subtitle: "For active suppliers, Tourvaa operations can help with tours, booking requests, payments, verification, and account access.", phone_hint: "Supplier operations support and urgent booking assistance", guarantee_title: "Supplier Support Commitment", guarantee_text: "Clear operational guidance for your tours and booking workflow." }
     : channels;
+  // Keep support-card navigation on routes that actually exist for the
+  // visitor's portal. The previous customer route (`/profile/bookings`) did
+  // not exist, and the agent contact page incorrectly sent users there too.
+  const bookingSupportHref = isSupplierInquiry
+    ? "/supplier/bookings"
+    : isAgentInquiry
+      ? "/agent/bookings"
+      : "/customer/bookings";
+  const messageSupportHref = isSupplierInquiry
+    ? "/supplier/messages"
+    : isAgentInquiry
+      ? "/agent/messages"
+      : "/customer/support";
+  const accountSupportHref = isSupplierInquiry
+    ? "/supplier/profile"
+    : isAgentInquiry
+      ? "/agent/profile"
+      : "/help-centre";
   const faqs: FaqItem[] = faqHeading.items?.length
     ? faqHeading.items.map((it, i) => ({ id: `faq-${i}`, category: it.category || "", question: it.question || "", answer: it.answer || "" }))
     : DEFAULT_FAQS;
@@ -387,10 +405,10 @@ export default function ContactPage({ audience }: { audience?: "supplier" | "age
               </p>
             </div>
             <Link
-              href={isSupplierInquiry ? "/supplier/bookings" : "/profile/bookings"}
+              href={bookingSupportHref}
               className="mt-8 inline-flex items-center justify-center gap-2 rounded-xl bg-[#0B1F3A] hover:bg-slate-800 text-white text-xs font-bold px-5 py-3 w-fit shadow-xs transition"
             >
-              <span>{isSupplierInquiry ? "Review Booking Requests" : "Manage My Bookings"}</span>
+              <span>{isSupplierInquiry ? "Review Booking Requests" : isAgentInquiry ? "Manage Agent Bookings" : "Manage My Bookings"}</span>
               <ArrowRight size={14} />
             </Link>
           </div>
@@ -411,8 +429,8 @@ export default function ContactPage({ audience }: { audience?: "supplier" | "age
                 {displaySupportCards[1].description}
               </p>
             </div>
-            {isSupplierInquiry ? <Link
-              href="/supplier/messages"
+            {(isSupplierInquiry || isAgentInquiry) ? <Link
+              href={messageSupportHref}
               className="mt-8 inline-flex items-center justify-center gap-2 rounded-xl bg-[#0B1F3A] hover:bg-slate-800 text-white text-xs font-bold px-5 py-3 w-fit shadow-xs transition"
             >
               <span>Message Tourvaa Support</span>
@@ -441,10 +459,10 @@ export default function ContactPage({ audience }: { audience?: "supplier" | "age
               </p>
             </div>
             <Link
-              href={isSupplierInquiry ? "/supplier/profile" : "/help-centre"}
+              href={accountSupportHref}
               className="mt-8 inline-flex items-center justify-center gap-2 rounded-xl bg-[#0B1F3A] hover:bg-slate-800 text-white text-xs font-bold px-5 py-3 w-fit shadow-xs transition"
             >
-              <span>{isSupplierInquiry ? "Open Supplier Profile" : "Browse Knowledge Base"}</span>
+              <span>{isSupplierInquiry ? "Open Supplier Profile" : isAgentInquiry ? "Open Agent Profile" : "Browse Knowledge Base"}</span>
               <ArrowRight size={14} />
             </Link>
           </div>

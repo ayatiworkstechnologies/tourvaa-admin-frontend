@@ -109,7 +109,7 @@ export default function SupplierTourPreviewPage() {
         icon={Eye}
         eyebrow="Private Supplier View"
         actions={[
-          { label: "My Tours", href: "/supplier/tours", icon: ArrowLeft, variant: "secondary" },
+          { label: "Back to My Tours", href: "/supplier/tours", icon: ArrowLeft, variant: "secondary" },
           { label: "Continue Editing", href: `/supplier/tours/${id}/edit`, icon: Pencil },
         ]}
       />

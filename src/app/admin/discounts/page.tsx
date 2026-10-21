@@ -12,7 +12,7 @@ import { useGeoCountries } from "@/hooks/useGeo";
 import { useToast } from "@/hooks/useToast";
 import { useConfirm } from "@/hooks/useConfirm";
 import { useAuthContext } from "@/providers/AuthProvider";
-import { formatCurrency } from "@/lib/utils/currency";
+import { useCurrency } from "@/hooks/useCurrency";
 import {
   createGlobalDiscount,
   updateGlobalDiscount,
@@ -73,6 +73,7 @@ export default function DiscountsPage() {
   const { confirm, dialog } = useConfirm();
   const { countries } = useGeoCountries();
   const { hasPermission } = useAuthContext();
+  const { format: money } = useCurrency();
   const canEdit = hasPermission("tours.edit");
   const [categories, setCategories] = useState<CategoryOption[]>([]);
   const [items, setItems] = useState<GlobalDiscount[]>([]);
@@ -535,7 +536,7 @@ export default function DiscountsPage() {
                             <div key={entry.id} className="rounded-xl border border-dash-border p-3">
                               <div className="flex flex-wrap items-center justify-between gap-2">
                                 <span className="font-bold text-dash-text">{entry.booking_code || `Booking #${entry.booking_id}`}</span>
-                                <span className="text-sm font-bold text-emerald-700">{formatCurrency(entry.discount_amount, entry.currency)} saved</span>
+                                <span className="text-sm font-bold text-emerald-700">{money(entry.discount_amount, entry.currency || "USD")} saved</span>
                               </div>
                               <p className="mt-1 text-xs text-dash-subtle">
                                 {entry.booking_source === "agent" && entry.agent_name ? `Agent: ${entry.agent_name}` : "Customer booking"}

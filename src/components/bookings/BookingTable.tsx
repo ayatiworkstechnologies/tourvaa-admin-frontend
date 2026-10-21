@@ -6,6 +6,7 @@ import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
 import { Booking } from "@/lib/api/services/bookingService";
 import BookingActionMenu from "./BookingActionMenu";
 import BookingStatusBadge from "./BookingStatusBadge";
+import { useCurrency } from "@/hooks/useCurrency";
 
 type BookingTableProps = {
   rows: Booking[];
@@ -21,11 +22,6 @@ type BookingTableProps = {
   onApproveCancellation?: (bookingId: number) => void;
   busyBookingId?: number | null;
 };
-
-function money(value: string | number | undefined, currency: string) {
-  const amount = Number(value || 0).toLocaleString();
-  return `${currency || "USD"} ${amount}`.trim();
-}
 
 function dueDateText(value?: string | null) {
   if (!value) return "-";
@@ -55,6 +51,7 @@ export default function BookingTable({
   ...tableProps
 }: BookingTableProps) {
   const { page, pageSize } = tableProps;
+  const { format: money } = useCurrency();
 
   const columns: DataTableColumn<Booking>[] = [
     {

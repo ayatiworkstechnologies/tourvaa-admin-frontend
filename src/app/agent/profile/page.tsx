@@ -55,14 +55,14 @@ export default function AgentProfilePage() {
               onClick={() => setActiveTab(tab.id)}
               role="tab"
               aria-selected={isActive}
-              className={`min-w-52 flex-1 rounded-xl px-4 py-3 text-left transition-all duration-200 whitespace-nowrap ${
+              className={`min-w-52 flex-1 overflow-hidden rounded-xl px-4 py-3 text-left transition-all duration-200 ${
                 isActive
                   ? "bg-blue-700 text-white shadow-sm"
                   : "text-slate-600 hover:bg-blue-50 hover:text-[#10213F]"
               }`}
             >
-              <span className="flex items-center gap-2 text-sm font-black"><Icon size={18} className={isActive ? "text-white" : "text-[#738199]"} />{tab.label}</span>
-              <span className={`mt-1 block text-xs font-medium ${isActive ? "text-blue-100" : "text-slate-500"}`}>{tab.description}</span>
+              <span className="flex min-w-0 items-center gap-2 text-sm font-black"><Icon size={18} className={`shrink-0 ${isActive ? "text-white" : "text-[#738199]"}`} /><span className="truncate">{tab.label}</span></span>
+              <span className={`mt-1 block truncate text-xs font-medium ${isActive ? "text-blue-100" : "text-slate-500"}`} title={tab.description}>{tab.description}</span>
             </button>
           );
         })}

@@ -512,29 +512,35 @@ export default function AboutPage() {
                     key={v.number}
                     data-reveal
                     style={delay(index * 60)}
-                    className="group relative overflow-hidden rounded-2xl bg-gradient-to-b from-slate-900 to-[#0B1F3A] p-6 text-white shadow-lg min-h-[300px] flex flex-col justify-between"
+                    tabIndex={0}
+                    className="group relative flex min-h-[300px] flex-col justify-between overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-6 shadow-xs transition-all duration-300 hover:border-slate-700 hover:shadow-lg focus-visible:border-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2"
                   >
                     <img
                       src="https://images.unsplash.com/photo-1552832230-c0197dd311b5?auto=format&fit=crop&w=600&q=80"
-                      alt="Historic Roman architecture"
-                      className="absolute inset-0 h-full w-full object-cover opacity-25 group-hover:scale-105 transition duration-700"
+                      alt=""
+                      aria-hidden="true"
+                      className="absolute inset-0 h-full w-full scale-105 object-cover opacity-0 transition duration-500 group-hover:scale-100 group-hover:opacity-100 group-focus-visible:scale-100 group-focus-visible:opacity-100"
+                    />
+                    <div
+                      aria-hidden="true"
+                      className="absolute inset-0 bg-gradient-to-b from-slate-900/70 to-[#0B1F3A]/95 opacity-0 transition-opacity duration-300 group-hover:opacity-100 group-focus-visible:opacity-100"
                     />
                     <div className="relative z-10 flex items-center justify-between">
-                      <span className="text-3xl font-black text-amber-400 font-heading">
+                      <span className="text-3xl font-black text-slate-300 transition-colors duration-300 group-hover:text-amber-400 group-focus-visible:text-amber-400 font-heading">
                         {v.number}
                       </span>
-                      <span className="rounded-full bg-white/20 px-2.5 py-0.5 text-[10px] font-bold text-white backdrop-blur-xs">
+                      <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-[10px] font-bold text-slate-600 transition-colors duration-300 group-hover:bg-white/20 group-hover:text-white group-focus-visible:bg-white/20 group-focus-visible:text-white group-hover:backdrop-blur-xs group-focus-visible:backdrop-blur-xs">
                         {v.badge}
                       </span>
                     </div>
                     <div className="relative z-10 mt-auto pt-8">
-                      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/20 text-white backdrop-blur-xs mb-3">
+                      <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-xl bg-sky-50 text-sky-700 transition-colors duration-300 group-hover:bg-white/20 group-hover:text-white group-focus-visible:bg-white/20 group-focus-visible:text-white group-hover:backdrop-blur-xs group-focus-visible:backdrop-blur-xs">
                         <Icon size={18} />
                       </div>
-                      <h3 className="text-base font-bold text-white leading-tight font-heading">
+                      <h3 className="text-base font-bold leading-tight text-slate-950 transition-colors duration-300 group-hover:text-white group-focus-visible:text-white font-heading">
                         {v.title}
                       </h3>
-                      <p className="mt-2 text-xs text-white/80 leading-relaxed font-normal">
+                      <p className="mt-2 text-xs font-normal leading-relaxed text-slate-600 transition-colors duration-300 group-hover:text-white/80 group-focus-visible:text-white/80">
                         {v.desc}
                       </p>
                     </div>

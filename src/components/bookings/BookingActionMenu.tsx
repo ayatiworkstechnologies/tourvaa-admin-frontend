@@ -6,6 +6,7 @@ import {
   LuEye as Eye,
   LuCircleX as XCircle,
 } from "react-icons/lu";
+import { canTransitionBookingStatus } from "@/lib/constants/bookingStatus";
 
 type BookingActionMenuProps = {
   bookingId: number;
@@ -25,9 +26,10 @@ export default function BookingActionMenu({
   onApproveCancellation,
   busy,
 }: BookingActionMenuProps) {
-  const isCancellationRequested = bookingStatus === "cancellation_requested";
-  const canConfirm = bookingStatus && !["confirmed", "cancelled", "cancellation_requested"].includes(bookingStatus);
-  const canCancel = bookingStatus !== "cancelled" && !isCancellationRequested;
+  const normalizedStatus = bookingStatus?.trim().toLowerCase();
+  const isCancellationRequested = normalizedStatus === "cancellation_requested";
+  const canConfirm = canTransitionBookingStatus(normalizedStatus, "confirmed") && !isCancellationRequested;
+  const canCancel = canTransitionBookingStatus(normalizedStatus, "cancelled") && !isCancellationRequested;
 
   return (
     <div className="flex items-center justify-end gap-1.5 whitespace-nowrap">

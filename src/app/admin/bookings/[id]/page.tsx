@@ -14,7 +14,7 @@ import api from "@/lib/api/client";
 import { useCurrency } from "@/hooks/useCurrency";
 import { useAuthContext } from "@/providers/AuthProvider";
 import { getApiErrorMessage } from "@/lib/utils/errorHandler";
-import { bookingStatusLabel } from "@/lib/constants/bookingStatus";
+import { BOOKING_STATUS_TRANSITIONS, bookingStatusLabel } from "@/lib/constants/bookingStatus";
 import {
   LuArrowLeft as ArrowLeft,
   LuCircleCheckBig as CheckCircle2,
@@ -43,80 +43,6 @@ import {
   LuUser as User,
   LuCalendarDays as CalendarDays,
 } from "react-icons/lu";
-
-// Kept in sync with BOOKING_STATUS_TRANSITIONS in backend
-const BOOKING_STATUS_TRANSITIONS: Record<string, string[]> = {
-  draft: ["pending_payment", "pending_credit_approval", "pending_supplier_assignment", "cancelled"],
-  pending_payment: [
-    "pending_credit_approval",
-    "payment_authorized",
-    "pending_supplier_assignment",
-    "pending_supplier_acceptance",
-    "cancellation_requested",
-    "cancelled",
-    "declined",
-  ],
-  pending_credit_approval: [
-    "pending_payment",
-    "payment_authorized",
-    "pending_supplier_assignment",
-    "cancellation_requested",
-    "cancelled",
-    "declined",
-  ],
-  pending_supplier_assignment: [
-    "pending_payment",
-    "payment_authorized",
-    "pending_supplier_acceptance",
-    "supplier_reassignment_required",
-    "cancellation_requested",
-    "cancelled",
-    "declined",
-  ],
-  payment_authorized: [
-    "pending_supplier_assignment",
-    "pending_supplier_acceptance",
-    "cancellation_requested",
-    "cancelled",
-    "declined",
-  ],
-  pending_supplier_acceptance: [
-    "pending_supplier_assignment",
-    "supplier_accepted",
-    "supplier_reassignment_required",
-    "postponed",
-    "cancellation_requested",
-    "cancelled",
-    "declined",
-  ],
-  supplier_accepted: ["confirmed", "supplier_reassignment_required", "cancellation_requested", "cancelled", "declined"],
-  supplier_reassignment_required: [
-    "pending_supplier_assignment",
-    "pending_supplier_acceptance",
-    "cancellation_requested",
-    "cancelled",
-    "declined",
-  ],
-  confirmed: ["ready_to_travel", "ongoing", "completed", "postponed", "cancellation_requested", "cancelled"],
-  ready_to_travel: ["ongoing", "completed", "postponed", "cancellation_requested", "cancelled"],
-  upcoming: ["confirmed", "ready_to_travel", "ongoing", "completed", "postponed", "cancellation_requested", "cancelled"],
-  ongoing: ["completed", "postponed", "cancellation_requested", "cancelled"],
-  postponed: ["confirmed", "ready_to_travel", "ongoing", "completed", "cancellation_requested", "cancelled"],
-  cancellation_requested: [
-    "pending_payment",
-    "payment_authorized",
-    "pending_supplier_acceptance",
-    "confirmed",
-    "ready_to_travel",
-    "ongoing",
-    "postponed",
-    "cancelled",
-  ],
-  cancelled: ["refunded"],
-  declined: ["pending_supplier_assignment", "supplier_reassignment_required", "refunded"],
-  completed: [],
-  refunded: [],
-};
 
 type DetailPanelProps = {
   title: string;

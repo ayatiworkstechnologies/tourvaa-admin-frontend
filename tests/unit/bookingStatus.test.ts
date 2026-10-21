@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { bookingStatusLabel } from "@/lib/constants/bookingStatus";
+import {
+  bookingStatusLabel,
+  bookingStatusTransitions,
+  canTransitionBookingStatus,
+} from "@/lib/constants/bookingStatus";
 
 describe("portal-aware booking status labels", () => {
   it("keeps a received request distinct from supplier confirmation", () => {
@@ -22,5 +26,20 @@ describe("portal-aware booking status labels", () => {
       expect(bookingStatusLabel(state, "supplier")).not.toMatch(/_/);
       expect(bookingStatusLabel(state, "admin")).not.toMatch(/_/);
     }
+  });
+});
+
+describe("booking status actions", () => {
+  it("does not expose actions for terminal bookings", () => {
+    expect(bookingStatusTransitions("completed")).toEqual([]);
+    expect(canTransitionBookingStatus("completed", "confirmed")).toBe(false);
+    expect(canTransitionBookingStatus("completed", "cancelled")).toBe(false);
+    expect(bookingStatusTransitions("refunded")).toEqual([]);
+  });
+
+  it("only exposes actions allowed by the lifecycle", () => {
+    expect(canTransitionBookingStatus("supplier_accepted", "confirmed")).toBe(true);
+    expect(canTransitionBookingStatus("confirmed", "confirmed")).toBe(false);
+    expect(canTransitionBookingStatus("confirmed", "cancelled")).toBe(true);
   });
 });

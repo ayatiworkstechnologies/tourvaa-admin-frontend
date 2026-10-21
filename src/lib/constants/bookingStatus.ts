@@ -1,5 +1,36 @@
 const CONFIRMED_STATUSES = new Set(["confirmed", "ready_to_travel", "upcoming", "postponed"]);
 
+// Keep this map aligned with BOOKING_STATUS_TRANSITIONS in the backend. UI
+// actions must be derived from valid transitions, not from a partial deny-list.
+export const BOOKING_STATUS_TRANSITIONS: Readonly<Record<string, readonly string[]>> = {
+  draft: ["pending_payment", "pending_credit_approval", "pending_supplier_assignment", "cancelled"],
+  pending_payment: ["pending_credit_approval", "payment_authorized", "pending_supplier_assignment", "pending_supplier_acceptance", "cancellation_requested", "cancelled", "declined"],
+  pending_credit_approval: ["pending_payment", "payment_authorized", "pending_supplier_assignment", "cancellation_requested", "cancelled", "declined"],
+  pending_supplier_assignment: ["pending_payment", "payment_authorized", "pending_supplier_acceptance", "supplier_reassignment_required", "cancellation_requested", "cancelled", "declined"],
+  payment_authorized: ["pending_supplier_assignment", "pending_supplier_acceptance", "cancellation_requested", "cancelled", "declined"],
+  pending_supplier_acceptance: ["pending_supplier_assignment", "supplier_accepted", "supplier_reassignment_required", "postponed", "cancellation_requested", "cancelled", "declined"],
+  supplier_accepted: ["confirmed", "supplier_reassignment_required", "cancellation_requested", "cancelled", "declined"],
+  supplier_reassignment_required: ["pending_supplier_assignment", "pending_supplier_acceptance", "cancellation_requested", "cancelled", "declined"],
+  confirmed: ["ready_to_travel", "ongoing", "completed", "postponed", "supplier_reassignment_required", "cancellation_requested", "cancelled"],
+  ready_to_travel: ["ongoing", "completed", "postponed", "cancellation_requested", "cancelled"],
+  upcoming: ["confirmed", "ready_to_travel", "ongoing", "completed", "postponed", "cancellation_requested", "cancelled"],
+  ongoing: ["completed", "postponed", "supplier_reassignment_required", "cancellation_requested", "cancelled"],
+  postponed: ["confirmed", "ready_to_travel", "ongoing", "completed", "cancellation_requested", "cancelled"],
+  cancellation_requested: ["pending_payment", "payment_authorized", "pending_supplier_acceptance", "confirmed", "ready_to_travel", "ongoing", "postponed", "cancelled"],
+  cancelled: ["refunded"],
+  declined: ["pending_supplier_assignment", "supplier_reassignment_required", "refunded"],
+  completed: [],
+  refunded: [],
+};
+
+export function bookingStatusTransitions(status?: string | null): readonly string[] {
+  return BOOKING_STATUS_TRANSITIONS[(status || "").trim().toLowerCase()] ?? [];
+}
+
+export function canTransitionBookingStatus(status: string | null | undefined, target: string): boolean {
+  return bookingStatusTransitions(status).includes(target.trim().toLowerCase());
+}
+
 export type BookingPortal = "customer" | "agent" | "supplier" | "admin";
 
 export const BOOKING_AWAITING_CONFIRMATION_LABEL = "Booking Successful - Awaiting Tourvaa Confirmation";

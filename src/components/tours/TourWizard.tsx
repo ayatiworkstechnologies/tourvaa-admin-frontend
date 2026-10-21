@@ -321,7 +321,7 @@ export default function TourWizard({ tourId, role }: { tourId?: string; role: "a
             </TourWorkspaceContent>
             <WizardStickyActionBar
               role={role}
-              left={[{ key: "cancel", label: "Cancel", onClick: () => router.push(basePath), variant: "ghost" }]}
+              left={[{ key: "back-to-tours", label: isSupplier ? "Back to My Tours" : "Back to Tours", icon: ArrowLeft, onClick: () => router.push(basePath), variant: "secondary" }]}
               right={[
                 {
                   key: "continue",
@@ -386,9 +386,9 @@ export default function TourWizard({ tourId, role }: { tourId?: string; role: "a
   const saveLabel = isSupplier ? "Save Changes" : "Save Draft";
   const stepHasSave = stepFormIds.length > 0;
 
-  const leftButtons: WizardBarButton[] = [
-    { key: "prev", label: "Previous", icon: ArrowLeft, variant: "secondary", disabled: isFirstStep, onClick: () => void selectStep(Math.max(0, activeIndex - 1)) },
-  ];
+  const leftButtons: WizardBarButton[] = isFirstStep
+    ? [{ key: "back-to-tours", label: isSupplier ? "Back to My Tours" : "Back to Tours", icon: ArrowLeft, variant: "secondary", onClick: () => router.push(basePath) }]
+    : [{ key: "prev", label: "Previous", icon: ArrowLeft, variant: "secondary", onClick: () => void selectStep(activeIndex - 1) }];
   const rightButtons: WizardBarButton[] = [];
   if (!isReviewStep) {
     if (stepHasSave) {

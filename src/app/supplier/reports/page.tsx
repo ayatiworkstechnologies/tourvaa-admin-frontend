@@ -70,7 +70,7 @@ function EarningsSummary({ report, money }: { report: MyEarningsReport; money: (
   );
 }
 
-function BookingSummary({ summary, money }: { summary: SupplierBookingSummary; money: (v: string | number) => string }) {
+function BookingSummary({ summary, money }: { summary: SupplierBookingSummary; money: (v: string | number, currency?: string) => string }) {
   const cards = [
     { label: "Total bookings", value: summary.total_bookings, tone: "text-[#153426]" },
     { label: "Awaiting action", value: summary.pending_bookings, tone: "text-amber-700" },
@@ -92,7 +92,7 @@ function BookingSummary({ summary, money }: { summary: SupplierBookingSummary; m
         <div className="flex flex-wrap gap-2">
           {summary.amounts_by_currency.map((amount) => (
             <span key={amount.currency} className="rounded-lg border border-[#DCEBE2] bg-white px-3 py-2 text-xs font-semibold text-[#365545]">
-              {amount.bookings} booking{amount.bookings === 1 ? "" : "s"} · {amount.currency} · {money(amount.booking_value)}
+              {amount.bookings} completed booking{amount.bookings === 1 ? "" : "s"} · {amount.currency} · {money(amount.booking_value, amount.currency)}
             </span>
           ))}
         </div>
@@ -189,7 +189,7 @@ export default function SupplierReportsPage() {
     { key: "travel_date", header: "Travel Date", render: (r) => r.travel_date || "-" },
     { key: "adults", header: "Adults" },
     { key: "children", header: "Children" },
-    { key: "total_amount", header: "Amount", render: (r) => money(r.total_amount) },
+    { key: "total_amount", header: "Amount", render: (r) => money(r.total_amount, r.currency) },
     { key: "booking_status", header: "Booking Status", render: (r) => bookingStatusLabel(r.booking_status, "supplier") },
     { key: "payment_status", header: "Payment Status", className: "capitalize" },
     { key: "special_requests", header: "Special Requests", render: (r) => r.special_requests || "-" },

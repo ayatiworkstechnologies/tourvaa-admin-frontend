@@ -60,6 +60,7 @@ import {
 import { useAuthContext } from "@/providers/AuthProvider";
 import { useToast } from "@/hooks/useToast";
 import { useGeoCountries } from "@/hooks/useGeo";
+import { useCurrency } from "@/hooks/useCurrency";
 import { openPrivateDocument } from "@/lib/api/services/privateDocumentService";
 
 type DetailValue = string | number | boolean | null | undefined;
@@ -161,6 +162,7 @@ export default function AgentDetailPage() {
   const toast = useToast();
   const { hasPermission } = useAuthContext();
   const { countries } = useGeoCountries();
+  const { code: displayCurrency, format: moneyText } = useCurrency();
 
   const [record, setRecord] = useState<ReviewRecord | null>(null);
   const [loading, setLoading] = useState(true);
@@ -289,6 +291,9 @@ export default function AgentDetailPage() {
   const summary = activity?.summary;
   const recentBookings = activity?.recent_bookings ?? [];
   const agencyCustomers = activity?.customers ?? [];
+  const summaryCurrency = String(
+    (summary as { currency?: string } | undefined)?.currency || record?.currency || "USD",
+  ).toUpperCase();
 
   const storedBusinessYears = businessInfo?.years_in_business;
   const yearsInBusiness: DetailValue =
@@ -296,19 +301,6 @@ export default function AgentDetailPage() {
     typeof storedBusinessYears === "number"
       ? storedBusinessYears
       : record?.years_in_operation;
-
-  const moneyText = (value?: string | number, currency = "USD") => {
-    const amount = Number(value || 0);
-    try {
-      return new Intl.NumberFormat("en-US", {
-        style: "currency",
-        currency,
-        maximumFractionDigits: 2,
-      }).format(amount);
-    } catch {
-      return `${currency} ${amount.toFixed(2)}`;
-    }
-  };
 
   const viewDocument = async (documentId: number) => {
     try {
@@ -547,7 +539,7 @@ export default function AgentDetailPage() {
             contactPhone={primaryContact?.phone || registrationContact?.phone}
             logoUrl={record.business_logo}
             tradingName={businessInfo?.trading_name as string}
-            currency={record.currency || "USD"}
+            currency={displayCurrency}
             commissionAccepted={Boolean(record.commission_accepted_at)}
             registeredAt={record.created_at}
           />
@@ -644,7 +636,7 @@ export default function AgentDetailPage() {
                 {summary?.total_bookings ?? recentBookings.length}
               </p>
               <p className="mt-1 text-xs text-dash-muted">
-                Gross value: <strong>{moneyText(summary?.total_booking_value)}</strong>
+                Gross value: <strong>{moneyText(summary?.total_booking_value, summaryCurrency)}</strong>
               </p>
             </div>
 
@@ -659,10 +651,10 @@ export default function AgentDetailPage() {
                 </span>
               </div>
               <p className="mt-2 text-2xl font-black text-dash-text text-emerald-600">
-                {moneyText(summary?.amount_paid)}
+                {moneyText(summary?.amount_paid, summaryCurrency)}
               </p>
               <p className="mt-1 text-xs text-dash-muted">
-                Pending settlement: {moneyText(summary?.amount_pending)}
+                Pending settlement: {moneyText(summary?.amount_pending, summaryCurrency)}
               </p>
             </div>
 
@@ -1080,7 +1072,7 @@ export default function AgentDetailPage() {
                                 {c.booking_count}
                               </td>
                               <td className="px-4 py-3 font-bold text-dash-text text-right">
-                                {moneyText(c.booking_value)}
+                                {moneyText(c.booking_value, summaryCurrency)}
                               </td>
                             </tr>
                           ))}

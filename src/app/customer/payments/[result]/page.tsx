@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import {
+  LuArrowLeft as ArrowLeft,
   LuArrowRight as ArrowRight,
   LuBadgeCheck as BadgeCheck,
   LuCircleAlert as AlertCircle,
@@ -110,6 +111,9 @@ export default function CustomerPaymentResultPage() {
   return (
     <CustomerPageShell>
       <div className="mx-auto mt-8 max-w-2xl overflow-hidden rounded-[28px] border border-[#DDE7F3] bg-white shadow-[0_18px_55px_rgba(25,62,109,0.10)]">
+        <div className="border-b border-[#E7EEF6] px-6 py-3 sm:px-12">
+          <Link href={bookingHref} className="inline-flex items-center gap-2 text-xs font-black text-[#315174] transition hover:text-[#1464F4]"><ArrowLeft size={15} /> Back to booking</Link>
+        </div>
         <div className={`relative overflow-hidden px-6 pb-10 pt-9 text-center sm:px-12 ${verifying ? "bg-[#F2F7FF]" : success ? "bg-[linear-gradient(135deg,#EDFDF5_0%,#F7FFFB_54%,#EEF7FF_100%)]" : "bg-[linear-gradient(135deg,#FFF5F4_0%,#FFFDFC_58%,#FFF8EE_100%)]"}`}>
           <span className={`mx-auto flex h-[76px] w-[76px] items-center justify-center rounded-[26px] border shadow-sm ${verifying ? "border-blue-100 bg-white text-[#1464F4]" : success ? "border-emerald-100 bg-white text-[#009A68]" : "border-rose-100 bg-white text-[#D64747]"}`}>
             {verifying ? <Loader2 size={38} className="animate-spin" /> : success ? <CheckCircle2 size={39} strokeWidth={2.4} /> : <AlertCircle size={38} strokeWidth={2.2} />}
