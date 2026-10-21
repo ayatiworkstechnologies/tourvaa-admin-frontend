@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { LuArrowRight as ArrowRight, LuCalendarDays as CalendarDays, LuChevronLeft as ChevronLeft, LuChevronRight as ChevronRight, LuX as X } from "react-icons/lu";
+import { LuCalendarDays as CalendarDays, LuChevronLeft as ChevronLeft, LuChevronRight as ChevronRight, LuX as X } from "react-icons/lu";
 
 type DateRangePickerProps = {
   startDate: string;
@@ -31,11 +31,10 @@ function formatDate(value: string) {
   return date?.toLocaleDateString("en-GB", { weekday: "short", day: "2-digit", month: "short", year: "numeric" }) ?? "";
 }
 
-/** A two-field date range control backed by one calendar and one selected range. */
+/** A single-field date range control backed by one calendar and one selected range. */
 export default function DateRangePicker({ startDate, endDate, onChange, className = "" }: DateRangePickerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const startButtonRef = useRef<HTMLButtonElement>(null);
-  const endButtonRef = useRef<HTMLButtonElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
   const [activeBoundary, setActiveBoundary] = useState<"start" | "end">("start");
@@ -79,7 +78,7 @@ export default function DateRangePicker({ startDate, endDate, onChange, classNam
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") setOpen(false);
     };
-    const reposition = () => positionPopover(activeBoundary === "start" ? startButtonRef.current : endButtonRef.current);
+    const reposition = () => positionPopover(triggerRef.current);
     document.addEventListener("mousedown", onPointerDown);
     document.addEventListener("keydown", onKeyDown);
     window.addEventListener("resize", reposition);
@@ -93,10 +92,9 @@ export default function DateRangePicker({ startDate, endDate, onChange, classNam
   }, [activeBoundary, open, positionPopover]);
 
   function openPicker(boundary: "start" | "end") {
-    const trigger = boundary === "start" ? startButtonRef.current : endButtonRef.current;
     setActiveBoundary(boundary);
     setCurrentMonth(parseDate(boundary === "start" ? startDate : endDate) ?? start ?? end ?? new Date());
-    positionPopover(trigger);
+    positionPopover(triggerRef.current);
     setOpen(true);
   }
 
@@ -128,25 +126,22 @@ export default function DateRangePicker({ startDate, endDate, onChange, classNam
 
   const startText = formatDate(startDate);
   const endText = formatDate(endDate);
-  const fieldClass = (boundary: "start" | "end", selected: boolean) => `flex min-h-[52px] min-w-0 flex-1 items-center gap-2.5 rounded-xl border bg-white px-3 py-2 text-left text-sm shadow-sm outline-none transition hover:border-slate-300 hover:shadow-md focus:ring-4 active:translate-y-px ${selected ? "pr-9" : ""} ${open && activeBoundary === boundary ? "border-blue-600 ring-blue-100" : "border-slate-200 focus:border-blue-600 focus:ring-blue-100"}`;
+  const rangeText = startText && endText
+    ? `${startText} - ${endText}`
+    : startText
+      ? `${startText} - Select end date`
+      : "Select date range";
 
   return (
-    <div ref={containerRef} className={`flex min-w-0 flex-col gap-2 rounded-2xl bg-slate-50/70 p-1 sm:flex-row ${className}`}>
-      {(["start", "end"] as const).map((boundary) => {
-        const selected = boundary === "start" ? startText : endText;
-        const label = boundary === "start" ? "Start date" : "End date";
-        const ref = boundary === "start" ? startButtonRef : endButtonRef;
-        return <div className="relative min-w-0 flex-1" key={boundary}>
-          <button ref={ref} type="button" onClick={() => openPicker(boundary)} aria-haspopup="dialog" aria-expanded={open && activeBoundary === boundary} className={fieldClass(boundary, Boolean(selected))}>
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-700"><CalendarDays size={17} /></span>
-            <span className="min-w-0 flex-1">
-              <span className="block text-[10px] font-bold uppercase tracking-wide text-slate-400">{boundary}</span>
-              <span className={`block truncate ${selected ? "font-bold text-slate-900" : "font-medium text-slate-500"}`}>{selected || label}</span>
-            </span>
-          </button>
-          {selected && <button type="button" onClick={() => { onChange(boundary === "start" ? "" : startDate, boundary === "end" ? "" : endDate); }} aria-label={`Clear ${label.toLowerCase()}`} className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-md p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700"><X size={14} /></button>}
-        </div>;
-      })}
+    <div ref={containerRef} className={`relative min-w-0 ${className}`}>
+      <button ref={triggerRef} type="button" onClick={() => openPicker(startDate && !endDate ? "end" : "start")} aria-haspopup="dialog" aria-expanded={open} className={`flex min-h-[58px] w-full min-w-0 items-center gap-3 rounded-xl border bg-white px-3 py-2 text-left text-sm shadow-sm outline-none transition hover:border-slate-300 hover:shadow-md focus:ring-4 active:translate-y-px ${open ? "border-blue-600 ring-blue-100" : "border-slate-200 focus:border-blue-600 focus:ring-blue-100"}`}>
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-700"><CalendarDays size={18} /></span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-[10px] font-bold uppercase tracking-wide text-slate-400">Booking date range</span>
+          <span className={`block truncate ${startDate ? "font-bold text-slate-900" : "font-medium text-slate-500"}`}>{rangeText}</span>
+        </span>
+      </button>
+      {(startDate || endDate) && <button type="button" onClick={() => { onChange("", ""); setActiveBoundary("start"); }} aria-label="Clear date range" className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-md p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700"><X size={14} /></button>}
 
       {open && createPortal(
         <div ref={popoverRef} role="dialog" aria-label="Choose a date range" style={position} className="fixed z-[200] rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_24px_70px_-18px_rgba(15,23,42,0.35)]">
@@ -155,9 +150,7 @@ export default function DateRangePicker({ startDate, endDate, onChange, classNam
               <p className="text-[10px] font-black uppercase tracking-widest text-blue-700">Booking date range</p>
               <p className="mt-0.5 text-xs font-semibold text-slate-600">{startDate && !endDate ? "Now select an end date" : "Select a start date, then an end date"}</p>
             </div>
-            <span className="hidden shrink-0 items-center gap-1.5 text-xs font-bold text-blue-800 sm:flex">
-              <span>{startDate ? "Start" : ""}</span>{startDate && <ArrowRight size={14} />}<span>{endDate ? "End" : ""}</span>
-            </span>
+            <span className="hidden shrink-0 text-xs font-bold text-blue-800 sm:block">{activeBoundary === "end" ? "End date" : "Start date"}</span>
           </div>
           <div className="mb-4 flex items-center justify-between gap-2">
             <button type="button" onClick={() => setCurrentMonth((month) => new Date(month.getFullYear(), month.getMonth() - 1, 1))} aria-label="Previous month" className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50"><ChevronLeft size={17} /></button>

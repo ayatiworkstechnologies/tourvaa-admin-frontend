@@ -9,7 +9,7 @@ import ModuleWrapper from "@/components/common/ModuleWrapper";
 import ReportScheduleSection from "@/components/reports/ReportScheduleSection";
 import Loader from "@/components/ui/Loader";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
-import DatePicker from "@/components/ui/DatePicker";
+import DateRangePicker from "@/components/ui/DateRangePicker";
 import {
   exportReportCsv,
   exportAllReportsWorkbook,
@@ -624,13 +624,7 @@ export default function ReportsPage() {
                 ))}
               </div>
 
-              {period === "custom" && (
-                <div className="flex items-center gap-2 print:hidden">
-                  <DatePicker value={customStart} maxDate={customEnd || undefined} onChange={setCustomStart} placeholder="Start date" className="w-48" />
-                  <span className="text-xs text-dash-subtle">to</span>
-                  <DatePicker value={customEnd} minDate={customStart || undefined} onChange={setCustomEnd} placeholder="End date" className="w-48" align="right" />
-                </div>
-              )}
+              {period === "custom" && <DateRangePicker startDate={customStart} endDate={customEnd} className="min-w-[min(100%,26rem)] print:hidden" onChange={(startDate, endDate) => { setCustomStart(startDate); setCustomEnd(endDate); }} />}
             </div>
           ) : (
             <p className="mb-5 text-xs font-semibold text-dash-subtle">

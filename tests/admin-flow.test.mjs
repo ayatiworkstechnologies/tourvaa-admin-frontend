@@ -56,6 +56,10 @@ const nextConfig = read("next.config.ts");
 const countrySettings = read("src/app/admin/settings/countries/page.tsx");
 const geoHooks = read("src/hooks/useGeo.ts");
 const reviewList = read("src/components/operations/ReviewListPage.tsx");
+const adminDashboard = read("src/app/admin/dashboard/page.tsx");
+const adminReports = read("src/app/admin/reports/page.tsx");
+const supplierDashboard = read("src/app/supplier/dashboard/page.tsx");
+const supplierReports = read("src/app/supplier/reports/page.tsx");
 const actionModal = read("src/components/operations/ActionModal.tsx");
 const dataTable = read("src/components/ui/DataTable.tsx");
 const dateRangePicker = read("src/components/ui/DateRangePicker.tsx");
@@ -64,9 +68,17 @@ check(
   dateRangePicker.includes("function selectDate(date: Date)") &&
     dateRangePicker.includes("Now select an end date") &&
     dateRangePicker.includes("Clear range") &&
+    dateRangePicker.includes("Select date range") &&
+    !dateRangePicker.includes("startButtonRef") &&
+    !dateRangePicker.includes("endButtonRef") &&
     reviewList.includes("<DateRangePicker") &&
     reviewList.includes("setStartDate(nextStartDate)") &&
     reviewList.includes("setEndDate(nextEndDate)"),
+);
+check(
+  "all dashboard and report date filters use the shared range calendar",
+  [adminDashboard, adminReports, supplierDashboard, supplierReports].every((source) => source.includes("<DateRangePicker")) &&
+    [adminDashboard, adminReports, supplierDashboard, supplierReports].every((source) => !source.includes("<DatePicker")),
 );
 check(
   "affiliate directory includes the shared country and date-range filters",

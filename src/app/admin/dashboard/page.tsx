@@ -9,7 +9,7 @@ import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import api from "@/lib/api/client";
 import { useCurrency } from "@/hooks/useCurrency";
 import { ReportSnapshot } from "@/lib/api/services/reportService";
-import DatePicker from "@/components/ui/DatePicker";
+import DateRangePicker from "@/components/ui/DateRangePicker";
 import Loader from "@/components/ui/Loader";
 import { bookingStatusLabel } from "@/lib/constants/bookingStatus";
 import {
@@ -355,10 +355,15 @@ function AdminDashboardContent({ user }: { user: { name: string; role: { name: s
           ))}
         </div>
         <div className="grid grid-cols-1 items-end gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {/* Start date */}
-          <DatePicker label="Start date" value={fStart} maxDate={fEnd || undefined} onChange={setFStart} />
-          {/* End date */}
-          <DatePicker label="End date" value={fEnd} minDate={fStart || undefined} onChange={setFEnd} />
+          <DateRangePicker
+            startDate={fStart}
+            endDate={fEnd}
+            className="sm:col-span-2"
+            onChange={(startDate, endDate) => {
+              setFStart(startDate);
+              setFEnd(endDate);
+            }}
+          />
           {/* Country */}
           <div>
             <label htmlFor="filter-country" className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-dash-muted">Country</label>

@@ -31,7 +31,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell,
 } from "recharts";
-import DatePicker from "@/components/ui/DatePicker";
+import DateRangePicker from "@/components/ui/DateRangePicker";
 import api from "@/lib/api/client";
 import { useAuthContext } from "@/providers/AuthProvider";
 import { useCurrency } from "@/hooks/useCurrency";
@@ -507,8 +507,12 @@ function ApprovedSupplierDashboard() {
               </div>
 
               <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_1.1fr_auto]">
-                <DatePicker label="From" value={filters.start_date} maxDate={filters.end_date || undefined} onChange={(date) => setFilters((current) => ({ ...current, start_date: date }))} />
-                <DatePicker label="To" value={filters.end_date} minDate={filters.start_date || undefined} onChange={(date) => setFilters((current) => ({ ...current, end_date: date }))} />
+                <DateRangePicker
+                  startDate={filters.start_date}
+                  endDate={filters.end_date}
+                  className="sm:col-span-2"
+                  onChange={(startDate, endDate) => setFilters((current) => ({ ...current, start_date: startDate, end_date: endDate }))}
+                />
                 <label className="flex flex-col gap-1">
                   <span className="text-xs font-bold uppercase tracking-wide text-dash-muted">Status</span>
                   <select value={filters.status} onChange={(event) => setFilters((current) => ({ ...current, status: event.target.value }))} className="h-10 rounded-xl border border-[#D5E4DB] bg-white px-3 text-xs font-semibold text-[#365545] outline-none focus:border-[#16833A] focus:ring-4 focus:ring-emerald-50">

@@ -17,6 +17,7 @@ import {
 
 import PageUnavailable from "@/components/public/PageUnavailable";
 import { useContentBlock } from "@/hooks/useContentBlock";
+import { useCurrency } from "@/hooks/useCurrency";
 
 const DEFAULT_TOOLS = [
   {
@@ -242,6 +243,7 @@ export default function AgentPortalLandingPage() {
   const expectationsBlock = useContentBlock<ExpectationsBlock>("agent_portal_expectations", {});
   const faqsBlock = useContentBlock<FaqsBlock>("agent_portal_faqs", {});
   const cta = useContentBlock<CtaBlock>("agent_portal_cta", DEFAULT_CTA);
+  const { code: displayCurrency, format: formatCurrency } = useCurrency();
 
   // Interactive Commission Calculator State
   const [monthlyBookings, setMonthlyBookings] = useState(25);
@@ -410,9 +412,9 @@ export default function AgentPortalLandingPage() {
                 {/* Slider 2: Average Booking Value */}
                 <div className="mt-6 space-y-2">
                   <div className="flex items-center justify-between text-xs sm:text-sm font-semibold text-pub-fg">
-                    <span>Average Booking Value (USD)</span>
+                    <span>Average Booking Value ({displayCurrency})</span>
                     <span className="rounded-lg bg-pub-secondary/10 border border-pub-secondary/20 px-2.5 py-1 text-xs font-bold text-pub-secondary">
-                      ${avgBookingValue}
+                      {formatCurrency(avgBookingValue, "USD")}
                     </span>
                   </div>
                   <input
@@ -425,9 +427,9 @@ export default function AgentPortalLandingPage() {
                     className="w-full accent-pub-secondary cursor-pointer h-2 bg-slate-100 rounded-lg"
                   />
                   <div className="flex justify-between text-[11px] text-pub-muted font-medium">
-                    <span>$100</span>
-                    <span>$1,500</span>
-                    <span>$3,000+</span>
+                    <span>{formatCurrency(100, "USD")}</span>
+                    <span>{formatCurrency(1500, "USD")}</span>
+                    <span>{formatCurrency(3000, "USD")}+</span>
                   </div>
                 </div>
               </div>
@@ -441,32 +443,32 @@ export default function AgentPortalLandingPage() {
             {/* Right Result Card (Dark Navy) */}
             <div className="flex flex-col justify-between rounded-2xl bg-pub-primary p-6 sm:p-8 text-white shadow-xl">
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 text-center">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-white/70 text-center">
                   Estimated Monthly Commission
                 </p>
                 <div className="mt-2 text-4xl sm:text-5xl font-bold text-white tracking-tight text-center">
-                  ${Math.round(estimatedCommission).toLocaleString()}
+                  {formatCurrency(estimatedCommission, "USD")}
                 </div>
-                <p className="mt-1 text-[11px] text-slate-400 text-center font-normal">
-                  *Estimated based on the values selected on the left
+                <p className="mt-1 text-[11px] text-white/70 text-center font-normal">
+                  Estimate based on the selected booking values and commission tier.
                 </p>
 
                 {/* Two Mini Metrics */}
                 <div className="mt-8 grid grid-cols-2 gap-4 border-t border-white/10 pt-6 text-center">
                   <div>
-                    <span className="block text-[10px] uppercase tracking-wider text-slate-400 font-semibold">
-                      Annual Revenue
+                    <span className="block text-[10px] uppercase tracking-wider text-white/70 font-semibold">
+                      Projected Annual Commission
                     </span>
                     <span className="mt-1 block text-lg sm:text-xl font-bold text-white">
-                      ${Math.round(estimatedCommission * 12).toLocaleString()}
+                      {formatCurrency(estimatedCommission * 12, "USD")}
                     </span>
                   </div>
                   <div>
-                    <span className="block text-[10px] uppercase tracking-wider text-slate-400 font-semibold">
-                      Total Sales Booked
+                    <span className="block text-[10px] uppercase tracking-wider text-white/70 font-semibold">
+                      Monthly Booking Value
                     </span>
                     <span className="mt-1 block text-lg sm:text-xl font-bold text-white">
-                      ${totalGrossBookingVolume.toLocaleString()}
+                      {formatCurrency(totalGrossBookingVolume, "USD")}
                     </span>
                   </div>
                 </div>
@@ -480,7 +482,7 @@ export default function AgentPortalLandingPage() {
                 >
                   Start Earning Commission Today &rarr;
                 </Link>
-                <p className="mt-2 text-[11px] text-slate-400 text-center font-normal">
+                <p className="mt-2 text-[11px] text-white/75 text-center font-normal">
                   Instant registration. No membership fees or booking quotas required.
                 </p>
               </div>

@@ -19,6 +19,7 @@ import { AFFILIATE_ENABLED } from "@/lib/features";
 import { usePublicSettings } from "@/providers/PublicSettingsProvider";
 import { PublicSettingsProvider } from "@/providers/PublicSettingsProvider";
 import { TravelStoreProvider } from "@/providers/TravelStoreProvider";
+import LanguageCurrencySelector from "@/components/public/LanguageCurrencySelector";
 
 export type PortalTheme = "emerald" | "blue" | "indigo" | "purple";
 
@@ -269,13 +270,7 @@ function PortalPublicHeaderInner({
             </span>
           </Link>
 
-          {/* USD / Currency */}
-          <div className="flex flex-col items-center justify-center text-pub-muted hover:text-pub-fg transition group cursor-pointer">
-            <Globe size={16} className="text-pub-muted group-hover:text-pub-fg transition" />
-            <span className="text-[10px] font-medium tracking-tight mt-0.5">
-              USD
-            </span>
-          </div>
+          <LanguageCurrencySelector />
 
           {/* Sign In */}
           <Link

@@ -6,11 +6,13 @@ import { LuArrowRight as ArrowRight, LuBanknote as Banknote, LuCoins as Coins } 
 import api from "@/lib/api/client";
 import { useAuthContext } from "@/providers/AuthProvider";
 import { useToast } from "@/hooks/useToast";
+import { useCurrency } from "@/hooks/useCurrency";
 
 type CommissionSummary = { total_commission?: number; paid_commission?: number; pending_commission?: number; available_commission?: number; currency?: string };
 
 export default function CommissionsPage() {
   const toast = useToast();
+  const { format } = useCurrency();
   const { dashboard } = useAuthContext();
   const affiliateId = dashboard?.user?.affiliate_id ?? null;
   const [summary, setSummary] = useState<CommissionSummary>({});
@@ -32,8 +34,7 @@ export default function CommissionsPage() {
     void load();
   }, [affiliateId, toast]);
 
-  const cur = summary.currency || "USD";
-  const fmt = (v: number | undefined) => `${cur} ${Number(v || 0).toLocaleString()}`;
+  const fmt = (value: number | undefined) => format(value, summary.currency || "USD");
 
   const cards = [
     { label: "Total Commission Earned", value: fmt(summary.total_commission), color: "text-purple-700 bg-purple-50", icon: Coins },

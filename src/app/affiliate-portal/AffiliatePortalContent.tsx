@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import {
   LuArrowRight as ArrowRight,
@@ -7,18 +8,18 @@ import {
   LuCircleCheckBig as CheckCircle2,
   LuLink2 as Link2,
   LuMegaphone as Megaphone,
-  LuSparkles as Sparkles,
   LuWallet as Wallet,
   LuZap as Zap,
 } from "react-icons/lu";
-import { useContentBlock } from "@/hooks/useContentBlock";
+import PartnerPortalFooter from "@/components/public/portal/PartnerPortalFooter";
 import PageUnavailable from "@/components/public/PageUnavailable";
+import { useContentBlock } from "@/hooks/useContentBlock";
 
 const DEFAULT_PERKS = [
-  { icon: Link2, title: "Unique Referral Link", description: "Get a personal tracking link to share across all your channels." },
-  { icon: Wallet, title: "Commission on Every Booking", description: "Earn on every booking that comes through your link. No cap." },
-  { icon: BarChart3, title: "Live Analytics", description: "Real-time dashboard showing clicks, conversions, and earnings." },
-  { icon: Zap, title: "Ready-made Assets", description: "Banners, copy, and social content ready for you to use instantly." },
+  { icon: Link2, title: "Your own referral link", description: "Receive a personal tracking link that works across your website, newsletters, and social channels." },
+  { icon: Wallet, title: "Commission on bookings", description: "Earn commission for every eligible booking attributed to your referral link, with no listing cost." },
+  { icon: BarChart3, title: "Clear performance data", description: "Track clicks, conversions, commissions, and payout progress from one affiliate workspace." },
+  { icon: Zap, title: "Campaign-ready assets", description: "Use approved banners, copy, and links to share tours with your audience quickly and consistently." },
 ] as const;
 
 const DEFAULT_STATS = [
@@ -37,18 +38,18 @@ const DEFAULT_IDEAL_FOR = [
 
 const DEFAULT_HERO = {
   is_active: true,
-  heading: "Promote great travel. Earn while you do.",
-  subtitle: "Share Tourvaa tours with your audience - on your blog, social media, or email list - and earn commission on every booking that comes through your unique link.",
+  heading: "Share better travel. Earn on every booking.",
+  subtitle: "Introduce your audience to bookable Tourvaa experiences and earn commission through one simple, trackable partner link.",
   primary_cta_text: "Become an Affiliate",
 };
 
 const DEFAULT_CTA = {
-  heading: "Ready to start earning?",
-  subtitle: "Registration takes a few minutes. Get your referral link as soon as your account is approved.",
+  heading: "Ready to earn from your travel audience?",
+  subtitle: "Apply in a few minutes, then create links and monitor performance from your affiliate workspace.",
   cta_text: "Become an Affiliate",
 };
 
-const PERK_ICONS = DEFAULT_PERKS.map((p) => p.icon);
+const PERK_ICONS = DEFAULT_PERKS.map((perk) => perk.icon);
 
 type StatItem = { title?: string; detail?: string };
 type StatsBlock = { items?: StatItem[] };
@@ -63,130 +64,73 @@ export default function AffiliatePortalContent() {
   const idealForBlock = useContentBlock<IdealForBlock>("affiliate_portal_ideal_for", {});
   const cta = useContentBlock("affiliate_portal_cta", DEFAULT_CTA);
 
-  if (hero.is_active === false) {
-    return <PageUnavailable />;
-  }
+  if (hero.is_active === false) return <PageUnavailable />;
 
   const stats = statsBlock.items?.length
-    ? statsBlock.items.map((it) => [it.title || "", it.detail || ""] as const)
+    ? statsBlock.items.map((item) => [item.title || "", item.detail || ""] as const)
     : DEFAULT_STATS;
   const perks = perksBlock.items?.length
-    ? perksBlock.items.map((it, i) => ({ icon: PERK_ICONS[i % PERK_ICONS.length], title: it.title || "", description: it.description || "" }))
+    ? perksBlock.items.map((item, index) => ({
+        icon: PERK_ICONS[index % PERK_ICONS.length],
+        title: item.title || "",
+        description: item.description || "",
+      }))
     : DEFAULT_PERKS;
   const idealFor = idealForBlock.items?.length ? idealForBlock.items : DEFAULT_IDEAL_FOR;
 
   return (
-    <main className="overflow-hidden bg-white text-slate-900">
-      <section id="overview" className="relative isolate overflow-hidden bg-[#24143b] text-white">
-        <div className="pointer-events-none absolute -right-16 -top-24 h-96 w-96 rounded-full bg-purple-400/15 blur-3xl" />
-        <div className="pointer-events-none absolute -left-20 bottom-0 h-72 w-72 rounded-full bg-fuchsia-400/10 blur-3xl" />
-        <div className="relative mx-auto max-w-6xl px-5 pb-28 pt-20 sm:px-8 sm:pb-32 sm:pt-24">
-          <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs font-bold backdrop-blur">
-            <Megaphone size={14} /> Tourvaa Affiliate Programme
-          </span>
-          <h1 className="mt-7 max-w-3xl text-4xl font-bold leading-[1.08] tracking-tight sm:text-6xl lg:text-7xl">
-            {hero.heading || DEFAULT_HERO.heading}
-          </h1>
-          <p className="mt-6 max-w-xl text-base leading-7 text-white/70 sm:text-lg">
-            {hero.subtitle || DEFAULT_HERO.subtitle}
-          </p>
-          <div className="mt-9 flex flex-wrap items-center gap-3">
-            <Link href="/affiliate-portal/login?tab=register" className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-6 py-3.5 text-sm font-bold text-purple-800 shadow-lg transition hover:-translate-y-0.5 hover:shadow-xl">
-              {hero.primary_cta_text || DEFAULT_HERO.primary_cta_text} <ArrowRight size={16} />
-            </Link>
-            <Link href="/affiliate-portal/login" className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/30 bg-white/10 px-6 py-3.5 text-sm font-bold text-white backdrop-blur transition hover:bg-white/20">
-              Affiliate Login
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* Cross-portal banner */}
-      <div className="bg-purple-900/10 border-b border-purple-100 py-3 px-4">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 text-xs">
-          <span className="text-slate-600 font-medium">
-            Are you a tour operator or travel agency?
-          </span>
-          <div className="flex items-center gap-4 font-bold">
-            <Link href="/supplier-portal" className="text-emerald-700 hover:underline">
-              Supplier Portal &rarr;
-            </Link>
-            <Link href="/agent-portal" className="text-indigo-700 hover:underline">
-              Agent Portal &rarr;
-            </Link>
-          </div>
-        </div>
-      </div>
-
-      <section className="relative z-10 mx-auto max-w-6xl px-4 pt-8 sm:px-6">
-        <div className="grid overflow-hidden rounded-2xl border border-purple-100 bg-purple-50/50 sm:grid-cols-3">
-          {stats.map(([title, detail], index) => (
-            <div key={index} className={`px-7 py-6 text-left ${index ? "border-t border-purple-100 sm:border-l sm:border-t-0" : ""}`}>
-              <p className="text-lg font-black text-slate-950">{title}</p>
-              <p className="mt-1 text-xs font-semibold text-purple-700">{detail}</p>
+    <>
+      <main className="overflow-x-hidden bg-white text-pub-fg">
+        <section id="overview" className="mx-auto max-w-[1380px] px-4 pt-4 scroll-mt-24 sm:px-6 sm:pt-6">
+          <div className="relative min-h-[470px] overflow-hidden rounded-[24px] bg-pub-primary px-6 py-10 sm:min-h-[520px] sm:rounded-[32px] sm:px-12 sm:py-12">
+            <Image src="/images/hero-2.jpg" alt="Coastal travel destination" fill priority sizes="(max-width: 768px) 100vw, 1380px" className="object-cover object-center" />
+            <div className="absolute inset-0 bg-gradient-to-r from-slate-950/90 via-slate-950/68 to-slate-950/30" />
+            <div className="relative z-10 flex min-h-[390px] max-w-2xl flex-col justify-center text-white sm:min-h-[424px]">
+              <div className="inline-flex w-fit items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-[11px] font-bold text-white backdrop-blur-sm"><Megaphone size={14} /> Tourvaa Affiliate Programme</div>
+              <h1 className="mt-6 max-w-xl text-4xl font-bold leading-[1.08] tracking-tight sm:text-5xl lg:text-6xl">{hero.heading || DEFAULT_HERO.heading}</h1>
+              <p className="mt-4 max-w-xl text-sm leading-6 text-white/85 sm:text-base sm:leading-7">{hero.subtitle || DEFAULT_HERO.subtitle}</p>
+              <div className="mt-7 flex flex-wrap items-center gap-3">
+                <Link href="/affiliate-portal/login?tab=register" className="inline-flex items-center justify-center gap-2 rounded-xl bg-pub-accent px-6 py-3.5 text-sm font-bold text-white shadow-md transition hover:bg-pub-accent/90 active:scale-[0.98]">{hero.primary_cta_text || DEFAULT_HERO.primary_cta_text} <ArrowRight size={16} /></Link>
+                <Link href="/affiliate-portal/login" className="inline-flex items-center justify-center rounded-xl border border-white/35 bg-white/10 px-6 py-3.5 text-sm font-bold text-white backdrop-blur-sm transition hover:bg-white/20 active:scale-[0.98]">Affiliate sign in</Link>
+              </div>
             </div>
-          ))}
-        </div>
-      </section>
+          </div>
+        </section>
 
-      <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
-        <div className="max-w-2xl">
-          <p className="text-xs font-black uppercase tracking-[.16em] text-purple-700">Why join</p>
-          <h2 className="mt-2 text-3xl font-black tracking-tight text-slate-950">{perksBlock.heading || "Why join as an affiliate?"}</h2>
-        </div>
-        <div className="mt-10 grid gap-x-10 gap-y-8 sm:grid-cols-2">
-          {perks.map(({ icon: Icon, title, description }, index) => (
-            <div key={index} className="group border-t border-purple-100 py-6">
-              <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-purple-50 text-purple-700"><Icon size={20} /></span>
-              <h3 className="mt-4 text-lg font-bold text-slate-950">{title}</h3>
-              <p className="mt-1.5 text-sm leading-6 text-slate-500">{description}</p>
+        <section className="mx-auto mt-6 max-w-[1380px] px-4 sm:mt-8 sm:px-6">
+          <div className="rounded-2xl bg-pub-primary p-6 text-white shadow-md sm:p-8">
+            <div className="grid grid-cols-1 divide-y divide-white/15 text-center sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+              {stats.map(([title, detail], index) => <div key={`${title}-${index}`} className="px-4 py-3 sm:py-0"><p className="text-3xl font-bold tracking-tight text-white sm:text-4xl">{title}</p><p className="mt-1 text-[11px] font-bold uppercase tracking-wider text-pub-accent">{detail}</p></div>)}
             </div>
-          ))}
-        </div>
-      </section>
+          </div>
+          <div className="mt-3 flex flex-col items-center justify-between gap-2 px-2 text-xs sm:flex-row"><p className="font-medium text-pub-muted">For travel creators, publishers, and audience-led communities.</p><div className="flex items-center gap-4 font-semibold"><Link href="/supplier-portal" className="text-pub-secondary transition hover:underline">List tours</Link><Link href="/agent-portal" className="text-pub-secondary transition hover:underline">Book for clients</Link></div></div>
+        </section>
 
-      <section className="bg-purple-50/50 py-16">
-        <div className="mx-auto max-w-4xl px-4 sm:px-6">
-          <div className="max-w-2xl">
-            <p className="text-xs font-black uppercase tracking-[.16em] text-purple-700">Ideal for</p>
-            <h2 className="mt-2 text-3xl font-black tracking-tight text-slate-950">{idealForBlock.heading || "Built for creators and publishers"}</h2>
+        <section id="benefits" className="mx-auto mt-16 max-w-[1180px] px-4 scroll-mt-28 sm:mt-20 sm:px-6">
+          <div className="max-w-2xl"><h2 className="text-2xl font-semibold tracking-tight text-pub-fg sm:text-3xl">{perksBlock.heading || "A partner programme built for sharing"}</h2><p className="mt-3 max-w-xl text-sm leading-6 text-pub-muted">Everything you need to share relevant travel experiences and understand the results of your referrals.</p></div>
+          <div className="mt-9 grid gap-x-12 gap-y-2 sm:grid-cols-2">
+            {perks.map(({ icon: Icon, title, description }) => <article key={title} className="border-t border-pub-border py-6"><span className="flex h-11 w-11 items-center justify-center rounded-xl bg-pub-secondary/10 text-pub-secondary"><Icon size={20} /></span><h3 className="mt-4 text-base font-bold tracking-tight text-pub-fg">{title}</h3><p className="mt-2 text-sm leading-6 text-pub-muted">{description}</p></article>)}
           </div>
-          <div className="mt-10 rounded-2xl border border-purple-100 bg-white p-7 sm:p-10">
-            <ul className="space-y-4">
-              {idealFor.map((item, index) => (
-                <li key={index} className="flex items-center gap-3 text-sm text-slate-600">
-                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-purple-50"><span className="h-2 w-2 rounded-full bg-purple-500" /></span>
-                  {item}
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      </section>
+        </section>
 
-      <section className="relative mx-auto max-w-6xl overflow-hidden px-4 py-20 text-center sm:px-6">
-        <div className="pointer-events-none absolute left-1/2 top-1/2 h-72 w-72 -translate-x-1/2 -translate-y-1/2 rounded-full bg-purple-200/60 blur-3xl" />
-        <div className="relative rounded-2xl border border-purple-100 bg-purple-50 px-6 py-14 sm:py-16">
-          <Sparkles className="mx-auto mb-4 text-purple-600" size={24} />
-          <h2 className="text-3xl font-black tracking-tight text-slate-950">{cta.heading || DEFAULT_CTA.heading}</h2>
-          <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-slate-500">
-            {cta.subtitle || DEFAULT_CTA.subtitle}
-          </p>
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-            <Link href="/affiliate-portal/login?tab=register" className="inline-flex items-center justify-center gap-2 rounded-xl bg-purple-700 px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-purple-200 transition hover:-translate-y-0.5 hover:bg-purple-800 hover:shadow-xl">
-              {cta.cta_text || DEFAULT_CTA.cta_text} <ArrowRight size={16} />
-            </Link>
-            <Link href="/affiliate-portal/login" className="inline-flex items-center justify-center gap-2 rounded-xl border border-purple-200 bg-white px-6 py-3.5 text-sm font-bold text-purple-700 transition hover:bg-purple-50">
-              Already an affiliate? Sign in
-            </Link>
+        <section className="mt-16 bg-pub-bg py-16 sm:mt-20 sm:py-20">
+          <div className="mx-auto grid max-w-[1180px] gap-10 px-4 sm:px-6 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
+            <div className="relative min-h-[300px] overflow-hidden rounded-2xl sm:min-h-[360px]"><Image src="/images/hero-3.jpg" alt="Travel destination surrounded by turquoise water" fill sizes="(max-width: 1024px) 100vw, 520px" className="object-cover" /></div>
+            <div><h2 className="text-2xl font-semibold tracking-tight text-pub-fg sm:text-3xl">{idealForBlock.heading || "Designed for travel storytellers"}</h2><p className="mt-3 max-w-xl text-sm leading-6 text-pub-muted">Build referral content around the channels and communities you already manage.</p><ul className="mt-7 grid gap-3 sm:grid-cols-2">{idealFor.map((item) => <li key={item} className="flex items-start gap-2.5 text-sm leading-6 text-pub-fg"><CheckCircle2 size={17} className="mt-0.5 shrink-0 text-pub-secondary" aria-hidden="true" /><span>{item}</span></li>)}</ul></div>
           </div>
-          <p className="mt-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs font-semibold text-slate-500">
-            {["No listing fees", "Human onboarding support", "Secure partner payouts"].map((item) => (
-              <span key={item} className="flex items-center gap-2"><CheckCircle2 size={15} className="text-purple-600" />{item}</span>
-            ))}
-          </p>
-        </div>
-      </section>
-    </main>
+        </section>
+
+        <section className="mx-auto mt-16 max-w-[1180px] px-4 sm:mt-20 sm:px-6">
+          <div className="rounded-2xl bg-pub-primary px-6 py-12 text-center text-white sm:px-12 sm:py-16">
+            <Megaphone className="mx-auto text-pub-accent" size={26} aria-hidden="true" />
+            <h2 className="mx-auto mt-4 max-w-2xl text-3xl font-bold tracking-tight sm:text-4xl">{cta.heading || DEFAULT_CTA.heading}</h2>
+            <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-white/80">{cta.subtitle || DEFAULT_CTA.subtitle}</p>
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-3"><Link href="/affiliate-portal/login?tab=register" className="inline-flex items-center justify-center gap-2 rounded-xl bg-pub-accent px-6 py-3.5 text-sm font-bold text-white shadow-md transition hover:bg-pub-accent/90 active:scale-[0.98]">{cta.cta_text || DEFAULT_CTA.cta_text} <ArrowRight size={16} /></Link><Link href="/affiliate-portal/login" className="inline-flex items-center justify-center rounded-xl border border-white/35 px-6 py-3.5 text-sm font-bold text-white transition hover:bg-white/10 active:scale-[0.98]">Affiliate sign in</Link></div>
+            <p className="mt-7 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs font-medium text-white/75"><span className="flex items-center gap-2"><CheckCircle2 size={15} className="text-pub-accent" />No listing fees</span><span className="flex items-center gap-2"><CheckCircle2 size={15} className="text-pub-accent" />Support when you need it</span><span className="flex items-center gap-2"><CheckCircle2 size={15} className="text-pub-accent" />Secure partner payouts</span></p>
+          </div>
+        </section>
+      </main>
+      <PartnerPortalFooter portal="affiliate" />
+    </>
   );
 }

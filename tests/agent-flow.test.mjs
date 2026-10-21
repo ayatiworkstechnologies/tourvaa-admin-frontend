@@ -39,9 +39,17 @@ check(
 );
 
 const agentPortal = read("src/app/agent-portal/login/page.tsx");
+const agentPortalLanding = read("src/app/agent-portal/page.tsx");
 check(
   "agent portal keeps its own inline registration tab (no registerHref override)",
   agentPortal.includes("registerNamePlaceholder") && !agentPortal.includes("registerHref"),
+);
+check(
+  "agent commission calculator follows the selected page currency",
+  agentPortalLanding.includes("useCurrency") &&
+    agentPortalLanding.includes("displayCurrency") &&
+    agentPortalLanding.includes('formatCurrency(estimatedCommission, "USD")') &&
+    agentPortalLanding.includes("Projected Annual Commission"),
 );
 
 const tours = read("src/app/agent/tours/page.tsx");

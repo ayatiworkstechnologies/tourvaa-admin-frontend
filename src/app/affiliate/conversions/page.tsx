@@ -5,6 +5,7 @@ import api from "@/lib/api/client";
 import { useAuthContext } from "@/providers/AuthProvider";
 import { useToast } from "@/hooks/useToast";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
+import { useCurrency } from "@/hooks/useCurrency";
 
 type Conversion = { id: number; booking_code?: string; booking_amount?: string; commission_percentage?: number; commission_amount: string; currency: string; status: string; created_at?: string };
 
@@ -17,6 +18,7 @@ function statusCls(s: string) {
 
 export default function ConversionsPage() {
   const toast = useToast();
+  const { code: displayCurrency, convert, format, formatExact } = useCurrency();
   const { dashboard } = useAuthContext();
   const affiliateId = dashboard?.user?.affiliate_id ?? null;
   const [conversions, setConversions] = useState<Conversion[]>([]);
@@ -25,8 +27,10 @@ export default function ConversionsPage() {
   const [total, setTotal] = useState(0);
   const limit = 20;
 
-  const totalCommission = conversions.reduce((sum, c) => sum + Number(c.commission_amount || 0), 0);
-  const currency = conversions[0]?.currency || "USD";
+  const totalCommission = conversions.reduce(
+    (sum, conversion) => sum + convert(conversion.commission_amount, conversion.currency || "USD"),
+    0,
+  );
 
   useEffect(() => {
     if (!affiliateId) { setLoading(false); return; }
@@ -57,9 +61,9 @@ export default function ConversionsPage() {
     },
     { key: "date", header: "Date", className: "text-xs text-dash-body", render: (c) => c.created_at ? new Date(c.created_at).toLocaleDateString() : "-" },
     { key: "booking", header: "Booking", className: "font-mono text-xs text-dash-body", render: (c) => c.booking_code || `#${c.id}` },
-    { key: "booking_amount", header: "Booking Amount", className: "text-xs text-dash-body", render: (c) => `${c.currency} ${Number(c.booking_amount || 0).toLocaleString()}` },
+    { key: "booking_amount", header: "Booking Amount", className: "text-xs text-dash-body", render: (c) => format(c.booking_amount, c.currency || "USD") },
     { key: "commission_perc", header: "Commission %", className: "text-xs text-dash-body", render: (c) => `${c.commission_percentage ?? "-"}%` },
-    { key: "commission", header: "Commission", className: "text-sm font-bold text-purple-700", render: (c) => `${c.currency} ${Number(c.commission_amount).toLocaleString()}` },
+    { key: "commission", header: "Commission", className: "text-sm font-bold text-purple-700", render: (c) => format(c.commission_amount, c.currency || "USD") },
     { key: "status", header: "Status", render: (c) => <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${statusCls(c.status)}`}>{c.status}</span> },
   ];
 
@@ -74,7 +78,7 @@ export default function ConversionsPage() {
         <div className="mb-5 grid gap-4 sm:grid-cols-3">
           {[
             { label: "Total Conversions", value: total },
-            { label: "Total Commission", value: `${currency} ${totalCommission.toLocaleString()}` },
+            { label: `Total Commission (shown in ${displayCurrency})`, value: formatExact(totalCommission, displayCurrency) },
             { label: "Pending", value: conversions.filter(c => c.status === "pending").length },
           ].map(({ label, value }) => (
             <div key={label} className="rounded-xl border border-dash-border bg-white p-5 shadow-sm">

@@ -23,7 +23,7 @@ import { useAuthContext } from "@/providers/AuthProvider";
 import { useCurrency } from "@/hooks/useCurrency";
 import { affiliateApprovalStatus, isApprovedAffiliate } from "@/lib/auth/affiliateAccess";
 
-type Summary = { total_conversions?: number; total_commission?: string; pending_commission?: string };
+type Summary = { total_conversions?: number; total_commission?: string; pending_commission?: string; currency?: string };
 type AffLink = { id: number; ref_code: string; label: string; destination_url: string; is_active: boolean; total_clicks?: number; total_conversions?: number };
 type Conversion = { id: number; booking_code?: string; commission_amount: string; currency: string; status: string; converted_at?: string };
 
@@ -161,8 +161,8 @@ function ApprovedAffiliateDashboard() {
   const stats = [
     { label: "Total Clicks", value: links.reduce((total, link) => total + Number(link.total_clicks || 0), 0), icon: MousePointerClick, color: "text-blue-600 bg-blue-50" },
     { label: "Conversions", value: summary.total_conversions ?? conversions.length, icon: TrendingUp, color: "text-emerald-600 bg-emerald-50" },
-    { label: "Total Commission", value: formatCompact(summary.total_commission), icon: Coins, color: "text-purple-600 bg-purple-50" },
-    { label: "Pending Payout", value: formatCompact(summary.pending_commission), icon: Banknote, color: "text-amber-600 bg-amber-50" },
+    { label: "Total Commission", value: formatCompact(summary.total_commission, summary.currency || "USD"), icon: Coins, color: "text-purple-600 bg-purple-50" },
+    { label: "Pending Payout", value: formatCompact(summary.pending_commission, summary.currency || "USD"), icon: Banknote, color: "text-amber-600 bg-amber-50" },
   ];
 
   if (loading) {
@@ -262,7 +262,7 @@ function ApprovedAffiliateDashboard() {
                     <p className="text-xs text-dash-muted">{c.converted_at ? new Date(c.converted_at).toLocaleDateString() : ""}</p>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-bold text-purple-700">{format(c.commission_amount)}</span>
+                    <span className="text-sm font-bold text-purple-700">{format(c.commission_amount, c.currency || "USD")}</span>
                     <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${statusCls(c.status)}`}>{c.status}</span>
                   </div>
                 </div>

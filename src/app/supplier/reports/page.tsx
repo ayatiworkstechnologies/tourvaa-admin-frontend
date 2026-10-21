@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { LuChartColumn as ChartColumn, LuDownload as Download, LuLoaderCircle as Loader2, LuPrinter as Printer } from "react-icons/lu";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
-import DatePicker from "@/components/ui/DatePicker";
+import DateRangePicker from "@/components/ui/DateRangePicker";
 import Loader from "@/components/ui/Loader";
 import { SupplierPageHeader, SupplierPageShell } from "@/components/supplier/SupplierPage";
 import { useCurrency } from "@/hooks/useCurrency";
@@ -260,10 +260,7 @@ export default function SupplierReportsPage() {
                 {PERIOD_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
               </select>
             </label>
-            {period === "custom" && <>
-              <DatePicker label="From booking date" value={startDate} maxDate={endDate || undefined} onChange={setStartDate} accent="teal" />
-              <DatePicker label="To booking date" value={endDate} minDate={startDate || undefined} onChange={setEndDate} accent="teal" />
-            </>}
+            {period === "custom" && <DateRangePicker startDate={startDate} endDate={endDate} className="min-w-[min(100%,26rem)]" onChange={(nextStartDate, nextEndDate) => { setStartDate(nextStartDate); setEndDate(nextEndDate); }} />}
             <label className="flex flex-col gap-1">
               <span className="text-xs font-bold uppercase tracking-wide text-[#6B8074]">Booking Status</span>
               <select value={bookingStatus} onChange={(e) => setBookingStatus(e.target.value)} className="h-10 rounded-xl border border-[#D5E4DB] bg-white px-3 text-xs font-semibold text-[#365545] outline-none focus:border-[#16833A]">
