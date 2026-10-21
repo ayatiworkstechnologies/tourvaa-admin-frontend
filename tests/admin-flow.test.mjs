@@ -58,14 +58,22 @@ const geoHooks = read("src/hooks/useGeo.ts");
 const reviewList = read("src/components/operations/ReviewListPage.tsx");
 const actionModal = read("src/components/operations/ActionModal.tsx");
 const dataTable = read("src/components/ui/DataTable.tsx");
-const datePicker = read("src/components/ui/DatePicker.tsx");
+const dateRangePicker = read("src/components/ui/DateRangePicker.tsx");
 check(
-  "selected admin date filters can be cleared directly from the date field",
-  datePicker.includes("function clearDate()") &&
-    datePicker.includes('onChange("")') &&
-    datePicker.includes('title="Clear date"') &&
-    reviewList.includes('onChange={(date) => { setStartDate(date); setPage(1); }}') &&
-    reviewList.includes('onChange={(date) => { setEndDate(date); setPage(1); }}'),
+  "admin review filters use one clearable start-to-end calendar",
+  dateRangePicker.includes("function selectDate(date: Date)") &&
+    dateRangePicker.includes("Now select an end date") &&
+    dateRangePicker.includes("Clear range") &&
+    reviewList.includes("<DateRangePicker") &&
+    reviewList.includes("setStartDate(nextStartDate)") &&
+    reviewList.includes("setEndDate(nextEndDate)"),
+);
+check(
+  "affiliate directory includes the shared country and date-range filters",
+  reviewList.includes('module === "affiliates"') &&
+    reviewList.includes("supportsDirectoryFilters") &&
+    reviewList.includes("statusFilters.start_date") &&
+    reviewList.includes("statusFilters.end_date"),
 );
 check(
   "wide admin tables expose dynamic horizontal navigation controls before the table footer",

@@ -8,7 +8,7 @@ import ModuleWrapper from "@/components/common/ModuleWrapper";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
 import StatusBadge from "@/components/operations/StatusBadge";
 import ActionModal from "@/components/operations/ActionModal";
-import DatePicker from "@/components/ui/DatePicker";
+import DateRangePicker from "@/components/ui/DateRangePicker";
 import { bulkApproveAgents, bulkApproveSuppliers, bulkRejectAgents, bulkRejectSuppliers, createReviewRecord, listReviewRecords, ReviewModule, ReviewRecord } from "@/lib/api/services/operationsService";
 import api from "@/lib/api/client";
 import { useAuthContext } from "@/providers/AuthProvider";
@@ -69,9 +69,9 @@ export default function ReviewListPage({ module, title, requiredPermission }: Pr
   const [saving, setSaving] = useState(false);
   const [statusView, setStatusView] = useState<"all" | "pending" | "approved" | "inactive">("all");
   const supportsStatusView = module === "suppliers" || module === "agents";
+  const supportsDirectoryFilters = supportsStatusView || module === "affiliates";
   // Richer filters (country/date range/sort) match Customer Management's
-  // filter set for consistency - only offered where the backend supports
-  // them (agents/suppliers), not affiliates.
+  // filter set for consistency across every partner directory.
   const [countryFilter, setCountryFilter] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -183,10 +183,12 @@ export default function ReviewListPage({ module, title, requiredPermission }: Pr
     setLoading(true);
     try {
       const statusFilters: Record<string, string | number> = {};
-      if (supportsStatusView) {
-        if (statusView === "pending") statusFilters.approval_status = "pending";
-        if (statusView === "approved") statusFilters.approval_status = "approved";
-        if (statusView === "inactive") statusFilters.status = "inactive";
+      if (supportsDirectoryFilters) {
+        if (supportsStatusView) {
+          if (statusView === "pending") statusFilters.approval_status = "pending";
+          if (statusView === "approved") statusFilters.approval_status = "approved";
+          if (statusView === "inactive") statusFilters.status = "inactive";
+        }
         if (countryFilter) statusFilters.country_id = countryFilter;
         if (startDate) statusFilters.start_date = startDate;
         if (endDate) statusFilters.end_date = endDate;
@@ -201,7 +203,7 @@ export default function ReviewListPage({ module, title, requiredPermission }: Pr
     } finally {
       setLoading(false);
     }
-  }, [module, page, search, statusView, supportsStatusView, countryFilter, startDate, endDate, sortBy, toast]);
+  }, [module, page, search, statusView, supportsStatusView, supportsDirectoryFilters, countryFilter, startDate, endDate, sortBy, toast]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => void fetchRows(), 200);
@@ -424,9 +426,9 @@ export default function ReviewListPage({ module, title, requiredPermission }: Pr
             )}
           </div>
         </section>
-        {supportsStatusView && (
+        {supportsDirectoryFilters && (
           <section className="space-y-3 rounded-xl border border-dash-border bg-white p-4">
-            <nav className="flex flex-wrap gap-2" aria-label={`${entityLabel} status filters`}>
+            {supportsStatusView && <nav className="flex flex-wrap gap-2" aria-label={`${entityLabel} status filters`}>
               {(["all", "pending", "approved", "inactive"] as const).map((view) => (
                 <button
                   key={view}
@@ -440,7 +442,7 @@ export default function ReviewListPage({ module, title, requiredPermission }: Pr
                   {view}
                 </button>
               ))}
-            </nav>
+            </nav>}
             <div className="grid gap-3 border-t border-dash-border-soft pt-3 sm:grid-cols-2 lg:grid-cols-4">
               <select
                 value={countryFilter}
@@ -457,8 +459,16 @@ export default function ReviewListPage({ module, title, requiredPermission }: Pr
                   </option>
                 ))}
               </select>
-              <DatePicker value={startDate} maxDate={endDate || undefined} onChange={(date) => { setStartDate(date); setPage(1); }} placeholder="Start date" />
-              <DatePicker value={endDate} minDate={startDate || undefined} onChange={(date) => { setEndDate(date); setPage(1); }} placeholder="End date" align="right" />
+              <DateRangePicker
+                startDate={startDate}
+                endDate={endDate}
+                className="sm:col-span-2"
+                onChange={(nextStartDate, nextEndDate) => {
+                  setStartDate(nextStartDate);
+                  setEndDate(nextEndDate);
+                  setPage(1);
+                }}
+              />
               <select
                 value={sortBy}
                 onChange={(event) => {

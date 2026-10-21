@@ -29,7 +29,7 @@ import { bookingStatusLabel } from "@/lib/constants/bookingStatus";
 import { useAuthContext } from "@/providers/AuthProvider";
 import { formatCurrencyCompact } from "@/lib/utils/currency";
 import { getApiErrorMessage } from "@/lib/utils/errorHandler";
-import DatePicker from "@/components/ui/DatePicker";
+import DateRangePicker from "@/components/ui/DateRangePicker";
 import { AgentMetric, AgentPageShell, AgentSection } from "@/components/agent/AgentPage";
 
 type Summary = {
@@ -575,19 +575,11 @@ export default function AgentDashboardPage() {
           {/* Dashboard Filters */}
           <AgentSection className="mt-4" title="Dashboard Filters" description="Filter booking data by date range and status.">
             <div className="flex flex-wrap items-end gap-4 p-5">
-              <DatePicker
-                label="Start date"
-                value={filters.start_date}
-                maxDate={filters.end_date || undefined}
-                onChange={(date) => setFilters((filters) => ({ ...filters, start_date: date }))}
-                className="min-w-52"
-              />
-              <DatePicker
-                label="End date"
-                value={filters.end_date}
-                minDate={filters.start_date || undefined}
-                onChange={(date) => setFilters((filters) => ({ ...filters, end_date: date }))}
-                className="min-w-52"
+              <DateRangePicker
+                startDate={filters.start_date}
+                endDate={filters.end_date}
+                onChange={(startDate, endDate) => setFilters((current) => ({ ...current, start_date: startDate, end_date: endDate }))}
+                className="w-full sm:w-[26rem]"
               />
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-bold uppercase tracking-wide text-dash-muted">Booking Status</label>
