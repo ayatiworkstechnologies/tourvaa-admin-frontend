@@ -2049,10 +2049,10 @@ export default function TourFormPage({
 
           {showMedia && (
           <FormSection role={role} icon={ImageIcon} title="Media" description="Images and downloads for the tour listing.">
-            <AdminAssetUpload label="Banner image" value={form.banner_image ?? ""} onChange={(value) => update("banner_image", value)} />
-            <AdminAssetUpload label="Map image" value={form.map_image ?? ""} onChange={(value) => update("map_image", value)} />
-            <AdminAssetUpload label="Mobile cover image" value={form.mobile_cover_image ?? ""} onChange={(value) => update("mobile_cover_image", value)} />
-            <AdminAssetUpload label="Brochure (PDF)" value={form.brochure_pdf ?? ""} onChange={(value) => update("brochure_pdf", value)} />
+            <AdminAssetUpload assetScope="tour" label="Banner image" value={form.banner_image ?? ""} onChange={(value) => update("banner_image", value)} />
+            <AdminAssetUpload assetScope="tour" label="Map image" value={form.map_image ?? ""} onChange={(value) => update("map_image", value)} />
+            <AdminAssetUpload assetScope="tour" label="Mobile cover image" value={form.mobile_cover_image ?? ""} onChange={(value) => update("mobile_cover_image", value)} />
+            <AdminAssetUpload assetScope="tour" label={isSupplier ? "Itinerary PDF (Trip Notes)" : "Brochure (PDF)"} value={form.brochure_pdf ?? ""} onChange={(value) => update("brochure_pdf", value)} />
             <label data-field="tour_video_url" className="block">
               <span className="mb-1 block text-xs font-bold uppercase text-slate-600">Tour video URL</span>
               <input
@@ -2166,7 +2166,7 @@ export default function TourFormPage({
                 </p>
               )}
             </label>
-            <AdminAssetUpload label="Open Graph image" value={form.open_graph_image ?? ""} onChange={(value) => update("open_graph_image", value)} />
+            <AdminAssetUpload assetScope="tour" label="Open Graph image" value={form.open_graph_image ?? ""} onChange={(value) => update("open_graph_image", value)} />
             <label className="flex items-center gap-2 pt-6">
               <input type="checkbox" checked={form.search_visibility !== "false"} onChange={(e) => update("search_visibility", String(e.target.checked))} />
               <span className="text-sm font-semibold text-dash-body">Visible to search engines</span>

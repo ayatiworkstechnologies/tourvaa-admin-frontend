@@ -32,7 +32,7 @@ function errorMessage(error: unknown) {
 const fieldClass = "w-full rounded-xl border border-dash-border bg-white px-3 py-2.5 text-sm outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-500";
 const Label = ({ children }: { children: React.ReactNode }) => <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">{children}</span>;
 
-export default function BankAndInvoicingTab() {
+export default function BankAndInvoicingTab({ onSaved }: { onSaved?: () => void }) {
   const toast = useToast();
   const { countries } = useGeoCountries();
   const [form, setForm] = useState<Form>(emptyForm);
@@ -126,6 +126,7 @@ export default function BankAndInvoicingTab() {
         setBankLocked(Boolean(saved.bank_details_locked));
       }
       toast.success("Bank, invoicing and billing details saved.");
+      onSaved?.();
     } catch (error) {
       toast.error(errorMessage(error));
     } finally {

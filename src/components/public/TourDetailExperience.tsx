@@ -390,6 +390,91 @@ function LightboxModal({
   );
 }
 
+function ItineraryPdfPreview({
+  previewUrl,
+  downloadUrl,
+  fallbackUrl,
+  onClose,
+}: {
+  previewUrl: string;
+  downloadUrl: string;
+  fallbackUrl?: string;
+  onClose: () => void;
+}) {
+  const [resolvedPreviewUrl, setResolvedPreviewUrl] = useState<string | null>(null);
+  const [previewError, setPreviewError] = useState("");
+
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    document.body.classList.add("lightbox-open");
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.classList.remove("lightbox-open");
+    };
+  }, [onClose]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    setResolvedPreviewUrl(null);
+    setPreviewError("");
+
+    void fetch(previewUrl, { signal: controller.signal })
+      .then(async (response) => {
+        const isPdf = response.ok && response.headers.get("content-type")?.toLowerCase().includes("pdf");
+        await response.body?.cancel();
+        if (isPdf) {
+          setResolvedPreviewUrl(previewUrl);
+        } else if (fallbackUrl) {
+          setResolvedPreviewUrl(fallbackUrl);
+        } else {
+          setPreviewError("The itinerary PDF is temporarily unavailable. Please try again shortly.");
+        }
+      })
+      .catch((error: unknown) => {
+        if ((error as { name?: string })?.name === "AbortError") return;
+        if (fallbackUrl) setResolvedPreviewUrl(fallbackUrl);
+        else setPreviewError("The itinerary PDF is temporarily unavailable. Please try again shortly.");
+      });
+
+    return () => controller.abort();
+  }, [fallbackUrl, previewUrl]);
+
+  const activeDownloadUrl = resolvedPreviewUrl === fallbackUrl ? fallbackUrl : downloadUrl;
+
+  return createPortal(
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="Itinerary PDF preview"
+      className="fixed inset-0 z-[2147483000] flex items-center justify-center bg-slate-950/70 p-3 backdrop-blur-sm sm:p-6"
+      onClick={(event) => { if (event.target === event.currentTarget) onClose(); }}
+    >
+      <div className="flex h-[min(850px,calc(100vh-1.5rem))] w-full max-w-6xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl sm:h-[min(850px,calc(100vh-3rem))]">
+        <div className="flex shrink-0 items-center gap-3 border-b border-slate-200 px-4 py-3 sm:px-5">
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-black text-slate-900">Itinerary &amp; trip notes</p>
+            <p className="text-xs text-slate-500">Preview the supplier-provided PDF.</p>
+          </div>
+          <a href={activeDownloadUrl} className="hidden rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 sm:inline-flex">Download PDF</a>
+          <button type="button" onClick={onClose} aria-label="Close itinerary preview" className="inline-flex h-9 w-9 items-center justify-center rounded-full text-slate-600 hover:bg-slate-100"><X size={20} /></button>
+        </div>
+        {resolvedPreviewUrl ? (
+          <iframe title="Itinerary PDF preview" src={resolvedPreviewUrl} className="min-h-0 flex-1 bg-slate-100" />
+        ) : previewError ? (
+          <div className="flex min-h-0 flex-1 items-center justify-center p-6 text-center text-sm font-semibold text-slate-600">{previewError}</div>
+        ) : (
+          <div className="flex min-h-0 flex-1 items-center justify-center p-6 text-sm font-semibold text-slate-500">Loading itinerary PDF…</div>
+        )}
+        <a href={activeDownloadUrl} className="shrink-0 border-t border-slate-200 px-4 py-3 text-center text-sm font-bold text-blue-700 underline sm:hidden">Download PDF</a>
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
 // Upper bound for the traveller steppers only when the tour publishes neither a
 // group size nor departure seats; availability is still enforced by the server.
 function StyleFact({
@@ -686,8 +771,12 @@ export default function TourDetailExperience({
 }: Props) {
   const { format } = useCurrency();
   const [overviewExpanded, setOverviewExpanded] = useState(false);
+  const [itineraryPreviewOpen, setItineraryPreviewOpen] = useState(false);
 
   const destination = tour.country_name || tour.city_name || "Destination";
+  const itineraryPreviewUrl = tour.brochure_pdf ? `/api/public/tours/${tour.id}/brochure?inline=1` : `/api/public/tours/${tour.id}/itinerary`;
+  const itineraryDownloadUrl = tour.brochure_pdf ? `/api/public/tours/${tour.id}/brochure` : `/api/public/tours/${tour.id}/itinerary?download=1`;
+  const itineraryFallbackUrl = tour.brochure_pdf && (/^https:\/\/res\.cloudinary\.com\//i.test(tour.brochure_pdf) || tour.brochure_pdf.startsWith("/storage/")) ? tour.brochure_pdf : undefined;
   const city = tour.city_name || "";
   const title = tour.title || "Tour Experience";
   const dayCount = tour.number_of_days || tour.itineraries?.length || 1;
@@ -1630,6 +1719,14 @@ export default function TourDetailExperience({
           onClose={() => setLightboxOpen(false)}
         />
       )}
+      {itineraryPreviewOpen && (
+        <ItineraryPdfPreview
+          previewUrl={itineraryPreviewUrl}
+          downloadUrl={itineraryDownloadUrl}
+          fallbackUrl={itineraryFallbackUrl}
+          onClose={() => setItineraryPreviewOpen(false)}
+        />
+      )}
 
       <div className="mx-auto max-w-[1400px] px-4 sm:px-6">
         {/* ── 1. BREADCRUMBS & TOP ACTIONS ── */}
@@ -1823,15 +1920,13 @@ export default function TourDetailExperience({
             />
           )}
 
-          {tour.brochure_pdf && (
-            <a
-              href={`/api/public/tours/${tour.id}/brochure`}
-              download
-              className="mt-6 flex max-w-4xl items-center gap-3 rounded-2xl border border-blue-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 transition hover:border-blue-400 hover:bg-blue-50 sm:px-5"
-            >
+          {(tour.brochure_pdf || tour.itineraries?.length > 0) && (
+            <div className="mt-6 flex max-w-4xl flex-wrap items-center gap-3 rounded-2xl border border-blue-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 sm:px-5">
               <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white text-[#173f70] shadow-sm"><Download size={16} /></span>
-              <span>For a detailed itinerary and practical travel information, <span className="font-bold text-blue-700 underline">download the trip notes</span>.</span>
-            </a>
+              <span className="mr-auto">Need a copy? View or download the supplier-provided itinerary and trip notes.</span>
+              <button type="button" onClick={() => setItineraryPreviewOpen(true)} className="font-bold text-blue-700 underline">Open itinerary</button>
+              <a href={itineraryFallbackUrl || itineraryDownloadUrl} className="font-bold text-blue-700 underline">Download PDF</a>
+            </div>
           )}
         </section>
 
@@ -2298,7 +2393,7 @@ export default function TourDetailExperience({
                     </div>
                   )}
 
-                  {false && (tour.tour_language || tour.overview?.tour_type) && (
+                  {(tour.tour_language || tour.overview?.tour_type) && (
                     <div className="group flex items-center gap-3 border-b border-slate-100 py-3.5 transition-colors hover:bg-slate-50/70">
                       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
                         <User size={18} />
@@ -2367,7 +2462,7 @@ export default function TourDetailExperience({
                     </div>
                   )}
 
-                  {false && tour.overview?.tour_pace && (
+                  {tour.overview?.tour_pace && (
                     <div className="group flex items-center gap-3 rounded-2xl border border-slate-200/90 bg-white p-3.5 sm:p-4 shadow-xs transition-all duration-200 hover:border-indigo-300 hover:shadow-md">
                       <div className="flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 transition-all duration-200 group-hover:scale-105 group-hover:bg-indigo-600 group-hover:text-white shadow-xs">
                         <Gauge size={18} />
@@ -2505,6 +2600,7 @@ export default function TourDetailExperience({
                   {itineraryList.map((day) => {
                     const isOpen = Boolean(openDays[day.accordionKey]);
                     const overviewText = day.summary || day.detail;
+                    const hasDistinctDetail = Boolean(day.detail && day.detail !== overviewText);
 
                     return (
                       <div
@@ -2578,11 +2674,22 @@ export default function TourDetailExperience({
                                 </div>
                               ))}
 
+                            {hasDistinctDetail && (
+                              <div className="rounded-xl border border-slate-200/80 bg-white p-4 shadow-2xs">
+                                <p className="mb-2.5 text-xs font-bold uppercase tracking-wider text-black">Day details</p>
+                                <TextParagraphs
+                                  text={day.detail}
+                                  className="text-[15px] font-normal leading-7 text-slate-800 sm:text-base"
+                                />
+                              </div>
+                            )}
+
 
                             {/* Quick Facts Strip: Start, Timings, Transport (only if present) */}
                             {(day.startPoint ||
                               (day.startTime && day.endTime) ||
-                              day.transport) && (
+                              day.transport ||
+                              day.travelTime) && (
                               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
                                 {day.startPoint && (
                                   <div className="rounded-xl border border-slate-200/80 bg-white p-3 flex items-start gap-2.5">
@@ -2633,6 +2740,18 @@ export default function TourDetailExperience({
                                     </div>
                                   </div>
                                 )}
+
+                                {day.travelTime && (
+                                  <div className="rounded-xl border border-slate-200/80 bg-white p-3 flex items-start gap-2.5">
+                                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-violet-50 text-violet-600">
+                                      <ArrowLeftRight size={14} />
+                                    </span>
+                                    <div>
+                                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Travel</p>
+                                      <p className="mt-0.5 text-xs font-semibold text-slate-800">{day.travelTime}</p>
+                                    </div>
+                                  </div>
+                                )}
                               </div>
                             )}
 
@@ -2656,6 +2775,44 @@ export default function TourDetailExperience({
                                     </div>
                                   ))}
                                 </div>
+                              </div>
+                            )}
+
+                            {(day.meals.length > 0 || day.accommodation) && (
+                              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                                {day.meals.length > 0 && (
+                                  <div className="rounded-xl border border-rose-100 bg-rose-50/40 p-4">
+                                    <p className="mb-2 text-xs font-bold uppercase tracking-wider text-rose-800">Meals included</p>
+                                    <p className="text-sm leading-6 text-slate-700">{day.meals.join(", ")}</p>
+                                  </div>
+                                )}
+                                {day.accommodation && (
+                                  <div className="rounded-xl border border-amber-100 bg-amber-50/40 p-4">
+                                    <p className="mb-2 text-xs font-bold uppercase tracking-wider text-amber-800">Accommodation</p>
+                                    <p className="text-sm leading-6 text-slate-700">{day.accommodation}</p>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+
+                            {day.optionalActivities.length > 0 && (
+                              <div className="rounded-xl border border-violet-100 bg-violet-50/40 p-4">
+                                <p className="mb-3 text-xs font-bold uppercase tracking-wider text-violet-800">Optional activities</p>
+                                <div className="grid grid-cols-1 gap-2 text-sm sm:grid-cols-2 sm:text-[15px]">
+                                  {day.optionalActivities.map((activity, activityIndex) => (
+                                    <div key={activityIndex} className="flex items-start gap-2 font-medium text-slate-800">
+                                      <Sparkles size={15} className="mt-0.5 shrink-0 text-violet-600" />
+                                      <span>{activity}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {day.importantNotes && (
+                              <div className="rounded-xl border border-amber-200 bg-amber-50/60 p-4">
+                                <p className="mb-1.5 text-xs font-bold uppercase tracking-wider text-amber-900">Important notes</p>
+                                <TextParagraphs text={day.importantNotes} className="text-sm leading-6 text-slate-700" />
                               </div>
                             )}
 

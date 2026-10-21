@@ -231,6 +231,12 @@ export default function TourWizard({ tourId, role }: { tourId?: string; role: "a
 
   const { statuses, refresh: refreshCompletion } = useStepCompletion(tourId, tour);
 
+  const getApiErrorMessage = (error: unknown, fallback: string) => {
+    const response = (error as { response?: { data?: { detail?: string; message?: string } } })?.response;
+    const message = response?.data?.detail ?? response?.data?.message;
+    return typeof message === "string" ? message : fallback;
+  };
+
   const resolveComment = async (commentId: number) => {
     if (!tourId) return;
     try {
@@ -247,8 +253,8 @@ export default function TourWizard({ tourId, role }: { tourId?: string; role: "a
     try {
       await api.post(`/tours/${tourId}/withdraw`);
       await fetchTour(false);
-    } catch {
-      setSubmitError("Could not withdraw the submission. Please try again.");
+    } catch (error: unknown) {
+      setSubmitError(getApiErrorMessage(error, "Could not withdraw the submission. Please try again."));
     } finally {
       setWithdrawing(false);
     }
@@ -264,13 +270,7 @@ export default function TourWizard({ tourId, role }: { tourId?: string; role: "a
       setSubmitSuccess(true);
       await fetchTour(false);
     } catch (error: unknown) {
-      const message =
-        (error as { response?: { data?: { detail?: string; message?: string } } })
-          ?.response?.data?.detail ??
-        (error as { response?: { data?: { message?: string } } })?.response?.data
-          ?.message ??
-        "Could not submit for approval.";
-      setSubmitError(typeof message === "string" ? message : "Could not submit for approval.");
+      setSubmitError(getApiErrorMessage(error, "Could not submit for approval."));
     } finally {
       setSubmitting(false);
     }

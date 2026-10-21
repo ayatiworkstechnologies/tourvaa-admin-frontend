@@ -872,7 +872,7 @@ export default function ContactPage({ audience }: { audience?: "supplier" | "age
             </div>
             <div className="p-5 pt-0">
               <Link
-                href="/portal/supplier/login"
+                href="/supplier-portal/login?tab=register"
                 className="inline-flex items-center gap-1.5 text-xs font-bold text-pub-secondary hover:underline"
               >
                 <span>Supplier Portal</span>
@@ -905,7 +905,7 @@ export default function ContactPage({ audience }: { audience?: "supplier" | "age
             </div>
             <div className="p-5 pt-0">
               <Link
-                href="/portal/agent/login"
+                href="/agent-portal/login?tab=register"
                 className="inline-flex items-center gap-1.5 text-xs font-bold text-pub-secondary hover:underline"
               >
                 <span>Agent Login</span>
@@ -938,7 +938,7 @@ export default function ContactPage({ audience }: { audience?: "supplier" | "age
             </div>
             <div className="p-5 pt-0">
               <Link
-                href="/portal"
+                href="/contact#contact-form-section"
                 className="inline-flex items-center gap-1.5 text-xs font-bold text-pub-secondary hover:underline"
               >
                 <span>Explore API Docs</span>

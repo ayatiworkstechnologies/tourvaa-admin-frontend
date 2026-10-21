@@ -51,7 +51,7 @@ type CompanyForm = {
 
 const BUSINESS_TYPES = ["transport_tour_operator", "tour_provider", "activity_provider", "other"];
 
-export default function CompanyInfoTab() {
+export default function CompanyInfoTab({ onSaved }: { onSaved?: () => void }) {
   const toast = useToast();
   const { refreshSession, logout } = useAuthContext();
 
@@ -198,6 +198,7 @@ export default function CompanyInfoTab() {
       ]);
       await refreshSession();
       toast.success("Company details updated successfully.");
+      onSaved?.();
     } catch (err) {
       toast.error(apiErr(err, "Could not save company details."));
     } finally {
@@ -374,6 +375,7 @@ export default function CompanyInfoTab() {
                 onChange={code => set("currency", code)}
                 className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-emerald-500"
               />
+              <span className="mt-1 block text-xs text-dash-muted">You can change this currency before saving. Existing tour-price amounts are not converted automatically, so review affected tours afterward.</span>
             </label>
 
             {/* State */}

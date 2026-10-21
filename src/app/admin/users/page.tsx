@@ -387,6 +387,7 @@ export default function UsersPage() {
               ["CUSTOMER", "Customers"],
               ["AGENT", "Travel Agents"],
               ["SUPPLIER", "Suppliers"],
+              ["AFFILIATE", "Affiliates"],
             ].map(([value, label]) => <button key={label} type="button" onClick={() => { setUserTypeFilter(userTypeFilter === value ? "" : value); pagination.setPage(1); }} className={`rounded-lg px-3 py-2 text-xs font-bold ${userTypeFilter === value ? "bg-blue-600 text-white" : "bg-blue-50 text-blue-700"}`}>{label}</button>)}
           </div>
           <DataTable

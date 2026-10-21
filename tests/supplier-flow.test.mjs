@@ -42,6 +42,21 @@ const supplierPortal = read("src/app/supplier-portal/login/page.tsx");
 const supplierLayout = read("src/app/supplier/layout.tsx");
 const supplierLanding = read("src/app/supplier-portal/page.tsx");
 check(
+  "supplier earnings estimator follows the public header display currency",
+  supplierLanding.includes('import { useCurrency } from "@/hooks/useCurrency"') &&
+    supplierLanding.includes('const { formatCompact, outputCode } = useCurrency()') &&
+    supplierLanding.includes('const calculatorCurrency = outputCode("USD")') &&
+    supplierLanding.includes('Average Price per Person ({calculatorCurrency})') &&
+    ["avgTicketPrice", "netEarnings", "grossSales", "annualEarnings"].every((amount) => supplierLanding.includes(`formatCompact(${amount}, "USD")`)),
+);
+const supplierEarnings = read("src/app/supplier/earnings/page.tsx");
+check(
+  "empty supplier earnings use the active header currency instead of a hard-coded USD fallback",
+  supplierEarnings.includes("const { code: activeCurrency, formatExact: money } = useCurrency()") &&
+    supplierEarnings.includes("selectedCurrency ?? currencies[0] ?? activeCurrency") &&
+    supplierEarnings.includes("payouts.map((payout) => (payout.currency || \"\").toUpperCase())"),
+);
+check(
   "supplier portal keeps its own inline registration tab (no registerHref override)",
   supplierPortal.includes("registerNamePlaceholder") && !supplierPortal.includes("registerHref"),
 );
@@ -89,6 +104,14 @@ check(
     !bookingDetail.includes("Resume Tour") &&
     bookingDetail.includes("contact Tourvaa support for the next steps"),
 );
+const tourWizardActions = read("src/components/tours/TourWizard.tsx");
+check(
+  "tour submission and withdrawal show the API error detail",
+  tourWizardActions.includes('api.post(`/tours/${tourId}/submit-for-approval`)') &&
+    tourWizardActions.includes('api.post(`/tours/${tourId}/withdraw`)') &&
+    tourWizardActions.includes('getApiErrorMessage(error, "Could not submit for approval.")') &&
+    tourWizardActions.includes('getApiErrorMessage(error, "Could not withdraw the submission. Please try again.")'),
+);
 const portalAuth = read("src/components/public/portal/PortalAuthPage.tsx");
 check(
   "supplier registration accepts every phone-country even when it is absent from the admin geo catalogue",
@@ -97,8 +120,9 @@ check(
     !portalAuth.includes('return setError("Countries are still loading. Please try again.")'),
 );
 check(
-  "supplier verification checklist matches the supplier document requirements and contact desk opens the form",
+  "supplier verification checklist marks required documents red and optional documents green",
   ["Business Registration Certificate", "Relevant Operating Licence", "Public Liability Insurance Certificate", "Tourism Accreditation", "Industry Certification", "Safety Certification", "Other Licences", "Additional Supporting Documents"].every((label) => supplierLanding.includes(label)) &&
+    ["REQUIRED_SUPPLIER_DOCUMENT_TITLES", 'badge: required ? "MANDATORY" : "OPTIONAL"', '"bg-red-50 text-red-700 border-red-300"', '"bg-emerald-50 text-emerald-700 border-emerald-300"'].every((value) => supplierLanding.includes(value)) &&
     supplierLanding.includes('href="/supplier-contact#contact-form-section"'),
 );
 const contactPage = read("src/app/(public)/contact/page.tsx");
@@ -111,10 +135,11 @@ check(
 );
 const supplierDocuments = read("src/components/supplier/profile/DocumentsTab.tsx");
 check(
-  "supplier document uploads preserve optional document status",
+  "supplier document uploads clearly identify mandatory and optional requirements",
   supplierDocuments.includes("required: false") &&
     supplierDocuments.includes("docTypes.filter((type) => type.required)") &&
-    supplierDocuments.includes("(Optional)"),
+    supplierDocuments.includes('required ? "Mandatory" : "Optional"') &&
+    supplierDocuments.includes("Upload every document marked"),
 );
 check("supplier portal mounts the shared language translator", supplierLayout.includes("ElfsightTranslator") && supplierLayout.includes("<ElfsightTranslator />"));
 check(
@@ -185,6 +210,13 @@ const portalMessageThread = read("src/components/messaging/PortalMessageThread.t
 const messagingService = read("src/lib/api/services/messagingService.ts");
 check("supplier message history is connected", messages.includes('PortalMessageThread portal="supplier"') && portalMessageThread.includes("getOwnConversation(portal)") && messagingService.includes('supplier: "/supplier/messages"'));
 check("supplier support compose is connected", portalMessageThread.includes("sendOwnMessage(portal") && messagingService.includes("api.post(OWN_MESSAGES_PATH[portal]"));
+check(
+  "supplier messages route customer and agent communication through Tourvaa",
+  messages.includes('label: "Booking Support"') &&
+    messages.includes("Tourvaa manages all customer and agent communication.") &&
+    !messages.includes("Customers & Agents") &&
+    messagingService.includes("Supplier <-> Tourvaa Admin"),
+);
 
 const payouts = read("src/app/supplier/payouts/page.tsx");
 check("payout payload omits unsupported bank fields", !payouts.includes("bank_name:") && !payouts.includes("account_number:"));
@@ -197,6 +229,8 @@ check("supplier documents expose retryable loading failures", documents.includes
 
 const supplierProfile = read("src/components/supplier/profile/CompanyInfoTab.tsx");
 const supplierBilling = read("src/components/supplier/profile/BankAndInvoicingTab.tsx");
+const supplierVehicles = read("src/components/supplier/profile/VehiclesTab.tsx");
+const supplierProfilePage = read("src/app/supplier/profile/page.tsx");
 const adminSupplierDetail = read("src/app/admin/suppliers/[id]/page.tsx");
 const tourPricing = read("src/components/tours/TourPricingTab.tsx");
 check(
@@ -210,6 +244,42 @@ check(
     supplierBilling.includes("Business Billing Address") &&
     supplierBilling.includes("bank_details_locked") &&
     supplierBilling.includes("Use Primary Contact"),
+);
+check(
+  "supplier can view and change the operating currency in company details",
+  supplierProfile.includes("Operating Currency") &&
+    supplierProfile.includes("<CurrencySelect") &&
+    supplierProfile.includes("Existing tour-price amounts are not converted automatically"),
+);
+check(
+  "supplier profile advances through each module only after its successful save",
+  supplierProfilePage.includes('onSaved={() => advanceToNextTab("company")}') &&
+    supplierProfilePage.includes('onSaved={() => advanceToNextTab("billing")}') &&
+    supplierProfilePage.includes('onSaved={() => advanceToNextTab("vehicles")}') &&
+    supplierProfilePage.includes('onVerificationSubmitted={() => advanceToNextTab("documents")}') &&
+    supplierProfile.includes("onSaved?.()") &&
+    supplierBilling.includes("onSaved?.()") &&
+    supplierVehicles.includes("onSaved?.()") &&
+    documents.includes("onVerificationSubmitted?.()"),
+);
+check(
+  "new vehicle form accepts documents and exterior or interior photos before creation",
+  ["Fitness Certificate", "Insurance Certificate", "Exterior Photos", "Interior Photos"].every((label) => supplierVehicles.includes(label)) &&
+    supplierVehicles.includes("uploadPendingFiles(vehicleId)") &&
+    supplierVehicles.includes('api.post(`/suppliers/me/vehicles/${vehicleId}/photos`') &&
+    supplierVehicles.includes("MAX_VEHICLE_PHOTOS"),
+);
+const supplierOnboarding = read("src/app/supplier/onboarding/page.tsx");
+check(
+  "supplier onboarding excludes the obsolete business-info approval status",
+  supplierOnboarding.includes('HIDDEN_BUSINESS_INFO_KEYS = new Set(["approval_status"])') &&
+    supplierOnboarding.includes("!HIDDEN_BUSINESS_INFO_KEYS.has(key)"),
+);
+check(
+  "supplier onboarding confirms completed required-document verification without implying features remain locked",
+  supplierOnboarding.includes("allRequiredDocumentsApproved") &&
+    supplierOnboarding.includes("All required verification documents are approved.") &&
+    !supplierOnboarding.includes("unlock all operational features"),
 );
 check(
   "tour editor no longer exposes or submits checkout tax and service fees",
@@ -255,6 +325,12 @@ check(
     tourService.includes("_apply_tour_currency") &&
     !tourService.includes("_normalize_pricing_to_usd"),
 );
+check("supplier tour media accepts a clearly labelled itinerary and trip-notes PDF", tourForm.includes("Itinerary PDF (Trip Notes)"));
+const assetUpload = read("src/components/operations/AdminAssetUpload.tsx");
+check("public tour media is explicitly routed to the public-only Cloudinary tour folder", tourForm.includes('assetScope="tour"') && assetUpload.includes('form.append("scope", assetScope)'));
+check("supplier can open and copy the Cloudinary itinerary PDF link from the media editor", assetUpload.includes("Open PDF") && assetUpload.includes("Copy Cloudinary link") && assetUpload.includes("navigator.clipboard.writeText") && assetUpload.includes("href={value}"));
+const publicTourDetail = read("src/components/public/TourDetailExperience.tsx");
+check("supplier-entered language and tour pace remain visible on the public tour", publicTourDetail.includes("{(tour.tour_language || tour.overview?.tour_type) && (") && publicTourDetail.includes("{tour.overview?.tour_pace && ("));
 check(
   "basic tour details displays legacy prices in the supplier operating currency",
   tourForm.includes("isSupplier ? convert(n, onePaxSlab.currency) : n") &&
@@ -272,8 +348,11 @@ check(
 
 const commissionTab = read("src/components/supplier/profile/CommissionTab.tsx");
 check(
-  "supplier profile shows the agreed commission without an editable basic tier",
+  "supplier profile shows its agreed commission or the current platform rate without an editable basic tier",
   commissionTab.includes("Agreed commission rate") &&
+    commissionTab.includes('api.get("/settings/public")') &&
+    commissionTab.includes("supplier_commission_percentage") &&
+    commissionTab.includes("const effectiveRate = hasSupplierRate ? profile.commission_percentage : platformRate") &&
     commissionTab.includes("no separate basic commission") &&
     commissionTab.includes("supplier-editable commission tier"),
 );

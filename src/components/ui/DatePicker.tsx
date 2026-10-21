@@ -7,6 +7,7 @@ import {
   LuChevronLeft as ChevronLeft,
   LuChevronRight as ChevronRight,
   LuCircleCheck as CircleCheck,
+  LuX as X,
 } from "react-icons/lu";
 
 export type DatePickerProps = {
@@ -170,6 +171,12 @@ export default function DatePicker({
     setIsOpen((open) => !open);
   }
 
+  function clearDate() {
+    onChange("");
+    setIsOpen(false);
+    triggerRef.current?.focus();
+  }
+
   const formattedValue = selectedDate?.toLocaleDateString("en-GB", { weekday: "short", day: "2-digit", month: "short", year: "numeric" }) ?? "";
 
   // Fast year/month navigation - clicking "previous month" one at a time to
@@ -191,19 +198,32 @@ export default function DatePicker({
   return (
     <div className={`relative ${className}`} ref={containerRef}>
       {label && <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-500">{label}{required && <span className="ml-1 text-rose-500">*</span>}</label>}
-      <button
-        ref={triggerRef}
-        type="button"
-        onClick={openPicker}
-        disabled={disabled}
-        aria-haspopup="dialog"
-        aria-expanded={isOpen}
-        aria-controls={dialogId}
-        className={`flex min-h-11 w-full items-center gap-3 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-left text-sm shadow-sm outline-none transition hover:border-slate-300 focus:ring-4 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:opacity-60 ${accentStyles.focus} ${buttonClassName}`}
-      >
-        <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${accentStyles.soft}`}><CalendarDays size={17} /></span>
-        <span className={`min-w-0 flex-1 truncate ${formattedValue ? "font-bold text-slate-900" : "font-medium text-slate-400"}`}>{formattedValue || placeholder}</span>
-      </button>
+      <div className="relative">
+        <button
+          ref={triggerRef}
+          type="button"
+          onClick={openPicker}
+          disabled={disabled}
+          aria-haspopup="dialog"
+          aria-expanded={isOpen}
+          aria-controls={dialogId}
+          className={`flex min-h-11 w-full items-center gap-3 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-left text-sm shadow-sm outline-none transition hover:border-slate-300 focus:ring-4 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:opacity-60 ${clearable && formattedValue ? "pr-11" : ""} ${accentStyles.focus} ${buttonClassName}`}
+        >
+          <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${accentStyles.soft}`}><CalendarDays size={17} /></span>
+          <span className={`min-w-0 flex-1 truncate ${formattedValue ? "font-bold text-slate-900" : "font-medium text-slate-400"}`}>{formattedValue || placeholder}</span>
+        </button>
+        {clearable && formattedValue && !disabled && (
+          <button
+            type="button"
+            onClick={clearDate}
+            aria-label="Clear selected date"
+            title="Clear date"
+            className="absolute right-3 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-300"
+          >
+            <X size={16} />
+          </button>
+        )}
+      </div>
 
       {isOpen && createPortal(
         <div
@@ -273,7 +293,7 @@ export default function DatePicker({
               {availableSet.size > 0 && <><span className={`h-2 w-2 rounded-full ${accentStyles.dot}`} />Available</>}
             </div>
             <div className="flex gap-2">
-              {clearable && <button type="button" aria-label="Clear selected date" onClick={() => { onChange(""); setIsOpen(false); }} className="rounded-lg px-2.5 py-1.5 text-xs font-bold text-slate-500 hover:bg-slate-100">Clear</button>}
+              {clearable && <button type="button" aria-label="Clear selected date" onClick={clearDate} className="rounded-lg px-2.5 py-1.5 text-xs font-bold text-slate-500 hover:bg-slate-100">Clear</button>}
               {!isDisabledDate(today) && <button type="button" onClick={() => selectDate(today)} className={`rounded-lg px-2.5 py-1.5 text-xs font-black ${accentStyles.soft}`}>Today</button>}
             </div>
           </div>

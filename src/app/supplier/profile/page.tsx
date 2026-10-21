@@ -30,6 +30,12 @@ export default function UnifiedSupplierProfilePage() {
     setActiveTab(TABS.some((tab) => tab.id === requestedTab) ? requestedTab! : "company");
   }, [requestedTab]);
 
+  const advanceToNextTab = (completedTabId: string) => {
+    const completedIndex = TABS.findIndex((tab) => tab.id === completedTabId);
+    const nextTab = completedIndex >= 0 ? TABS[completedIndex + 1] : undefined;
+    if (nextTab) setActiveTab(nextTab.id);
+  };
+
   return (
     <SupplierPageShell>
       <SupplierPageHeader title="My Profile" description="Keep your business details, settlement information, fleet, verification documents, and commission agreement up to date." icon={Building} eyebrow="Supplier Account" />
@@ -67,10 +73,10 @@ export default function UnifiedSupplierProfilePage() {
         </div>
         {/* Every tab stays mounted (hidden via CSS, not unmounted) so
             in-progress form edits on inactive tabs survive switching. */}
-        <div className={activeTab === "company" ? "" : "hidden"}><CompanyInfoTab /></div>
-        <div className={activeTab === "billing" ? "" : "hidden"}><BankAndInvoicingTab /></div>
-        <div className={activeTab === "vehicles" ? "" : "hidden"}><VehiclesTab /></div>
-        <div className={activeTab === "documents" ? "" : "hidden"}><DocumentsTab /></div>
+        <div className={activeTab === "company" ? "" : "hidden"}><CompanyInfoTab onSaved={() => advanceToNextTab("company")} /></div>
+        <div className={activeTab === "billing" ? "" : "hidden"}><BankAndInvoicingTab onSaved={() => advanceToNextTab("billing")} /></div>
+        <div className={activeTab === "vehicles" ? "" : "hidden"}><VehiclesTab onSaved={() => advanceToNextTab("vehicles")} /></div>
+        <div className={activeTab === "documents" ? "" : "hidden"}><DocumentsTab onVerificationSubmitted={() => advanceToNextTab("documents")} /></div>
         <div className={activeTab === "commission" ? "" : "hidden"}><CommissionTab /></div>
       </div>
     </SupplierPageShell>

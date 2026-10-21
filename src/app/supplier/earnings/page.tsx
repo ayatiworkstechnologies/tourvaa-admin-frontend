@@ -78,7 +78,7 @@ const inputCls = "w-full rounded-xl border border-dash-border px-3 py-2.5 text-s
 const labelCls = "mb-1.5 block text-xs font-bold uppercase tracking-wide text-dash-muted";
 
 export default function EarningsPage() {
-  const { formatExact: money } = useCurrency();
+  const { code: activeCurrency, formatExact: money } = useCurrency();
   const toast = useToast();
   const { confirm, dialog } = useConfirm();
   const [entries, setEntries] = useState<LedgerEntry[]>([]);
@@ -213,8 +213,11 @@ export default function EarningsPage() {
   // Ledger entries can span more than one currency, so summary totals are
   // always computed within a single currency and never mixed.
   const currencies = useMemo(
-    () => Array.from(new Set(entries.map((e) => (e.currency || "").toUpperCase()).filter(Boolean))),
-    [entries]
+    () => Array.from(new Set([
+      ...entries.map((entry) => (entry.currency || "").toUpperCase()),
+      ...payouts.map((payout) => (payout.currency || "").toUpperCase()),
+    ].filter(Boolean))),
+    [entries, payouts]
   );
 
   useEffect(() => {
@@ -225,7 +228,11 @@ export default function EarningsPage() {
   }, [currencies, selectedCurrency]);
 
   const summary = useMemo(() => {
-    const currency = selectedCurrency ?? currencies[0] ?? "USD";
+    // An empty supplier ledger has no transactional currency of its own.
+    // Use the active header currency for zero-value cards, rather than
+    // displaying an unrelated hard-coded US$. Once entries or payouts exist,
+    // retain their actual recorded currency for financial accuracy.
+    const currency = selectedCurrency ?? currencies[0] ?? activeCurrency;
     const currencyEntries = entries.filter((e) => (e.currency || "USD").toUpperCase() === currency);
     const currencyPayouts = payouts.filter((p) => (p.currency || "USD").toUpperCase() === currency);
     const gross = currencyEntries.reduce((sum, e) => sum + Number(e.gross_amount ?? 0), 0);
@@ -253,7 +260,7 @@ export default function EarningsPage() {
       pendingPayoutTotal: pendingPayouts.reduce((sum, p) => sum + Number(p.total_amount || 0), 0),
       paidPayoutTotal: paidPayouts.reduce((sum, p) => sum + Number(p.total_amount || 0), 0),
     };
-  }, [entries, payouts, selectedCurrency, currencies]);
+  }, [entries, payouts, selectedCurrency, currencies, activeCurrency]);
 
   const summaryCards = [
     { label: "Gross Sales", value: money(summary.gross, summary.currency), icon: TrendingUp, color: "text-blue-600 bg-blue-50" },

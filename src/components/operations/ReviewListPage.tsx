@@ -14,6 +14,7 @@ import api from "@/lib/api/client";
 import { useAuthContext } from "@/providers/AuthProvider";
 import { useGeoCountries } from "@/hooks/useGeo";
 import { useToast } from "@/hooks/useToast";
+import { getCurrencyList, loadCurrencyList, type CurrencyListItem } from "@/lib/utils/currency";
 import { getApiErrorMessage } from "@/lib/utils/errorHandler";
 
 type Props = {
@@ -57,6 +58,7 @@ export default function ReviewListPage({ module, title, requiredPermission }: Pr
   const toast = useToast();
   const { hasPermission } = useAuthContext();
   const { countries } = useGeoCountries();
+  const [currencies, setCurrencies] = useState<CurrencyListItem[]>(() => getCurrencyList());
   const [rows, setRows] = useState<ReviewRecord[]>([]);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
@@ -83,6 +85,15 @@ export default function ReviewListPage({ module, title, requiredPermission }: Pr
   // get_agent_default_commission / get_affiliate_default_commission) rather
   // than a vague "platform default" label with no number.
   const [defaultCommissions, setDefaultCommissions] = useState({ supplier: 0, agent: 0, affiliate: 0 });
+  useEffect(() => {
+    let active = true;
+    loadCurrencyList().then((loaded) => {
+      if (active) setCurrencies(loaded);
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
   useEffect(() => {
     api.get("/settings/public").then((res) => {
       const settings = res.data?.data ?? {};
@@ -516,6 +527,19 @@ export default function ReviewListPage({ module, title, requiredPermission }: Pr
           { name: "supplier_name", label: "Supplier Name", required: true },
           { name: "email", label: "Email", type: "email", required: true },
           { name: "password", label: "Password", type: "password", required: true },
+          {
+            name: "country_id",
+            label: "Country (optional)",
+            type: "select",
+            options: countries.map((country) => ({ label: country.name, value: String(country.id) })),
+          },
+          {
+            name: "currency",
+            label: "Operating Currency",
+            type: "select",
+            required: true,
+            options: currencies.map((currency) => ({ label: `${currency.symbol} - ${currency.code} - ${currency.name}`, value: currency.code })),
+          },
         ] : module === "agents" ? [
           { name: "agent_name", label: "Agent Name", required: true },
           { name: "email", label: "Email", type: "email", required: true },

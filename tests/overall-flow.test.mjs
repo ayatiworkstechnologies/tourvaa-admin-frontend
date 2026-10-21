@@ -74,6 +74,16 @@ const publicContactSources = [
 check("public layout loads settings once for all public contact surfaces", publicLayout.includes("<PublicSettingsProvider>") && publicSettings.includes("fetchPublicSettings()"));
 check("public contact surfaces use configured support details", publicContactSources.includes("usePublicSettings") || publicContactSources.includes("ConfiguredSupportEmail"));
 check("public contact surfaces contain no hardcoded Tourvaa contact links", !publicContactSources.includes("mailto:hello@tourvaa.com") && !publicContactSources.includes("mailto:support@tourvaa.com") && !publicContactSources.includes("tel:+919876543210"));
+const contactPage = read("src/app/(public)/contact/page.tsx");
+check(
+  "partner cards use live supplier, agent, and contact destinations",
+  contactPage.includes('href="/supplier-portal/login?tab=register"') &&
+    contactPage.includes('href="/agent-portal/login?tab=register"') &&
+    contactPage.includes('href="/contact#contact-form-section"') &&
+    !contactPage.includes('href="/portal/supplier/login"') &&
+    !contactPage.includes('href="/portal/agent/login"') &&
+    !contactPage.includes('href="/portal"'),
+);
 check("legacy seeded contact placeholders are suppressed", publicSettings.includes("PLACEHOLDER_EMAILS") && publicSettings.includes("PLACEHOLDER_PHONES") && publicSettings.includes("PLACEHOLDER_ADDRESSES"));
 // Footer link sections (Support/Our Company/Login) moved from hardcoded
 // per-component arrays to admin-CMS-managed data (see Admin > CMS > Footer,
@@ -162,6 +172,7 @@ const supplierVehicles = read("src/components/supplier/profile/VehiclesTab.tsx")
 const agentDocuments = read("src/components/agent/profile/VerificationDocumentsTab.tsx");
 check("shared image uploads accept AVIF", imageFormats.includes("image/avif") && imageFormats.includes(".avif"));
 check("admin asset uploads preview and explain AVIF", adminAssetUpload.includes("avif") && adminAssetUpload.includes("IMAGE_AND_PDF_FORMAT_LABEL"));
+check("admin asset uploads allow Cloudinary time for 10MB images and PDFs", adminAssetUpload.includes("ASSET_UPLOAD_TIMEOUT_MS = 180_000") && adminAssetUpload.includes("timeout: ASSET_UPLOAD_TIMEOUT_MS"));
 check("profile image uploads use shared AVIF formats", profileImageUpload.includes("IMAGE_ACCEPT") && profileImageUpload.includes("IMAGE_FORMAT_LABEL"));
 check("supplier and agent uploads share AVIF acceptance", [supplierDocuments, supplierVehicles, agentDocuments].every((source) => source.includes("imageFormats")));
 

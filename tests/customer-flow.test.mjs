@@ -1,5 +1,5 @@
 /** Customer journey contract checks. No server required. */
-import { readFileSync } from "fs";
+import { existsSync, readFileSync } from "fs";
 import { dirname, resolve } from "path";
 import { fileURLToPath } from "url";
 
@@ -59,6 +59,27 @@ check(
   !detailExperience.includes("setItineraryMode") &&
     !detailExperience.includes("Full Day Details") &&
     detailExperience.includes("const overviewText = day.summary || day.detail"),
+);
+check(
+  "public itinerary renders every supplier-entered day detail inside the existing accordion",
+  detailExperience.includes("hasDistinctDetail") &&
+    detailExperience.includes("Meals included") &&
+    detailExperience.includes("Accommodation") &&
+    detailExperience.includes("Optional activities") &&
+    detailExperience.includes("Important notes") &&
+    detailExperience.includes("day.travelTime"),
+);
+check(
+  "public tour itinerary opens or downloads supplier-authored itinerary days instead of a brochure",
+  detailExperience.includes("/brochure?inline=1") &&
+    detailExperience.includes("/itinerary") &&
+    detailExperience.includes("Open itinerary") &&
+    detailExperience.includes("ItineraryPdfPreview") &&
+    detailExperience.includes('title="Itinerary PDF preview"') &&
+    detailExperience.includes("fallbackUrl") &&
+    detailExperience.includes("Loading itinerary PDF") &&
+    detailExperience.includes("Download PDF") &&
+    !detailExperience.includes("download the trip notes"),
 );
 check("tour detail booking CTA has no cart actions", !detailExperience.includes("addToCart") && !detailExperience.includes("ShoppingCart"));
 check(
@@ -141,6 +162,25 @@ check(
     pricingTab.includes("Profit includes markup and supplier commission"),
 );
 const customerBookingDetail = read("src/app/customer/bookings/[id]/page.tsx");
+const paymentLogos = read("src/components/common/PaymentLogos.tsx");
+check(
+  "checkout payment brands use local SVG assets rather than hand-drawn logos",
+  ["paypal-wordmark.svg", "visa.svg", "mastercard.svg", "american-express.svg"].every((asset) =>
+    existsSync(resolve(root, "public/brands/payments", asset)),
+  ) &&
+    paymentLogos.includes('src="/brands/stripe-wordmark-blurple.svg"') &&
+    paymentLogos.includes('src="/brands/payments/paypal-wordmark.svg"') &&
+    paymentLogos.includes('src="/brands/payments/visa.svg"') &&
+    paymentLogos.includes('src="/brands/payments/mastercard.svg"') &&
+    paymentLogos.includes('src="/brands/payments/american-express.svg"') &&
+    paymentLogos.includes("export function CardNetworkBadges") &&
+    !paymentLogos.includes("<svg"),
+);
+check(
+  "Stripe checkout surfaces the local card-network badges for customer and agent payments",
+  customerBookingDetail.includes("CardNetworkBadges") &&
+    read("src/components/bookings/BookingPaymentModal.tsx").includes("CardNetworkBadges"),
+);
 check(
   "customer booking detail shows real payment and transaction references",
   customerBookingDetail.includes('label="Payment ID"') &&

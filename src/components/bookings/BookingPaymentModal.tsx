@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import axios from "axios";
 import { LuCircleAlert as AlertCircle, LuCreditCard as CreditCard, LuLoaderCircle as Loader2, LuX as X } from "react-icons/lu";
 import api from "@/lib/api/client";
-import { StripeWordmark, PayPalLogo } from "@/components/common/PaymentLogos";
+import { CardNetworkBadges, StripeWordmark, PayPalLogo } from "@/components/common/PaymentLogos";
 
 type GatewayStatus = { stripe: boolean; paypal: boolean; test_mode_available: boolean } | null;
 
@@ -229,6 +229,7 @@ export default function BookingPaymentModal({
                 <span className="inline-flex rounded-md bg-white px-2 py-1 shadow-2xs">
                   <StripeWordmark className="h-4 w-auto" />
                 </span>
+                <CardNetworkBadges className="hidden sm:inline-flex" />
               </button>
             )}
             {gateways?.paypal && (

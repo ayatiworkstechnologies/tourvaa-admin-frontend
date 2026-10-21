@@ -12,14 +12,19 @@ type Profile = {
 
 export default function CommissionTab() {
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [platformRate, setPlatformRate] = useState<string | number | null>(null);
   const [requestedRate, setRequestedRate] = useState("");
   const [requestMessage] = useState("");
   const [saving] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    Promise.allSettled([api.get("/suppliers/me")]).then(([profileRes]) => {
+    Promise.allSettled([api.get("/suppliers/me"), api.get("/settings/public")]).then(([profileRes, settingsRes]) => {
       if (profileRes.status === "fulfilled") setProfile(profileRes.value.data?.data ?? null);
+      if (settingsRes.status === "fulfilled") {
+        const rate = settingsRes.value.data?.data?.supplier_commission_percentage;
+        if (rate !== undefined && rate !== null && rate !== "") setPlatformRate(rate);
+      }
     }).finally(() => setLoading(false));
   }, []);
 
@@ -28,7 +33,8 @@ export default function CommissionTab() {
   // Every supplier is meant to have commission_percentage populated at
   // approval time, but fall back to the live platform rate rather than
   // show a blank "-%" for any account that predates that.
-  const effectiveRate = profile?.commission_percentage;
+  const hasSupplierRate = profile?.commission_percentage !== null && profile?.commission_percentage !== undefined;
+  const effectiveRate = hasSupplierRate ? profile.commission_percentage : platformRate;
 
   return (
     <div>
@@ -38,7 +44,10 @@ export default function CommissionTab() {
       </p>
       <div className="mt-4 rounded-xl bg-[#F5FAF7] p-4">
         <p className="text-xs font-bold uppercase text-[#8AA099]">Agreed commission rate</p>
-        <p className="mt-1 text-3xl font-black text-[#123024]">{effectiveRate ?? "-"}%</p>
+        <p className="mt-1 text-3xl font-black text-[#123024]">{effectiveRate ?? "Rate unavailable"}{effectiveRate !== null && effectiveRate !== undefined ? "%" : ""}</p>
+        {!hasSupplierRate && effectiveRate !== null && (
+          <p className="mt-2 text-xs text-[#647B6E]">Current platform commission rate.</p>
+        )}
         {profile?.commission_accepted_at && (
           <p className="mt-2 text-xs text-[#647B6E]">Agreed on {new Date(profile.commission_accepted_at).toLocaleDateString()}.</p>
         )}

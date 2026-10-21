@@ -18,6 +18,7 @@ import {
 
 import PageUnavailable from "@/components/public/PageUnavailable";
 import { useContentBlock } from "@/hooks/useContentBlock";
+import { useCurrency } from "@/hooks/useCurrency";
 
 const DEFAULT_CAPABILITIES = [
   {
@@ -98,31 +99,31 @@ const DEFAULT_STEPS = [
 const DEFAULT_VERIFICATION_DOCUMENTS = [
   {
     badge: "MANDATORY",
-    badgeColor: "bg-pub-accent/10 text-pub-accent border-pub-accent/20",
+    badgeColor: "bg-red-50 text-red-700 border-red-300",
     title: "Business Registration Certificate",
     description:
       "Official legal entity registration document from your country or state commerce registry.",
-    footer: "Accepted: PDF, JPG, PNG",
+    footer: "Mandatory - accepted: PDF, JPG, PNG",
   },
   {
-    badge: "OPTIONAL",
-    badgeColor: "bg-pub-secondary/10 text-pub-secondary border-pub-secondary/20",
+    badge: "MANDATORY",
+    badgeColor: "bg-red-50 text-red-700 border-red-300",
     title: "Relevant Operating Licence",
     description:
       "Current licence authorising your tourism, guiding, transport, or tour-operating activities, where applicable.",
-    footer: "Optional - accepted: PDF, JPG, PNG",
+    footer: "Mandatory - accepted: PDF, JPG, PNG",
   },
   {
-    badge: "OPTIONAL",
-    badgeColor: "bg-pub-secondary/10 text-pub-secondary border-pub-secondary/20",
+    badge: "MANDATORY",
+    badgeColor: "bg-red-50 text-red-700 border-red-300",
     title: "Public Liability Insurance Certificate",
     description:
       "Evidence of active public liability cover, where required for your business or local operations.",
-    footer: "Optional - accepted: PDF, JPG, PNG",
+    footer: "Mandatory - accepted: PDF, JPG, PNG",
   },
   {
     badge: "OPTIONAL",
-    badgeColor: "bg-pub-secondary/10 text-pub-secondary border-pub-secondary/20",
+    badgeColor: "bg-emerald-50 text-emerald-700 border-emerald-300",
     title: "Tourism Accreditation",
     description:
       "Tourism-board or recognised tourism accreditation supporting your supplier profile.",
@@ -130,7 +131,7 @@ const DEFAULT_VERIFICATION_DOCUMENTS = [
   },
   {
     badge: "OPTIONAL",
-    badgeColor: "bg-pub-secondary/10 text-pub-secondary border-pub-secondary/20",
+    badgeColor: "bg-emerald-50 text-emerald-700 border-emerald-300",
     title: "Industry Certification",
     description:
       "Relevant industry qualifications or professional certifications held by your business or team.",
@@ -138,7 +139,7 @@ const DEFAULT_VERIFICATION_DOCUMENTS = [
   },
   {
     badge: "OPTIONAL",
-    badgeColor: "bg-pub-secondary/10 text-pub-secondary border-pub-secondary/20",
+    badgeColor: "bg-emerald-50 text-emerald-700 border-emerald-300",
     title: "Safety Certification",
     description:
       "Safety, first-aid, risk-management, or other operational safety certificates.",
@@ -146,7 +147,7 @@ const DEFAULT_VERIFICATION_DOCUMENTS = [
   },
   {
     badge: "OPTIONAL",
-    badgeColor: "bg-pub-secondary/10 text-pub-secondary border-pub-secondary/20",
+    badgeColor: "bg-emerald-50 text-emerald-700 border-emerald-300",
     title: "Other Licences",
     description:
       "Any additional licences relevant to the experiences, activities, or transport you provide.",
@@ -154,7 +155,7 @@ const DEFAULT_VERIFICATION_DOCUMENTS = [
   },
   {
     badge: "OPTIONAL",
-    badgeColor: "bg-pub-secondary/10 text-pub-secondary border-pub-secondary/20",
+    badgeColor: "bg-emerald-50 text-emerald-700 border-emerald-300",
     title: "Additional Supporting Documents",
     description:
       "Extra documents that help our onboarding team validate your business more quickly.",
@@ -244,7 +245,24 @@ type FaqsBlock = { items?: FaqBlockItem[] };
 type CtaBlock = { heading?: string; subtitle?: string; cta_text?: string };
 
 const CAPABILITY_ICONS = DEFAULT_CAPABILITIES.map((c) => c.icon);
-const DOCUMENT_BADGE_COLORS = DEFAULT_VERIFICATION_DOCUMENTS.map((d) => d.badgeColor);
+const REQUIRED_SUPPLIER_DOCUMENT_TITLES = new Set([
+  "Business Registration Certificate",
+  "Relevant Operating Licence",
+  "Public Liability Insurance Certificate",
+]);
+const MANDATORY_DOCUMENT_BADGE_COLOR = "bg-red-50 text-red-700 border-red-300";
+const OPTIONAL_DOCUMENT_BADGE_COLOR = "bg-emerald-50 text-emerald-700 border-emerald-300";
+
+function withSupplierDocumentRequirement(document: DocumentItem) {
+  const required = REQUIRED_SUPPLIER_DOCUMENT_TITLES.has(document.title || "");
+
+  return {
+    ...document,
+    badge: required ? "MANDATORY" : "OPTIONAL",
+    badgeColor: required ? MANDATORY_DOCUMENT_BADGE_COLOR : OPTIONAL_DOCUMENT_BADGE_COLOR,
+    footer: `${required ? "Mandatory" : "Optional"} - accepted: PDF, JPG, PNG`,
+  };
+}
 
 export default function SupplierPortalLandingPage() {
   const hero = useContentBlock<HeroBlock>("supplier_portal_hero", { is_active: true, ...DEFAULT_HERO });
@@ -255,6 +273,10 @@ export default function SupplierPortalLandingPage() {
   const expectationsBlock = useContentBlock<ExpectationsBlock>("supplier_portal_expectations", {});
   const faqsBlock = useContentBlock<FaqsBlock>("supplier_portal_faqs", {});
   const cta = useContentBlock<CtaBlock>("supplier_portal_cta", DEFAULT_CTA);
+  // The estimator's baseline amounts are USD, matching its fixed slider
+  // ranges.  Display them through the shared currency hook so the calculator
+  // always follows the currency selected in the public header.
+  const { formatCompact, outputCode } = useCurrency();
 
   // Interactive Earnings Calculator State
   const [monthlyGuests, setMonthlyGuests] = useState(45);
@@ -265,6 +287,7 @@ export default function SupplierPortalLandingPage() {
   const tourvaaCommissionRate = 0.1; // 10% Tourvaa commission
   const netEarnings = grossSales * (1 - tourvaaCommissionRate);
   const annualEarnings = netEarnings * 12;
+  const calculatorCurrency = outputCode("USD");
 
   if (hero.is_active === false) return <PageUnavailable />;
 
@@ -277,9 +300,10 @@ export default function SupplierPortalLandingPage() {
   const steps = stepsBlock.items?.length
     ? stepsBlock.items.map((it, i) => ({ step: String(i + 1).padStart(2, "0"), badge: it.badge || "", title: it.title || "", description: it.description || "" }))
     : DEFAULT_STEPS;
-  const documents = documentsBlock.items?.length
-    ? documentsBlock.items.map((it, i) => ({ badge: it.badge || "", badgeColor: DOCUMENT_BADGE_COLORS[i % DOCUMENT_BADGE_COLORS.length], title: it.title || "", description: it.description || "", footer: it.footer || "" }))
-    : DEFAULT_VERIFICATION_DOCUMENTS;
+  const documents = (documentsBlock.items?.length
+    ? documentsBlock.items.map((it) => ({ title: it.title || "", description: it.description || "" }))
+    : DEFAULT_VERIFICATION_DOCUMENTS
+  ).map(withSupplierDocumentRequirement);
   const expectations = expectationsBlock.items?.length
     ? expectationsBlock.items.map((it) => ({ title: it.title || "", description: it.description || "" }))
     : DEFAULT_EXPECTATIONS;
@@ -423,9 +447,9 @@ export default function SupplierPortalLandingPage() {
                 {/* Slider 2: Average Price per Person */}
                 <div className="mt-6 space-y-2">
                   <div className="flex items-center justify-between text-xs sm:text-sm font-semibold text-pub-fg">
-                    <span>Average Price per Person (USD)</span>
+                    <span>Average Price per Person ({calculatorCurrency})</span>
                     <span className="rounded-lg bg-pub-secondary/10 border border-pub-secondary/20 px-2.5 py-1 text-xs font-bold text-pub-secondary">
-                      ${avgTicketPrice}
+                      {formatCompact(avgTicketPrice, "USD")}
                     </span>
                   </div>
                   <input
@@ -438,9 +462,9 @@ export default function SupplierPortalLandingPage() {
                     className="w-full accent-pub-secondary cursor-pointer h-2 bg-slate-100 rounded-lg"
                   />
                   <div className="flex justify-between text-[11px] text-pub-muted font-medium">
-                    <span>$20</span>
-                    <span>$400</span>
-                    <span>$800+</span>
+                    <span>{formatCompact(20, "USD")}</span>
+                    <span>{formatCompact(400, "USD")}</span>
+                    <span>{formatCompact(800, "USD")}+</span>
                   </div>
                 </div>
               </div>
@@ -458,7 +482,7 @@ export default function SupplierPortalLandingPage() {
                   Projected Monthly Supplier Payout
                 </p>
                 <div className="mt-2 text-4xl sm:text-5xl font-bold text-white tracking-tight text-center">
-                  ${Math.round(netEarnings).toLocaleString()}
+                  {formatCompact(netEarnings, "USD")}
                 </div>
                 <p className="mt-1 text-[11px] text-white/75 text-center font-normal">
                   *Net earnings transferred directly to your bank account
@@ -471,7 +495,7 @@ export default function SupplierPortalLandingPage() {
                       Gross Ticket Value
                     </span>
                     <span className="mt-1 block text-lg sm:text-xl font-bold text-white">
-                      ${grossSales.toLocaleString()}
+                      {formatCompact(grossSales, "USD")}
                     </span>
                   </div>
                   <div>
@@ -479,7 +503,7 @@ export default function SupplierPortalLandingPage() {
                       Annual Revenue
                     </span>
                     <span className="mt-1 block text-lg sm:text-xl font-bold text-white">
-                      ${Math.round(annualEarnings).toLocaleString()}
+                      {formatCompact(annualEarnings, "USD")}
                     </span>
                   </div>
                 </div>

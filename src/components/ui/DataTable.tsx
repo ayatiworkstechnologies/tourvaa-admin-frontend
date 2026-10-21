@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, type ReactNode } from "react";
+import { Fragment, type ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import {
   LuChevronLeft as ChevronLeft,
   LuChevronRight as ChevronRight,
@@ -58,6 +58,44 @@ export default function DataTable<T extends { id?: number | string }>({
   renderExpandedRow,
   minWidthClass,
 }: Props<T>) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [horizontalOverflow, setHorizontalOverflow] = useState(false);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
+  const updateHorizontalScrollState = useCallback(() => {
+    const container = scrollRef.current;
+    if (!container) return;
+    const hasOverflow = container.scrollWidth > container.clientWidth + 1;
+    setHorizontalOverflow(hasOverflow);
+    setCanScrollLeft(container.scrollLeft > 1);
+    setCanScrollRight(container.scrollLeft + container.clientWidth < container.scrollWidth - 1);
+  }, []);
+
+  useEffect(() => {
+    const container = scrollRef.current;
+    if (!container) return;
+    const resizeObserver = new ResizeObserver(updateHorizontalScrollState);
+    resizeObserver.observe(container);
+    container.addEventListener("scroll", updateHorizontalScrollState, { passive: true });
+    const animationFrame = window.requestAnimationFrame(updateHorizontalScrollState);
+
+    return () => {
+      window.cancelAnimationFrame(animationFrame);
+      resizeObserver.disconnect();
+      container.removeEventListener("scroll", updateHorizontalScrollState);
+    };
+  }, [columns.length, rows.length, updateHorizontalScrollState]);
+
+  const scrollHorizontally = (direction: "left" | "right") => {
+    const container = scrollRef.current;
+    if (!container) return;
+    container.scrollBy({
+      left: (direction === "left" ? -1 : 1) * Math.max(260, Math.round(container.clientWidth * 0.75)),
+      behavior: "smooth",
+    });
+  };
+
   const hasPagination =
     page !== undefined &&
     pageSize !== undefined &&
@@ -111,7 +149,30 @@ export default function DataTable<T extends { id?: number | string }>({
 
       {/* Main Table Card */}
       <div className="overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-[0_1px_3px_0_rgba(15,23,42,0.04)]">
-        <div className="overflow-x-auto [-webkit-overflow-scrolling:touch]">
+        {horizontalOverflow && (
+          <div className="flex items-center justify-end gap-2 border-b border-slate-200/90 bg-slate-50/90 px-4 py-2">
+            <span className="mr-auto text-xs font-medium text-slate-500">More columns available</span>
+            <button
+              type="button"
+              onClick={() => scrollHorizontally("left")}
+              disabled={!canScrollLeft}
+              aria-label="Show previous table columns"
+              className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-600 shadow-2xs transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              <ChevronLeft size={15} />
+            </button>
+            <button
+              type="button"
+              onClick={() => scrollHorizontally("right")}
+              disabled={!canScrollRight}
+              aria-label="Show more table columns"
+              className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-600 shadow-2xs transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              <ChevronRight size={15} />
+            </button>
+          </div>
+        )}
+        <div ref={scrollRef} className="overflow-x-auto [-webkit-overflow-scrolling:touch]">
           <table
             className={`w-full ${computedMinWidth} border-collapse text-left text-sm`}
             aria-label={ariaLabel}

@@ -47,6 +47,20 @@ const emptyForm = {
   capacity: "",
 };
 
+type PendingVehicleFiles = {
+  fitnessCertificate: File | null;
+  insuranceDocument: File | null;
+  exteriorPhotos: File[];
+  interiorPhotos: File[];
+};
+
+const emptyPendingVehicleFiles = (): PendingVehicleFiles => ({
+  fitnessCertificate: null,
+  insuranceDocument: null,
+  exteriorPhotos: [],
+  interiorPhotos: [],
+});
+
 function apiErr(err: unknown, fallback: string) {
   if (axios.isAxiosError(err)) {
     const d = err.response?.data;
@@ -68,12 +82,13 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
-export default function VehiclesTab() {
+export default function VehiclesTab({ onSaved }: { onSaved?: () => void }) {
   const toast = useToast();
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<number | "new" | null>(null);
   const [form, setForm] = useState(emptyForm);
+  const [pendingFiles, setPendingFiles] = useState<PendingVehicleFiles>(emptyPendingVehicleFiles);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState<number | null>(null);
   const [loadError, setLoadError] = useState("");
@@ -100,10 +115,12 @@ export default function VehiclesTab() {
 
   function openNew() {
     setForm(emptyForm);
+    setPendingFiles(emptyPendingVehicleFiles());
     setExpandedId("new");
   }
 
   function openEdit(v: Vehicle) {
+    setPendingFiles(emptyPendingVehicleFiles());
     setForm({
       make: v.make,
       model: v.model,
@@ -118,6 +135,7 @@ export default function VehiclesTab() {
   function cancelEdit() {
     setExpandedId(null);
     setForm(emptyForm);
+    setPendingFiles(emptyPendingVehicleFiles());
   }
 
   async function saveVehicle(e: React.FormEvent<HTMLFormElement>) {
@@ -133,18 +151,30 @@ export default function VehiclesTab() {
       year: form.year ? parseInt(form.year) : null,
       capacity: form.capacity ? parseInt(form.capacity) : null,
     };
+    let vehicleCreated = false;
     try {
       if (expandedId === "new") {
-        await api.post("/suppliers/me/vehicles", payload);
-        toast.success("Vehicle added.");
+        const response = await api.post("/suppliers/me/vehicles", payload);
+        vehicleCreated = true;
+        const vehicleId = Number(response.data?.data?.id);
+        if (!vehicleId) throw new Error("Vehicle was created but its upload record could not be opened.");
+        await uploadPendingFiles(vehicleId);
+        toast.success("Vehicle, documents and photos added.");
       } else {
         await api.patch(`/suppliers/me/vehicles/${expandedId}`, payload);
         toast.success("Vehicle updated.");
       }
       cancelEdit();
       await load();
+      onSaved?.();
     } catch (err) {
-      toast.error(apiErr(err, "Could not save vehicle."));
+      if (vehicleCreated) {
+        cancelEdit();
+        await load();
+        toast.error("Vehicle was added, but one or more selected files could not be uploaded. Open the vehicle to retry those uploads.");
+      } else {
+        toast.error(apiErr(err, "Could not save vehicle."));
+      }
     } finally {
       setSaving(false);
     }
@@ -202,6 +232,22 @@ export default function VehiclesTab() {
     }
   }
 
+  async function uploadPendingFiles(vehicleId: number) {
+    const selectedPhotos = [...pendingFiles.exteriorPhotos, ...pendingFiles.interiorPhotos];
+    if (selectedPhotos.length > MAX_VEHICLE_PHOTOS) {
+      throw new Error(`Choose at most ${MAX_VEHICLE_PHOTOS} exterior and interior photos in total.`);
+    }
+    const uploads: Promise<unknown>[] = [];
+    if (pendingFiles.fitnessCertificate) uploads.push(uploadDoc(vehicleId, "fitness_certificate", pendingFiles.fitnessCertificate));
+    if (pendingFiles.insuranceDocument) uploads.push(uploadDoc(vehicleId, "insurance_document", pendingFiles.insuranceDocument));
+    if (selectedPhotos.length) {
+      const fd = new FormData();
+      selectedPhotos.forEach((file) => fd.append("files", file));
+      uploads.push(api.post(`/suppliers/me/vehicles/${vehicleId}/photos`, fd, { headers: { "Content-Type": "multipart/form-data" } }));
+    }
+    await Promise.all(uploads);
+  }
+
   async function removePhoto(vehicleId: number, index: number) {
     try {
       await api.delete(`/suppliers/me/vehicles/${vehicleId}/photos`, { params: { photo_index: index } });
@@ -235,7 +281,16 @@ export default function VehiclesTab() {
 
       {/* Add new vehicle form */}
       {expandedId === "new" && (
-        <VehicleForm form={form} set={set} onSave={saveVehicle} onCancel={cancelEdit} saving={saving} isNew />
+        <VehicleForm
+          form={form}
+          set={set}
+          onSave={saveVehicle}
+          onCancel={cancelEdit}
+          saving={saving}
+          isNew
+          pendingFiles={pendingFiles}
+          onPendingFilesChange={setPendingFiles}
+        />
       )}
 
       {/* Vehicle list */}
@@ -359,7 +414,7 @@ export default function VehiclesTab() {
 type FormFields = typeof emptyForm;
 
 function VehicleForm({
-  form, set, onSave, onCancel, saving, isNew,
+  form, set, onSave, onCancel, saving, isNew, pendingFiles, onPendingFilesChange,
 }: {
   form: FormFields;
   set: (k: keyof FormFields, v: string) => void;
@@ -367,6 +422,8 @@ function VehicleForm({
   onCancel: () => void;
   saving: boolean;
   isNew: boolean;
+  pendingFiles?: PendingVehicleFiles;
+  onPendingFilesChange?: React.Dispatch<React.SetStateAction<PendingVehicleFiles>>;
 }) {
   return (
     <form onSubmit={onSave} className="rounded-2xl border border-dash-border bg-white p-5">
@@ -426,6 +483,44 @@ function VehicleForm({
         </label>
       </div>
 
+      {isNew && pendingFiles && onPendingFilesChange && (
+        <section className="mt-5 rounded-xl border border-emerald-100 bg-emerald-50/40 p-4">
+          <div className="mb-3">
+            <p className="text-sm font-bold text-dash-text">Vehicle documents &amp; photos</p>
+            <p className="mt-1 text-xs text-dash-muted">Choose files now. They are securely uploaded after this vehicle is created.</p>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <PendingFileInput
+              label="Fitness Certificate"
+              accept={IMAGE_AND_PDF_EXTENSIONS_ACCEPT}
+              file={pendingFiles.fitnessCertificate}
+              onChange={(file) => onPendingFilesChange((current) => ({ ...current, fitnessCertificate: Array.isArray(file) ? null : file }))}
+            />
+            <PendingFileInput
+              label="Insurance Certificate"
+              accept={IMAGE_AND_PDF_EXTENSIONS_ACCEPT}
+              file={pendingFiles.insuranceDocument}
+              onChange={(file) => onPendingFilesChange((current) => ({ ...current, insuranceDocument: Array.isArray(file) ? null : file }))}
+            />
+            <PendingFileInput
+              label="Exterior Photos"
+              accept={IMAGE_ACCEPT}
+              files={pendingFiles.exteriorPhotos}
+              multiple
+              onChange={(files) => onPendingFilesChange((current) => ({ ...current, exteriorPhotos: Array.isArray(files) ? files : [] }))}
+            />
+            <PendingFileInput
+              label="Interior Photos"
+              accept={IMAGE_ACCEPT}
+              files={pendingFiles.interiorPhotos}
+              multiple
+              onChange={(files) => onPendingFilesChange((current) => ({ ...current, interiorPhotos: Array.isArray(files) ? files : [] }))}
+            />
+          </div>
+          <p className="mt-3 text-xs text-dash-muted">JPG, PNG, WEBP or AVIF photos. You may add up to {MAX_VEHICLE_PHOTOS} exterior and interior photos combined.</p>
+        </section>
+      )}
+
       <div className="mt-4 flex items-center gap-3">
         <button type="submit" disabled={saving}
           className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-bold text-white hover:bg-emerald-700 disabled:opacity-60 transition-colors">
@@ -438,6 +533,32 @@ function VehicleForm({
         </button>
       </div>
     </form>
+  );
+}
+
+function PendingFileInput({
+  label, accept, file, files, multiple = false, onChange,
+}: {
+  label: string;
+  accept: string;
+  file?: File | null;
+  files?: File[];
+  multiple?: boolean;
+  onChange: (value: File | null | File[]) => void;
+}) {
+  const selectedNames = files?.map((selected) => selected.name) ?? (file ? [file.name] : []);
+  return (
+    <label className="block rounded-xl border border-dash-border bg-white p-3">
+      <span className="block text-xs font-bold uppercase text-dash-muted">{label}</span>
+      <input
+        type="file"
+        accept={accept}
+        multiple={multiple}
+        className="mt-2 block w-full text-xs text-dash-muted file:mr-3 file:rounded-lg file:border-0 file:bg-emerald-50 file:px-3 file:py-1.5 file:text-xs file:font-bold file:text-emerald-700 hover:file:bg-emerald-100"
+        onChange={(event) => onChange(multiple ? Array.from(event.target.files ?? []) : event.target.files?.[0] ?? null)}
+      />
+      {selectedNames.length > 0 && <span className="mt-2 block truncate text-xs font-medium text-emerald-700">{selectedNames.join(", ")}</span>}
+    </label>
   );
 }
 

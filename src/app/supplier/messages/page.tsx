@@ -7,7 +7,7 @@ import PortalMessageThread from "@/components/messaging/PortalMessageThread";
 import SupplierBookingInbox from "@/components/messaging/SupplierBookingInbox";
 
 const TABS = [
-  { key: "bookings", label: "Customers & Agents" },
+  { key: "bookings", label: "Booking Support" },
   { key: "support", label: "Tourvaa Support" },
 ] as const;
 
@@ -20,7 +20,7 @@ export default function SupplierMessagesPage() {
 
   return (
     <SupplierPageShell>
-      <SupplierPageHeader title="Messages" description="Chat with customers and agents about their bookings, or reach Tourvaa support directly." icon={MessageSquare} />
+      <SupplierPageHeader title="Messages" description="Contact Tourvaa for booking matters or operational support. Tourvaa manages all customer and agent communication." icon={MessageSquare} />
 
       <div className="mt-4 flex gap-2 border-b border-dash-border-soft pb-3">
         {TABS.map((item) => (

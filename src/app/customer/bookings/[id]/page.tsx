@@ -10,7 +10,7 @@ import { CustomerPageShell } from "@/components/customer/CustomerPage";
 import BookingMessageThread from "@/components/messaging/BookingMessageThread";
 import { useCurrency } from "@/hooks/useCurrency";
 import { formatCurrency } from "@/lib/utils/currency";
-import { StripeBadge, PayPalLogo } from "@/components/common/PaymentLogos";
+import { CardNetworkBadges, StripeBadge, PayPalLogo } from "@/components/common/PaymentLogos";
 import { publicTourUrl } from "@/lib/utils/tourUrl";
 import { bookingStatusLabel, BOOKING_AWAITING_CONFIRMATION_MESSAGE, BOOKING_PAYMENT_REQUIRED_MESSAGE } from "@/lib/constants/bookingStatus";
 import Loader from "@/components/ui/Loader";
@@ -335,6 +335,7 @@ function PayNowModal({
             {loading === "stripe" ? <Loader2 size={18} className="animate-spin" /> : <CreditCard size={18} />}
             <span>Pay {formatCurrency(paymentAmount, currency)} with</span>
             <StripeBadge className="bg-white/15 ring-1 ring-white/30" />
+            <CardNetworkBadges className="hidden sm:inline-flex" />
             {!gw?.stripe && <span className="ml-auto text-[10px] font-bold opacity-70">Not configured</span>}
           </button>
 

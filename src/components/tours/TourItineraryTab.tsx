@@ -510,6 +510,7 @@ export default function TourItineraryTab({ tourId, numberOfDays }: { tourId: str
             </label>
             <div className="md:col-span-2">
               <AdminAssetUpload
+                assetScope="tour"
                 label="Day image"
                 value={editing.image ?? ""}
                 onChange={(value) => setEditing((prev) => (prev ? { ...prev, image: value, image_alt_text: value && !prev.image_alt_text?.trim() ? [prev.day_title, prev.location_name].filter(Boolean).join(" - ").slice(0, 180) : prev.image_alt_text } : prev))}

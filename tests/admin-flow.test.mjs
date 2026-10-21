@@ -39,6 +39,7 @@ check("global auth separates admin and portal login routes", auth.includes('path
 const users = read("src/app/admin/users/page.tsx");
 check("admin-created users retain normalized phone", users.includes("createUser({ ...form, phone })"));
 check("admin user password validation matches backend strength", users.includes("(?=.*[^A-Za-z0-9])"));
+check("admin users can filter Affiliate accounts", users.includes('["AFFILIATE", "Affiliates"]'));
 const userDetail = read("src/app/admin/users/[id]/page.tsx");
 check("admin user reactivation uses its dedicated endpoint", userDetail.includes("`/users/${id}/reactivate`"));
 check("admin user activation errors remain visible", userDetail.includes("getApiErrorMessage(error)"));
@@ -56,6 +57,24 @@ const countrySettings = read("src/app/admin/settings/countries/page.tsx");
 const geoHooks = read("src/hooks/useGeo.ts");
 const reviewList = read("src/components/operations/ReviewListPage.tsx");
 const actionModal = read("src/components/operations/ActionModal.tsx");
+const dataTable = read("src/components/ui/DataTable.tsx");
+const datePicker = read("src/components/ui/DatePicker.tsx");
+check(
+  "selected admin date filters can be cleared directly from the date field",
+  datePicker.includes("function clearDate()") &&
+    datePicker.includes('onChange("")') &&
+    datePicker.includes('title="Clear date"') &&
+    reviewList.includes('onChange={(date) => { setStartDate(date); setPage(1); }}') &&
+    reviewList.includes('onChange={(date) => { setEndDate(date); setPage(1); }}'),
+);
+check(
+  "wide admin tables expose dynamic horizontal navigation controls before the table footer",
+  dataTable.includes("horizontalOverflow") &&
+    dataTable.includes("updateHorizontalScrollState") &&
+    dataTable.includes('aria-label="Show previous table columns"') &&
+    dataTable.includes('aria-label="Show more table columns"') &&
+    dataTable.includes("More columns available"),
+);
 check(
   "admin can create suppliers, agents, and affiliates through slash-safe proxy routes",
   operationsService.includes('api.post<{ data: ReviewRecord }>(`/${module}/`, payload)') &&
@@ -76,10 +95,14 @@ check(
     geoHooks.includes("export function invalidateGeoStates"),
 );
 check(
-  "admin supplier creation collects login details and displays a numeric id",
+  "admin supplier creation collects login details, country, and operating currency",
   reviewList.includes('{ name: "supplier_name", label: "Supplier Name", required: true }') &&
     reviewList.includes('{ name: "email", label: "Email", type: "email", required: true }') &&
     reviewList.includes('{ name: "password", label: "Password", type: "password", required: true }') &&
+    reviewList.includes('name: "country_id"') &&
+    reviewList.includes('name: "currency"') &&
+    reviewList.includes('label: "Operating Currency"') &&
+    reviewList.includes("loadCurrencyList()") &&
     reviewList.includes('render: (row) => row.id'),
 );
 check(
@@ -115,6 +138,17 @@ check(
     actionModal.includes('aria-modal="true"'),
 );
 check("supplier commission banner omits the misleading approve request action", !suppliers.includes("Approve request"));
+check(
+  "supplier vehicle cards exclude the admin-only inspection date",
+  !suppliers.includes("Inspection Date") && !suppliers.includes("vehicle.reviewed_at"),
+);
+check(
+  "supplier detail only shows operational data suppliers can provide",
+  suppliers.includes("Target Market") &&
+    suppliers.includes("Destinations Served") &&
+    !suppliers.includes("Monthly Volume Capacity") &&
+    !suppliers.includes("monthly_customers_count"),
+);
 check("supplier document review uses private document service", suppliers.includes('openPrivateDocument("supplier"'));
 const suppliersCompact = suppliers.replace(/\s+/g, " "); // tolerate formatter line-wrapping
 check(

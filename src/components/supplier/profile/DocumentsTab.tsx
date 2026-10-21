@@ -33,7 +33,7 @@ function statusCls(s: string) {
   return "bg-slate-50 text-slate-600";
 }
 
-export default function DocumentsTab() {
+export default function DocumentsTab({ onVerificationSubmitted }: { onVerificationSubmitted?: () => void }) {
   const toast = useToast();
   const { dashboard } = useAuthContext();
   const [supplierId, setSupplierId] = useState<number | null>(null);
@@ -121,6 +121,7 @@ export default function DocumentsTab() {
     try {
       await api.post(`/suppliers/submit-verification`);
       toast.success("Verification submitted. Admin will review your documents.");
+      onVerificationSubmitted?.();
     } catch {
       toast.error("Could not submit verification.");
     } finally {
@@ -135,7 +136,9 @@ export default function DocumentsTab() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <p className="text-sm text-dash-muted">Upload the required documents to get your supplier account approved.</p>
+          <p className="text-sm text-dash-muted">
+            Upload every document marked <span className="font-semibold text-red-700">Mandatory</span> to get your supplier account approved. Documents marked Optional can be added to support your verification.
+          </p>
         </div>
         {allUploaded && (
           <button type="button" onClick={submitVerification} disabled={submitting}
@@ -167,7 +170,11 @@ export default function DocumentsTab() {
                       <FileText size={18} className={doc ? "text-emerald-600" : "text-dash-subtle"} />
                     </div>
                     <div>
-                      <p className="font-semibold text-dash-text">{label} {!required && <span className="ml-1 text-xs font-medium text-dash-subtle">(Optional)</span>}</p>
+                      <p className="font-semibold text-dash-text">
+                        {label} <span className={`ml-1 text-xs font-medium ${required ? "text-red-700" : "text-dash-subtle"}`}>
+                          ({required ? "Mandatory" : "Optional"})
+                        </span>
+                      </p>
                       {doc ? (
                         <div className="mt-0.5 flex items-center gap-2">
                           <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${statusCls(doc.status)}`}>{doc.status}</span>

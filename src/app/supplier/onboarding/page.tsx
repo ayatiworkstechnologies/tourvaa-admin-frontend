@@ -19,6 +19,10 @@ type SupplierProfile = {
 type DocRequirement = { document_type: string; label: string; required?: boolean };
 
 const STEPS = ["Welcome", "Business Profile", "Commission & Payout", "Documents", "Finish"] as const;
+// Supplier approval belongs to the supplier account, not the business-info
+// record. Older API responses may include this stale nested field, so never
+// render it as business profile data.
+const HIDDEN_BUSINESS_INFO_KEYS = new Set(["approval_status"]);
 
 export default function SupplierOnboardingPage() {
   const router = useRouter();
@@ -64,7 +68,12 @@ export default function SupplierOnboardingPage() {
   if (loading) return <SupplierPageShell><Loader label="Loading your onboarding..." /></SupplierPageShell>;
 
   const approvedDocTypes = new Set((profile?.documents ?? []).filter((d) => d.status === "approved").map((d) => d.document_type));
-  const businessEntries = Object.entries(profile?.business_info ?? {}).filter(([, v]) => v !== null && v !== undefined && v !== "");
+  const allRequiredDocumentsApproved = docRequirements
+    .filter((document) => document.required)
+    .every((document) => approvedDocTypes.has(document.document_type));
+  const businessEntries = Object.entries(profile?.business_info ?? {}).filter(
+    ([key, value]) => !HIDDEN_BUSINESS_INFO_KEYS.has(key) && value !== null && value !== undefined && value !== "",
+  );
 
   return (
     <SupplierPageShell>
@@ -135,7 +144,11 @@ export default function SupplierOnboardingPage() {
           {step === 3 && (
             <div>
               <h2 className="flex items-center gap-2 text-lg font-black text-[#123024]"><FileText size={18} /> Documents checklist</h2>
-              <p className="mt-1 text-sm text-[#647B6E]">Upload and get these approved from My Profile → Documents to unlock all operational features.</p>
+              <p className="mt-1 text-sm text-[#647B6E]">
+                {allRequiredDocumentsApproved
+                  ? "All required verification documents are approved. You may add optional documents from My Profile → Documents at any time."
+                  : "Upload the required documents from My Profile → Documents so Tourvaa can complete your verification review."}
+              </p>
               <div className="mt-4 space-y-2">
                 {docRequirements.map((doc) => (
                   <div key={doc.document_type} className="flex items-center justify-between rounded-lg bg-[#F5FAF7] px-4 py-3">

@@ -816,7 +816,7 @@ export default function SupplierDetailPage() {
                       <Building2 className="text-dash-brand" size={18} />
                       <h3 className="text-sm font-black text-dash-text">Company & Legal Identity</h3>
                     </div>
-                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    <div className="grid gap-4 sm:grid-cols-2">
                       <div className="rounded-xl bg-dash-bg p-3.5">
                         <p className="text-[11px] font-bold uppercase text-dash-subtle">Legal Name</p>
                         <p className="mt-1 text-sm font-bold text-dash-text">
@@ -941,15 +941,6 @@ export default function SupplierDetailPage() {
                         <p className="text-[11px] font-bold uppercase text-dash-subtle">Destinations Served</p>
                         <p className="mt-1 text-sm font-semibold text-dash-text">
                           {valueText(businessInfo?.destinations_sold as DetailValue)}
-                        </p>
-                      </div>
-
-                      <div className="rounded-xl bg-dash-bg p-3.5">
-                        <p className="text-[11px] font-bold uppercase text-dash-subtle">Monthly Volume Capacity</p>
-                        <p className="mt-1 text-sm font-semibold text-dash-text">
-                          {businessInfo?.monthly_customers_count
-                            ? `${businessInfo.monthly_customers_count} pax/month`
-                            : "-"}
                         </p>
                       </div>
                     </div>
@@ -1706,15 +1697,6 @@ export default function SupplierDetailPage() {
                                   </span>
                                   <p className="mt-0.5 font-bold text-dash-text">
                                     {valueText(vehicle.year)}
-                                  </p>
-                                </div>
-
-                                <div className="rounded-lg bg-dash-bg p-2.5">
-                                  <span className="text-[10px] font-bold uppercase text-dash-subtle">
-                                    Inspection Date
-                                  </span>
-                                  <p className="mt-0.5 font-bold text-dash-text">
-                                    {formatDocDate(vehicle.reviewed_at) || "-"}
                                   </p>
                                 </div>
                               </div>

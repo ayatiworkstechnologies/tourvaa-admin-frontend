@@ -163,6 +163,7 @@ export default function TourOptionalActivityTab({ tourId }: { tourId: string }) 
           <div className="grid gap-4 md:grid-cols-2">
             <div className="md:col-span-2">
               <AdminAssetUpload
+                assetScope="tour"
                 label="Image"
                 value={editing.image}
                 onChange={(value) => setEditing((p) => (p ? { ...p, image: value } : p))}
