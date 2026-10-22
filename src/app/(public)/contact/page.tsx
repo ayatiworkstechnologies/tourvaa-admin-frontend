@@ -116,11 +116,17 @@ const DEFAULT_HERO = {
   background_image: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1800&q=80",
 };
 
-type SupportCardItem = { eyebrow?: string; title?: string; description?: string };
+type SupportCardItem = {
+  eyebrow?: string;
+  title?: string;
+  description?: string;
+  button_label?: string;
+  button_url?: string;
+};
 const DEFAULT_SUPPORT_CARDS: Required<SupportCardItem>[] = [
-  { eyebrow: "Existing Reservation", title: "Questions About Your Booking?", description: "Connect directly with your verified tour operator through your personal dashboard for real-time itinerary updates, pickup details, and luggage guidance." },
-  { eyebrow: "Instant Chat Assistance", title: "Chat With Concierge Scout", description: "Chat 24/7 with Scout, our intelligent travel assistant, or connect instantly with a human destination specialist for immediate booking answers." },
-  { eyebrow: "Self-Service Library", title: "Help & Knowledge Base", description: "Browse detailed guides on visas, packing essentials, payment safety, flexible cancellation policies, and partner supplier guidelines." },
+  { eyebrow: "Existing Reservation", title: "Questions About Your Booking?", description: "Connect directly with your verified tour operator through your personal dashboard for real-time itinerary updates, pickup details, and luggage guidance.", button_label: "Manage My Bookings", button_url: "/customer/bookings" },
+  { eyebrow: "Instant Chat Assistance", title: "Chat With Concierge Scout", description: "Chat 24/7 with Scout, our intelligent travel assistant, or connect instantly with a human destination specialist for immediate booking answers.", button_label: "Launch Live Chat", button_url: "" },
+  { eyebrow: "Self-Service Library", title: "Help & Knowledge Base", description: "Browse detailed guides on visas, packing essentials, payment safety, flexible cancellation policies, and partner supplier guidelines.", button_label: "Browse Knowledge Base", button_url: "/help-centre" },
 ];
 
 const SUPPLIER_HERO = {
@@ -131,9 +137,9 @@ const SUPPLIER_HERO = {
 };
 
 const SUPPLIER_SUPPORT_CARDS: Required<SupportCardItem>[] = [
-  { eyebrow: "Booking Operations", title: "Manage Booking Requests", description: "Review traveller requests, respond to booking updates, and keep your tour availability and operational details accurate." },
-  { eyebrow: "Tourvaa Support", title: "Message the Operations Team", description: "Contact Tourvaa directly for help with booking decisions, tour publishing, pricing, payments, or supplier account issues." },
-  { eyebrow: "Supplier Account", title: "Profile, Documents & Payouts", description: "Keep your company profile, verification documents, bank details, commission preferences, and payout information up to date." },
+  { eyebrow: "Booking Operations", title: "Manage Booking Requests", description: "Review traveller requests, respond to booking updates, and keep your tour availability and operational details accurate.", button_label: "Review Booking Requests", button_url: "/supplier/bookings" },
+  { eyebrow: "Tourvaa Support", title: "Message the Operations Team", description: "Contact Tourvaa directly for help with booking decisions, tour publishing, pricing, payments, or supplier account issues.", button_label: "Message Tourvaa Support", button_url: "/supplier/messages" },
+  { eyebrow: "Supplier Account", title: "Profile, Documents & Payouts", description: "Keep your company profile, verification documents, bank details, commission preferences, and payout information up to date.", button_label: "Open Supplier Profile", button_url: "/supplier/profile" },
 ];
 
 const SUPPLIER_FAQS: FaqItem[] = [
@@ -414,10 +420,10 @@ export default function ContactPage({ audience }: { audience?: "supplier" | "age
               </p>
             </div>
             <Link
-              href={bookingSupportHref}
+              href={!isSupplierInquiry && !isAgentInquiry && displaySupportCards[0].button_url ? displaySupportCards[0].button_url : bookingSupportHref}
               className="mt-8 inline-flex items-center justify-center gap-2 rounded-xl bg-[#0B1F3A] hover:bg-slate-800 text-white text-xs font-bold px-5 py-3 w-fit shadow-xs transition"
             >
-              <span>{isSupplierInquiry ? "Review Booking Requests" : isAgentInquiry ? "Manage Agent Bookings" : "Manage My Bookings"}</span>
+              <span>{isSupplierInquiry ? "Review Booking Requests" : isAgentInquiry ? "Manage Agent Bookings" : displaySupportCards[0].button_label || "Manage My Bookings"}</span>
               <ArrowRight size={14} />
             </Link>
           </div>
@@ -444,11 +450,17 @@ export default function ContactPage({ audience }: { audience?: "supplier" | "age
             >
               <span>Message Tourvaa Support</span>
               <ArrowRight size={14} />
+            </Link> : displaySupportCards[1].button_url ? <Link
+              href={displaySupportCards[1].button_url}
+              className="mt-8 inline-flex items-center justify-center gap-2 rounded-xl bg-[#0B1F3A] hover:bg-slate-800 text-white text-xs font-bold px-5 py-3 w-fit shadow-xs transition"
+            >
+              <span>{displaySupportCards[1].button_label || "Launch Live Chat"}</span>
+              <ArrowRight size={14} />
             </Link> : <button
               type="button"
               onClick={handleOpenChat}
               className="mt-8 inline-flex items-center justify-center gap-2 rounded-xl bg-[#0B1F3A] hover:bg-slate-800 text-white text-xs font-bold px-5 py-3 w-fit shadow-xs transition"
-            ><span>Launch Live Chat</span><ArrowRight size={14} /></button>}
+            ><span>{displaySupportCards[1].button_label || "Launch Live Chat"}</span><ArrowRight size={14} /></button>}
           </div>
 
           {/* Card 3: Help Center */}
@@ -468,10 +480,10 @@ export default function ContactPage({ audience }: { audience?: "supplier" | "age
               </p>
             </div>
             <Link
-              href={accountSupportHref}
+              href={!isSupplierInquiry && !isAgentInquiry && displaySupportCards[2].button_url ? displaySupportCards[2].button_url : accountSupportHref}
               className="mt-8 inline-flex items-center justify-center gap-2 rounded-xl bg-[#0B1F3A] hover:bg-slate-800 text-white text-xs font-bold px-5 py-3 w-fit shadow-xs transition"
             >
-              <span>{isSupplierInquiry ? "Open Supplier Profile" : isAgentInquiry ? "Open Agent Profile" : "Browse Knowledge Base"}</span>
+              <span>{isSupplierInquiry ? "Open Supplier Profile" : isAgentInquiry ? "Open Agent Profile" : displaySupportCards[2].button_label || "Browse Knowledge Base"}</span>
               <ArrowRight size={14} />
             </Link>
           </div>
