@@ -42,12 +42,14 @@ const supplierPortal = read("src/app/supplier-portal/login/page.tsx");
 const supplierLayout = read("src/app/supplier/layout.tsx");
 const supplierLanding = read("src/app/supplier-portal/page.tsx");
 check(
-  "supplier earnings estimator follows the public header display currency",
+  "supplier earnings estimator calculates from the displayed currency amount",
   supplierLanding.includes('import { useCurrency } from "@/hooks/useCurrency"') &&
-    supplierLanding.includes('const { formatCompact, outputCode } = useCurrency()') &&
+    supplierLanding.includes('const { convert, formatExact, outputCode } = useCurrency()') &&
     supplierLanding.includes('const calculatorCurrency = outputCode("USD")') &&
     supplierLanding.includes('Average Price per Person ({calculatorCurrency})') &&
-    ["avgTicketPrice", "netEarnings", "grossSales", "annualEarnings"].every((amount) => supplierLanding.includes(`formatCompact(${amount}, "USD")`)),
+    supplierLanding.includes('const displayedTicketPrice = Math.round(convert(avgTicketPrice, "USD") * 100) / 100') &&
+    supplierLanding.includes('const grossSales = monthlyGuests * displayedTicketPrice') &&
+    ["displayedTicketPrice", "netEarnings", "grossSales", "annualEarnings"].every((amount) => supplierLanding.includes(`calculatorMoney(${amount})`)),
 );
 const supplierEarnings = read("src/app/supplier/earnings/page.tsx");
 check(

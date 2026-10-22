@@ -58,6 +58,9 @@ export default function TourCard({ tour, format, variant = "search", href, view 
   useEffect(() => setImgSrc(image), [image]);
   const resolvedHref = href ?? publicTourUrl({ country_name: tour.country_name, title: tour.title || "Tour", slug: tour.slug });
   const discounted = hasActiveDiscount(tour);
+  const customerOriginalPrice = discounted
+    ? tour.storefront_original_price_per_person ?? tour.original_price_per_person
+    : null;
   const days = tour.number_of_days || 0;
   // group_size sometimes comes through as a bare number ("16") rather than a
   // range/label - shown as-is that reads as a broken/truncated line, so a
@@ -85,7 +88,7 @@ export default function TourCard({ tour, format, variant = "search", href, view 
 
   const priceBlock = discounted ? (
     <DiscountPriceLine
-      original={tour.original_price_per_person!}
+      original={customerOriginalPrice!}
       discounted={tour.discounted_price_per_person!}
       currency={tour.currency || "USD"}
       format={format}
@@ -173,7 +176,7 @@ export default function TourCard({ tour, format, variant = "search", href, view 
   // simply not shown (no invented prices, dates, ages or group sizes).
   const basePrice = discounted ? tour.discounted_price_per_person : tour.price_start_per_person;
   const currency = tour.currency || "USD";
-  const originalPrice = discounted ? tour.original_price_per_person : null;
+  const originalPrice = customerOriginalPrice;
   const routeSummary = tour.start_location && tour.end_location && tour.start_location !== tour.end_location
     ? `${tour.start_location} → ${tour.end_location}`
     : tour.start_location || tour.city_name || tour.country_name || "";

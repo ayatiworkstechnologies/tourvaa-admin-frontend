@@ -133,22 +133,11 @@ test.describe("Homepage UI and UX Comprehensive Audit", () => {
     const testimonialsHeading = page.getByRole("heading", { name: "What Tourvaa travellers are saying" });
     await expect(testimonialsHeading).toBeVisible();
 
-    // 10. Explore Directory Section & Tabs
-    const countriesTab = page.getByRole("button", { name: "Top countries to visit" });
-    const citiesTab = page.getByRole("button", { name: "Top Cities to Visit" });
-    const categoriesTab = page.getByRole("button", { name: "Top attraction categories" });
-
-    await expect(countriesTab).toBeVisible();
-    await expect(citiesTab).toBeVisible();
-    await expect(categoriesTab).toBeVisible();
-
-    // Test tab switching
-    await citiesTab.click();
-    await expect(citiesTab).toHaveClass(/border-slate-950/);
-    await categoriesTab.click();
-    await expect(categoriesTab).toHaveClass(/border-slate-950/);
-    await countriesTab.click();
-    await expect(countriesTab).toHaveClass(/border-slate-950/);
+    // 10. Dynamic country directory
+    const countryDirectoryHeading = page.getByRole("heading", { name: "Top countries to visit" });
+    await expect(countryDirectoryHeading).toBeVisible();
+    await expect(page.getByRole("button", { name: "Top Cities to Visit" })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Top attraction categories" })).toHaveCount(0);
 
     // 11. Airport Transfers Banner
     const transfersHeading = page.getByRole("heading", { name: "Book Your Airport Transfers" });
@@ -156,6 +145,11 @@ test.describe("Homepage UI and UX Comprehensive Audit", () => {
     const airportPickupBtn = page.locator("section:has-text('Book Your Airport Transfers') a:has-text('Book Airport Pickup')");
     await expect(airportPickupBtn).toBeVisible();
     await expect(airportPickupBtn).toHaveAttribute("href", "https://www.brightlane.co.nz/");
+    const airportPickupButtonHeight = await airportPickupBtn.evaluate(
+      (element) => element.getBoundingClientRect().height,
+    );
+    expect(airportPickupButtonHeight).toBeGreaterThanOrEqual(40);
+    expect(airportPickupButtonHeight).toBeLessThanOrEqual(52);
 
     // 12. Frequently Asked Questions Section
     const faqHeading = page.getByRole("heading", { name: "Frequently Asked Questions" });

@@ -499,7 +499,9 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
             ageRange: t.suitable_age_range || undefined,
             cities: t.city_name || t.country_name || "Location to be confirmed",
             departures: realDepartures || [],
-            originalPrice: t.original_price_per_person != null ? format(t.original_price_per_person, t.currency) : undefined,
+            originalPrice: (t.storefront_original_price_per_person ?? t.original_price_per_person) != null
+              ? format(t.storefront_original_price_per_person ?? t.original_price_per_person, t.currency)
+              : undefined,
             price: t.discounted_price_per_person != null
               ? format(t.discounted_price_per_person, t.currency)
               : t.price_start_per_person != null
@@ -507,7 +509,7 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
                 : "Price on request",
             rawPrice: t.discounted_price_per_person ?? t.price_start_per_person ?? null,
             discountPercentage: t.discount_percentage,
-            originalPriceRaw: t.original_price_per_person,
+            originalPriceRaw: t.storefront_original_price_per_person ?? t.original_price_per_person,
             discountedPriceRaw: t.discounted_price_per_person,
             currency: t.currency || "USD",
             image: t.banner_image ? mediaUrl(t.banner_image) : DEFAULT_TOUR_FALLBACK_IMAGE,

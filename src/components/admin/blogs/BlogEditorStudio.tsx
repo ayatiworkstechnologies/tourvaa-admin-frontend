@@ -38,6 +38,7 @@ import {
   DEFAULT_BLOG_FORM,
   extractFaqsFromContent,
   formatBlogTextToHtml,
+  generateTableOfContents,
   POPULAR_TRAVEL_TAGS,
   slugifyBlogTitle,
 } from "@/lib/types/blog";
@@ -74,22 +75,6 @@ function buildInitialForm(initialBlog?: BlogItem | null): BlogFormData {
     };
   }
   return DEFAULT_BLOG_FORM;
-}
-
-/** Auto-generate Table of Contents from headings in plain-text content */
-function generateTableOfContents(content: string): { level: number; text: string; anchor: string }[] {
-  const lines = content.split("\n");
-  const toc: { level: number; text: string; anchor: string }[] = [];
-  for (const line of lines) {
-    const match = line.match(/^(#{2,3})\s+(.+)/);
-    if (match) {
-      const level = match[1].length;
-      const text = match[2].trim();
-      const anchor = text.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-      toc.push({ level, text, anchor });
-    }
-  }
-  return toc;
 }
 
 export default function BlogEditorStudio({
@@ -1169,8 +1154,10 @@ export default function BlogEditorStudio({
                   <h2 className="text-sm font-bold text-indigo-900 mb-3">Table of Contents</h2>
                   <ol className="space-y-1.5">
                     {tocItems.map((item, idx) => (
-                      <li key={idx} className={`text-sm font-medium text-indigo-700 ${item.level === 3 ? "pl-4 text-indigo-500 text-xs" : ""}`}>
-                        {idx + 1}. {item.text}
+                      <li key={idx} className={`text-sm font-medium ${item.level === 3 ? "pl-4 text-indigo-500 text-xs" : "text-indigo-700"}`}>
+                        <a href={`#${item.anchor}`} className="hover:underline hover:text-indigo-900 transition-colors inline-block">
+                          {idx + 1}. {item.text}
+                        </a>
                       </li>
                     ))}
                   </ol>

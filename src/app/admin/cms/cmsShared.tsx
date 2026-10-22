@@ -203,7 +203,7 @@ export type TabConfig = {
   label: string;
   endpoint: string;
   columns: { key: string; header: string; render?: (item: CmsItem) => React.ReactNode; className?: string }[];
-  formFields: { key: string; label: string; type: "text" | "textarea" | "select" | "url" | "number" | "asset" | "video"; options?: FieldOption[]; required?: boolean; min?: number; max?: number; step?: number; maxLength?: number }[];
+  formFields: { key: string; label: string; type: "text" | "textarea" | "select" | "url" | "number" | "asset" | "video" | "boolean"; options?: FieldOption[]; required?: boolean; min?: number; max?: number; step?: number; maxLength?: number }[];
   createMethod?: "post" | "put";
   updateMethod?: "put" | "patch";
   updatePath?: "item" | "collection";
@@ -434,6 +434,7 @@ export const TABS: TabConfig[] = [
       { key: "showcase_image", label: "Showcase Image", type: "asset" },
       { key: "seo_title", label: "SEO Title", type: "text", maxLength: 200 },
       { key: "seo_description", label: "SEO Description", type: "textarea", maxLength: 400 },
+      { key: "is_active", label: "Publish this country page", type: "boolean" },
     ],
   },
   {
@@ -2064,7 +2065,11 @@ export function CmsTabPanel({ tab, onChanged }: { tab: TabConfig; onChanged?: ()
   const fetchItems = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await api.get(tab.endpoint);
+      // Fetch up to 1000 items so the client-side paginator (pageSize=10)
+      // always has the full list. CMS tabs manage editorial content, not
+      // high-volume rows, so a single large request is safe and avoids a
+      // separate "load more" mechanism.
+      const res = await api.get(tab.endpoint, { params: { page: 1, limit: 1000 } });
       const data = res.data?.data ?? res.data ?? [];
       setItems(Array.isArray(data) ? data : data.items ?? []);
       setPage(1);
@@ -2148,7 +2153,7 @@ export function CmsTabPanel({ tab, onChanged }: { tab: TabConfig; onChanged?: ()
 
   const openCreate = () => {
     setEditingItem(null);
-    setFormValues(Object.fromEntries(tab.formFields.map(f => [f.key, ""])));
+    setFormValues(Object.fromEntries(tab.formFields.map(f => [f.key, f.type === "boolean" ? "true" : ""])));
     setSectionBlocks([]);
     setShowForm(true);
   };
@@ -2191,7 +2196,9 @@ export function CmsTabPanel({ tab, onChanged }: { tab: TabConfig; onChanged?: ()
       const body: Record<string, unknown> = {};
       for (const f of tab.formFields) {
         if (formValues[f.key] !== "") {
-          body[f.key] = f.key === "tags"
+          body[f.key] = f.type === "boolean"
+            ? formValues[f.key] === "true"
+            : f.key === "tags"
             ? formValues[f.key].split(",").map((tag) => tag.trim()).filter(Boolean)
             : f.type === "number" || f.key.endsWith("_id") ? Number(formValues[f.key]) : formValues[f.key];
         } else if (
@@ -2257,9 +2264,18 @@ export function CmsTabPanel({ tab, onChanged }: { tab: TabConfig; onChanged?: ()
     setItems((prev) =>
       prev.map((x) => (x.id === item.id ? { ...x, is_active: nextState } : x))
     );
+    // Strip server-computed / read-only keys that are NOT part of any payload
+    // schema (e.g. country_name resolved by the backend serializer, timestamps).
+    // Spreading the raw item would send these to PUT endpoints whose Pydantic
+    // schemas don't define them, causing validation errors or silent setattr
+    // calls on non-column attributes in the SQLAlchemy model.
+    const SERVER_READONLY_KEYS = new Set(["country_name", "tour_title", "tour_code", "created_at", "updated_at", "published_at", "last_updated"]);
+    const safeBody = Object.fromEntries(
+      Object.entries(item).filter(([k]) => !SERVER_READONLY_KEYS.has(k))
+    );
     try {
       await api.put(`${tab.endpoint}/${item.id}`, {
-        ...item,
+        ...safeBody,
         is_active: nextState,
       });
       toast.success(`${getStringValue(item, "title") || tab.label} is now ${nextState ? "Active" : "Inactive"}.`);
@@ -2413,7 +2429,7 @@ export function CmsTabPanel({ tab, onChanged }: { tab: TabConfig; onChanged?: ()
         <div className="grid gap-4 sm:grid-cols-2">
           {tab.formFields.map(f => (
               <div key={f.key} className={f.type === "textarea" || f.type === "asset" || f.type === "video" ? "sm:col-span-2" : ""}>
-                {f.type !== "asset" && f.type !== "video" && (
+                {f.type !== "asset" && f.type !== "video" && f.type !== "boolean" && (
                   <label className="mb-1 block text-xs font-bold uppercase text-dash-muted">
                     {f.label}{f.required && " *"}
                   </label>
@@ -2425,6 +2441,16 @@ export function CmsTabPanel({ tab, onChanged }: { tab: TabConfig; onChanged?: ()
                     value={formValues[f.key] ?? ""}
                     onChange={(value) => setFormValues(v => ({ ...v, [f.key]: value }))}
                   />
+                ) : f.type === "boolean" ? (
+                  <label className="flex min-h-[46px] cursor-pointer items-center gap-3 rounded-xl border border-dash-border bg-slate-50/50 px-3 py-2.5 text-sm font-semibold text-dash-text">
+                    <input
+                      type="checkbox"
+                      checked={formValues[f.key] === "true"}
+                      onChange={(e) => setFormValues(v => ({ ...v, [f.key]: String(e.target.checked) }))}
+                      className="h-4 w-4 rounded border-slate-300 text-[#0284C7] focus:ring-[#0284C7]"
+                    />
+                    <span>Show this page publicly</span>
+                  </label>
                 ) : f.type === "textarea" ? (
                   <textarea
                     rows={5}

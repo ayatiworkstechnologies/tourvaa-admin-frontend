@@ -124,7 +124,7 @@ const DEFAULT_HERO = {
   response_time_text: "Response < 2h",
   heading: "We're Here to Help You Explore the World",
   subtitle: "Have questions about an upcoming tour, custom private itinerary, or existing reservation? Our global team is available around the clock to support your journey.",
-  background_image: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1800&q=80",
+  background_image: "/images/contact-support-team.png",
 };
 
 type SupportCardItem = {
@@ -222,6 +222,10 @@ export default function ContactPage({ audience }: { audience?: "supplier" | "age
     : DEFAULT_SUPPORT_CARDS;
   const supplierHero = { ...DEFAULT_HERO, ...SUPPLIER_HERO };
   const displayHero = isSupplierInquiry ? supplierHero : hero;
+  const [heroImageFailed, setHeroImageFailed] = useState(false);
+  const heroImageSource = heroImageFailed
+    ? DEFAULT_HERO.background_image
+    : displayHero.background_image || DEFAULT_HERO.background_image;
   const displaySupportCards = isSupplierInquiry ? SUPPLIER_SUPPORT_CARDS : supportCards;
   const displayChannels = isSupplierInquiry
     ? { ...DEFAULT_CHANNELS, badge_text: "Supplier Operations Desk", heading: "Talk to the Supplier Team", subtitle: "For active suppliers, Tourvaa operations can help with tours, booking requests, payments, verification, and account access.", phone_hint: "Supplier operations support and urgent booking assistance", guarantee_title: "Supplier Support Commitment", guarantee_text: "Clear operational guidance for your tours and booking workflow." }
@@ -315,6 +319,10 @@ export default function ContactPage({ audience }: { audience?: "supplier" | "age
   }, [audience]);
 
   useEffect(() => {
+    setHeroImageFailed(false);
+  }, [displayHero.background_image]);
+
+  useEffect(() => {
     if (isSupplierInquiry) {
       setValue("reservation", "no");
       setValue("subject", "Supplier Registration & Onboarding");
@@ -376,56 +384,38 @@ export default function ContactPage({ audience }: { audience?: "supplier" | "age
     <main className="min-h-screen bg-[#FAFAFC] text-slate-900 pb-24">
       {/* ── 1. Hero Landscape Banner ── */}
       <div className="mx-auto max-w-[1380px] px-4 sm:px-6 pt-4 sm:pt-6">
-        <section className="relative min-h-[320px] sm:min-h-[360px] w-full overflow-hidden rounded-[26px] bg-[#0B1F3A] shadow-lg flex items-center">
-          <img
-            src={displayHero.background_image || DEFAULT_HERO.background_image}
-            alt="Misty mountain valley landscape"
-            className="absolute inset-0 h-full w-full object-cover opacity-50 scale-105"
-          />
-          <div className="absolute inset-0 bg-gradient-to-r from-[#0B1F3A] via-[#0B1F3A]/85 to-transparent" />
-
-          {/* Hero Content */}
-          <div className="relative z-10 flex h-full flex-col justify-center px-6 sm:px-12 py-10 max-w-3xl">
-            <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3.5 py-1 text-xs font-bold text-white backdrop-blur-md shadow-xs w-fit">
-              <Sparkles size={13} className="text-amber-400" />
-              <span>{displayHero.badge_label || DEFAULT_HERO.badge_label}</span>
-              <span className="text-white/40">•</span>
-              <span className="text-emerald-400">{displayHero.response_time_text || DEFAULT_HERO.response_time_text}</span>
+        <section className="overflow-hidden rounded-[26px] border border-slate-200 bg-white shadow-[0_18px_48px_-36px_rgba(11,31,58,0.5)]">
+          <div className="grid min-h-[560px] grid-cols-1 lg:min-h-[420px] lg:grid-cols-[1.08fr_0.92fr]">
+            <div className="relative min-h-[240px] overflow-hidden sm:min-h-[300px] lg:min-h-0">
+              <img
+                src={heroImageSource}
+                alt="Tourvaa travel support team"
+                className="h-full w-full object-cover object-center"
+                onError={() => setHeroImageFailed(true)}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#0B1F3A]/15 via-transparent to-white/10 lg:bg-gradient-to-r lg:from-transparent lg:via-transparent lg:to-white/25" />
             </div>
 
-            <h1 className="mt-4 text-3xl sm:text-4xl lg:text-[46px] font-black tracking-tight text-white font-heading leading-tight drop-shadow-md">
-              {displayHero.heading || DEFAULT_HERO.heading}
-            </h1>
-            <p className="mt-3 text-sm sm:text-base font-medium leading-relaxed text-white/85 max-w-2xl">
-              {displayHero.subtitle || DEFAULT_HERO.subtitle}
-            </p>
-
-            {/* Quick Action Navigation Pills */}
-            <div className="mt-6 flex flex-wrap items-center gap-2.5">
-              <a
-                href="#contact-form-section"
-                className="inline-flex items-center rounded-full border border-white/30 bg-white/15 px-4 py-2 text-xs font-bold text-white backdrop-blur-xs transition hover:bg-white hover:text-slate-900 shadow-xs"
-              >
-                Send a Message
-              </a>
-              <a
-                href="#help-cards"
-                className="inline-flex items-center rounded-full border border-white/20 bg-black/25 px-4 py-2 text-xs font-semibold text-white backdrop-blur-xs transition hover:bg-white/20"
-              >
-                {isSupplierInquiry ? "Supplier Services" : "Priority Services"}
-              </a>
-              <a
-                href="#faqs"
-                className="inline-flex items-center rounded-full border border-white/20 bg-black/25 px-4 py-2 text-xs font-semibold text-white backdrop-blur-xs transition hover:bg-white/20"
-              >
-                {isSupplierInquiry ? "Supplier FAQs" : "Instant FAQs"}
-              </a>
-              <a
-                href="#offices"
-                className="inline-flex items-center rounded-full border border-white/20 bg-black/25 px-4 py-2 text-xs font-semibold text-white backdrop-blur-xs transition hover:bg-white/20"
-              >
-                Our Global Offices
-              </a>
+            <div className="flex items-center bg-white px-6 py-10 sm:px-10 lg:px-14">
+              <div className="max-w-lg">
+                <div className="inline-flex items-center gap-2 rounded-full bg-[#E9672B] px-3.5 py-1.5 text-xs font-bold text-white shadow-sm">
+                  <Sparkles size={13} aria-hidden="true" />
+                  <span>{displayHero.response_time_text || DEFAULT_HERO.response_time_text}</span>
+                </div>
+                <h1 className="mt-5 font-heading text-3xl font-black leading-tight tracking-tight text-[#0B1F3A] sm:text-4xl lg:text-[42px]">
+                  {displayHero.heading || DEFAULT_HERO.heading}
+                </h1>
+                <p className="mt-4 max-w-md text-sm font-medium leading-relaxed text-slate-700 sm:text-base">
+                  {displayHero.subtitle || DEFAULT_HERO.subtitle}
+                </p>
+                <a
+                  href="#contact-form-section"
+                  className="mt-7 inline-flex items-center gap-2 rounded-xl bg-[#0B1F3A] px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-[#173862] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0B1F3A] focus-visible:ring-offset-2 active:translate-y-px"
+                >
+                  Send a Message
+                  <ArrowRight size={17} aria-hidden="true" />
+                </a>
+              </div>
             </div>
           </div>
         </section>

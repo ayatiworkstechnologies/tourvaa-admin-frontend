@@ -276,18 +276,24 @@ export default function SupplierPortalLandingPage() {
   // The estimator's baseline amounts are USD, matching its fixed slider
   // ranges.  Display them through the shared currency hook so the calculator
   // always follows the currency selected in the public header.
-  const { formatCompact, outputCode } = useCurrency();
+  const { convert, formatExact, outputCode } = useCurrency();
 
   // Interactive Earnings Calculator State
   const [monthlyGuests, setMonthlyGuests] = useState(45);
   const [avgTicketPrice, setAvgTicketPrice] = useState(120);
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
 
-  const grossSales = monthlyGuests * avgTicketPrice;
+  const calculatorCurrency = outputCode("USD");
+  // The sliders are stored in USD, but visitors see the selected display
+  // currency. Round the converted per-person amount first, then derive every
+  // result from that same displayed amount. This prevents the price, gross,
+  // payout and annual figures from disagreeing after FX conversion.
+  const displayedTicketPrice = Math.round(convert(avgTicketPrice, "USD") * 100) / 100;
+  const grossSales = monthlyGuests * displayedTicketPrice;
   const tourvaaCommissionRate = 0.1; // 10% Tourvaa commission
   const netEarnings = grossSales * (1 - tourvaaCommissionRate);
   const annualEarnings = netEarnings * 12;
-  const calculatorCurrency = outputCode("USD");
+  const calculatorMoney = (amount: number) => formatExact(amount, calculatorCurrency);
 
   if (hero.is_active === false) return <PageUnavailable />;
 
@@ -449,7 +455,7 @@ export default function SupplierPortalLandingPage() {
                   <div className="flex items-center justify-between text-xs sm:text-sm font-semibold text-pub-fg">
                     <span>Average Price per Person ({calculatorCurrency})</span>
                     <span className="rounded-lg bg-pub-secondary/10 border border-pub-secondary/20 px-2.5 py-1 text-xs font-bold text-pub-secondary">
-                      {formatCompact(avgTicketPrice, "USD")}
+                      {calculatorMoney(displayedTicketPrice)}
                     </span>
                   </div>
                   <input
@@ -462,9 +468,9 @@ export default function SupplierPortalLandingPage() {
                     className="w-full accent-pub-secondary cursor-pointer h-2 bg-slate-100 rounded-lg"
                   />
                   <div className="flex justify-between text-[11px] text-pub-muted font-medium">
-                    <span>{formatCompact(20, "USD")}</span>
-                    <span>{formatCompact(400, "USD")}</span>
-                    <span>{formatCompact(800, "USD")}+</span>
+                    <span>{calculatorMoney(Math.round(convert(20, "USD") * 100) / 100)}</span>
+                    <span>{calculatorMoney(Math.round(convert(400, "USD") * 100) / 100)}</span>
+                    <span>{calculatorMoney(Math.round(convert(800, "USD") * 100) / 100)}+</span>
                   </div>
                 </div>
               </div>
@@ -482,7 +488,7 @@ export default function SupplierPortalLandingPage() {
                   Projected Monthly Supplier Payout
                 </p>
                 <div className="mt-2 text-4xl sm:text-5xl font-bold text-white tracking-tight text-center">
-                  {formatCompact(netEarnings, "USD")}
+                  {calculatorMoney(netEarnings)}
                 </div>
                 <p className="mt-1 text-[11px] text-white/75 text-center font-normal">
                   *Net earnings transferred directly to your bank account
@@ -495,7 +501,7 @@ export default function SupplierPortalLandingPage() {
                       Gross Ticket Value
                     </span>
                     <span className="mt-1 block text-lg sm:text-xl font-bold text-white">
-                      {formatCompact(grossSales, "USD")}
+                      {calculatorMoney(grossSales)}
                     </span>
                   </div>
                   <div>
@@ -503,7 +509,7 @@ export default function SupplierPortalLandingPage() {
                       Annual Revenue
                     </span>
                     <span className="mt-1 block text-lg sm:text-xl font-bold text-white">
-                      {formatCompact(annualEarnings, "USD")}
+                      {calculatorMoney(annualEarnings)}
                     </span>
                   </div>
                 </div>
@@ -573,48 +579,26 @@ export default function SupplierPortalLandingPage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {steps.map(({ step, badge, title, description }) => {
-              const isDark = step === "04";
               return (
                 <div
                   key={step}
-                  className={`flex flex-col justify-between rounded-2xl p-6 transition-all duration-300 ${
-                    isDark
-                      ? "bg-pub-primary text-white shadow-md"
-                      : "border border-pub-border bg-white shadow-2xs hover:shadow-md"
-                  }`}
+                  tabIndex={0}
+                  className="group flex flex-col justify-between rounded-2xl border border-pub-border bg-white p-6 shadow-2xs transition-all duration-300 hover:border-pub-primary hover:bg-pub-primary hover:shadow-md focus-visible:border-pub-primary focus-visible:bg-pub-primary focus-visible:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pub-secondary focus-visible:ring-offset-2"
                 >
                   <div>
                     <div className="flex items-center justify-between">
-                      <span
-                        className={`text-2xl sm:text-3xl font-bold tracking-tight ${
-                          isDark ? "text-white" : "text-pub-secondary"
-                        }`}
-                      >
+                      <span className="text-2xl sm:text-3xl font-bold tracking-tight text-pub-secondary transition-colors group-hover:text-white group-focus:text-white">
                         {step}
                       </span>
-                      <span
-                        className={`rounded-full px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-wider ${
-                          isDark
-                            ? "bg-white/10 text-white/90"
-                            : "bg-pub-accent/10 text-pub-accent border border-pub-accent/20"
-                        }`}
-                      >
+                      <span className="rounded-full border border-pub-accent/20 bg-pub-accent/10 px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-pub-accent transition-colors group-hover:border-white/20 group-hover:bg-white/10 group-hover:text-white group-focus:border-white/20 group-focus:bg-white/10 group-focus:text-white">
                         {badge}
                       </span>
                     </div>
 
-                    <h3
-                      className={`mt-4 text-base font-bold tracking-tight ${
-                        isDark ? "text-white" : "text-pub-fg"
-                      }`}
-                    >
+                    <h3 className="mt-4 text-base font-bold tracking-tight text-pub-fg transition-colors group-hover:text-white group-focus:text-white">
                       {title}
                     </h3>
-                    <p
-                      className={`mt-2 text-xs font-normal leading-relaxed ${
-                        isDark ? "text-white/75" : "text-pub-muted"
-                      }`}
-                    >
+                    <p className="mt-2 text-xs font-normal leading-relaxed text-pub-muted transition-colors group-hover:text-white/75 group-focus:text-white/75">
                       {description}
                     </p>
                   </div>

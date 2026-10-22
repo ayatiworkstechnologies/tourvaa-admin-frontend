@@ -169,7 +169,13 @@ export function mapPublicTour(tour: PublicTour): Tour {
   const rawPrice = hasDiscount
     ? tour.discounted_price_per_person
     : tour.price_start_per_person;
-  const originalPrice = hasDiscount ? tour.original_price_per_person : null;
+  // Supplier-funded offers are applied before Tourvaa's own storefront
+  // discount. `original_price_per_person` is therefore the intermediate
+  // supplier-discounted stage on older API payloads. Use the explicit raw
+  // storefront value for the crossed-out customer price when available.
+  const originalPrice = hasDiscount
+    ? tour.storefront_original_price_per_person ?? tour.original_price_per_person
+    : null;
   const discountBadge = tour.discount_percentage
     ? `Save ${formatDiscountPercent(tour.discount_percentage)}%`
     : undefined;

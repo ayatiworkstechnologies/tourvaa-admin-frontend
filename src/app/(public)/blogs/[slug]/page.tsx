@@ -7,6 +7,7 @@ import {
   cleanHtmlToHumanText,
   extractFaqsFromContent,
   formatBlogTextToHtml,
+  generateTableOfContents,
 } from "@/lib/types/blog";
 
 /* eslint-disable @next/next/no-img-element */
@@ -36,6 +37,7 @@ export default async function BlogDetailPage({ params }: { params: Promise<{ slu
   const faqs = post.faqs?.length ? post.faqs : legacyFaqs;
   const humanContent = cleanHtmlToHumanText(cleanContent);
   const formattedHtml = formatBlogTextToHtml(humanContent);
+  const toc = generateTableOfContents(humanContent);
 
   return (
     <main className="min-h-screen bg-slate-50/70 pb-20">
@@ -120,6 +122,42 @@ export default async function BlogDetailPage({ params }: { params: Promise<{ slu
 
       {/* ── 2. Article Content ── */}
       <div className="mx-auto max-w-[820px] px-5 py-8 sm:px-8 sm:py-12">
+        {/* Table of Contents */}
+        {toc.length >= 2 && (
+          <div className="mb-10 rounded-3xl border border-slate-200/90 bg-white p-6 sm:p-7 shadow-xs">
+            <div className="flex items-center gap-2 mb-3.5">
+              <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-sky-100 text-sky-700 text-xs font-black">
+                ≡
+              </span>
+              <h2 className="text-sm font-bold uppercase tracking-wider text-slate-800">
+                In this article
+              </h2>
+            </div>
+            <nav>
+              <ol className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2">
+                {toc.map((item, idx) => (
+                  <li
+                    key={idx}
+                    className={`text-sm ${
+                      item.level === 3 ? "pl-3 text-slate-500 text-xs" : "font-semibold text-slate-700"
+                    }`}
+                  >
+                    <a
+                      href={`#${item.anchor}`}
+                      className="group flex items-start gap-2 hover:text-pub-secondary transition-colors"
+                    >
+                      <span className="text-slate-400 group-hover:text-pub-secondary text-xs shrink-0 mt-0.5">
+                        {idx + 1}.
+                      </span>
+                      <span className="group-hover:underline underline-offset-4">{item.text}</span>
+                    </a>
+                  </li>
+                ))}
+              </ol>
+            </nav>
+          </div>
+        )}
+
         <article
           className="prose prose-slate max-w-none text-[16px] leading-7 text-slate-700 [&_h2]:mb-4 [&_h2]:mt-11 [&_h2]:text-2xl [&_h2]:font-black [&_h2]:tracking-tight [&_h2]:text-slate-950 sm:[&_h2]:text-3xl [&_h3]:mb-3 [&_h3]:mt-9 [&_h3]:text-xl [&_h3]:font-bold [&_h3]:text-slate-950 sm:[&_h3]:text-2xl [&_h4]:text-lg [&_h4]:font-bold [&_h4]:text-slate-900 [&_p]:my-5 [&_p]:leading-7 [&_a]:font-bold [&_a]:text-pub-secondary [&_a]:underline hover:[&_a]:text-pub-secondary/80 [&_strong]:text-slate-950 [&_ul]:my-5 [&_ul]:list-disc [&_ul]:space-y-2 [&_ul]:pl-6 [&_ol]:my-5 [&_ol]:list-decimal [&_ol]:space-y-2 [&_ol]:pl-6 [&_blockquote]:rounded-r-2xl [&_blockquote]:border-l-4 [&_blockquote]:border-pub-secondary [&_blockquote]:bg-slate-100/70 [&_blockquote]:p-5 [&_blockquote]:italic [&_blockquote]:text-slate-800"
           dangerouslySetInnerHTML={{ __html: formattedHtml }}

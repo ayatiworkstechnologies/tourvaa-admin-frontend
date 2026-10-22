@@ -1,238 +1,98 @@
 "use client";
 
 import Link from "next/link";
-import { destinationUrl } from "@/lib/utils/tourUrl";
 import { useEffect, useState } from "react";
-import {
-  fetchPublicCategories,
-  fetchPublicCities,
-  fetchPublicCountries,
-} from "@/lib/api/publicClient";
+import { fetchPublicCountries } from "@/lib/api/publicClient";
+import { destinationUrl } from "@/lib/utils/tourUrl";
 
-const DIRECTORY_COUNTRIES = [
-  "New Zealand",
-  "Spain",
-  "Italy",
-  "Greece",
-  "United States",
-  "France",
-  "Portugal",
-  "Türkiye",
-  "Poland",
-  "Netherlands",
-  "Croatia",
-  "Ireland",
-  "Australia",
-  "Morocco",
-  "Thailand",
-  "Malta",
-  "Germany",
-  "Canada",
-  "Norway",
-  "Hungary",
-  "Japan",
-  "Czechia",
-  "Indonesia",
-  "Switzerland",
-];
+const MAX_DIRECTORY_COUNTRIES = 24;
 
-const DIRECTORY_CITIES = [
-  "Rome",
-  "Paris",
-  "Tokyo",
-  "London",
-  "Barcelona",
-  "Dubai",
-  "New York",
-  "Istanbul",
-  "Bangkok",
-  "Amsterdam",
-  "Singapore",
-  "Vienna",
-  "Prague",
-  "Cairo",
-  "Sydney",
-  "Kyoto",
-  "Queenstown",
-  "Marrakech",
-  "Athens",
-  "Zurich",
-  "Edinburgh",
-  "Lisbon",
-  "Dubrovnik",
-  "Bali",
-];
-
-const DIRECTORY_CATEGORIES = [
-  "Wildlife & Safari",
-  "Cultural Heritage",
-  "Mountain Trekking",
-  "Beach & Island Escapes",
-  "Historic Architecture",
-  "Wine & Culinary Tours",
-  "Glacier & Fjord Cruises",
-  "Desert Expeditions",
-  "City Sightseeing",
-  "Northern Lights",
-  "Ancient Ruins",
-  "River Cruises",
-  "Photography Expeditions",
-  "Wellness & Ayurveda",
-  "Honeymoon Getaways",
-  "Luxury Train Journeys",
-  "Scuba & Snorkeling",
-  "Alpine Skiing",
-  "Volcano Trails",
-  "Festivals & Events",
-  "Island Hopping",
-  "Sacred Temples",
-  "Rainforest Adventures",
-  "Road Trips & Caravans",
-];
+function cleanCountryNames(countryNames: string[]) {
+  return Array.from(
+    new Set(countryNames.map((name) => name.trim()).filter(Boolean)),
+  ).slice(0, MAX_DIRECTORY_COUNTRIES);
+}
 
 export default function ExploreDirectorySection({
   countries: initialCountries,
-  cities: initialCities,
-  categories: initialCategories,
 }: {
   countries?: string[];
-  cities?: string[];
-  categories?: string[];
 }) {
-  const [activeTab, setActiveTab] = useState<
-    "countries" | "cities" | "categories"
-  >("countries");
-
-  const [countries, setCountries] = useState<string[]>(
-    initialCountries && initialCountries.length > 0
-      ? initialCountries
-      : DIRECTORY_COUNTRIES,
-  );
-  const [cities, setCities] = useState<string[]>(
-    initialCities && initialCities.length > 0
-      ? initialCities
-      : DIRECTORY_CITIES,
-  );
-  const [categories, setCategories] = useState<string[]>(
-    initialCategories && initialCategories.length > 0
-      ? initialCategories
-      : DIRECTORY_CATEGORIES,
-  );
+  const initialNames = cleanCountryNames(initialCountries ?? []);
+  const [countries, setCountries] = useState<string[]>(initialNames);
+  const [loading, setLoading] = useState(initialNames.length === 0);
+  const [loadFailed, setLoadFailed] = useState(false);
 
   useEffect(() => {
     let active = true;
-    Promise.allSettled([
-      fetchPublicCountries(),
-      fetchPublicCities(),
-      fetchPublicCategories(),
-    ]).then(([countryResult, cityResult, categoryResult]) => {
-      if (!active) return;
-      if (countryResult.status === "fulfilled" && countryResult.value.length) {
-        const validNames = Array.from(
-          new Set(
-            countryResult.value
-              .map((c) => c.country_name?.trim())
-              .filter((n): n is string => Boolean(n) && n.length > 2)
-          )
-        );
-        if (validNames.length >= 12 && !validNames.some((n) => n === "Abbeville" || n === "Abbotsford")) {
-          setCountries(validNames);
-        } else {
-          setCountries(DIRECTORY_COUNTRIES);
-        }
-      }
-      if (cityResult.status === "fulfilled" && cityResult.value.length) {
-        setCities(cityResult.value.map((c) => c.city_name));
-      }
-      if (
-        categoryResult.status === "fulfilled" &&
-        categoryResult.value.length
-      ) {
-        setCategories(categoryResult.value.map((c) => c.category_name));
-      }
-    });
+
+    fetchPublicCountries()
+      .then((items) => {
+        if (!active) return;
+        setCountries(cleanCountryNames(items.map((item) => item.country_name)));
+        setLoadFailed(false);
+      })
+      .catch(() => {
+        if (!active) return;
+        setLoadFailed(true);
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
 
     return () => {
       active = false;
     };
   }, []);
 
-  const items =
-    activeTab === "countries"
-      ? countries.length > 0
-        ? countries.slice(0, 24)
-        : DIRECTORY_COUNTRIES
-      : activeTab === "cities"
-        ? cities.length > 0
-          ? cities.slice(0, 24)
-          : DIRECTORY_CITIES
-        : categories.length > 0
-          ? categories.slice(0, 24)
-          : DIRECTORY_CATEGORIES;
-
-  const getHref = (item: string) => {
-    if (activeTab === "countries")
-      return destinationUrl(item);
-    if (activeTab === "cities")
-      return `/tours?search=${encodeURIComponent(item)}`;
-    return `/tours?category=${encodeURIComponent(item)}`;
-  };
-
   return (
-    <section className="w-full">
-      <div className="rounded-2xl sm:rounded-3xl border border-slate-200/70 bg-white p-6 sm:p-8 lg:p-10 shadow-xs">
-        {/* Tabs Bar */}
-        <div className="flex items-center gap-6 sm:gap-8 border-b border-slate-200/80 text-xs sm:text-sm md:text-base overflow-x-auto no-scrollbar">
-          <button
-            type="button"
-            onClick={() => setActiveTab("countries")}
-            className={`shrink-0 pb-3 font-bold transition-all duration-200 whitespace-nowrap -mb-[1px] active:scale-95 cursor-pointer ${
-              activeTab === "countries"
-                ? "border-b-2 border-slate-950 text-slate-950"
-                : "border-b-2 border-transparent text-slate-500 hover:text-slate-900"
-            }`}
-          >
-            Top countries to visit
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab("cities")}
-            className={`shrink-0 pb-3 font-bold transition-all duration-200 whitespace-nowrap -mb-[1px] active:scale-95 cursor-pointer ${
-              activeTab === "cities"
-                ? "border-b-2 border-slate-950 text-slate-950"
-                : "border-b-2 border-transparent text-slate-500 hover:text-slate-900"
-            }`}
-          >
-            Top Cities to Visit
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab("categories")}
-            className={`shrink-0 pb-3 font-bold transition-all duration-200 whitespace-nowrap -mb-[1px] active:scale-95 cursor-pointer ${
-              activeTab === "categories"
-                ? "border-b-2 border-slate-950 text-slate-950"
-                : "border-b-2 border-transparent text-slate-500 hover:text-slate-900"
-            }`}
-          >
-            Top attraction categories
-          </button>
-        </div>
+    <section className="w-full" aria-labelledby="country-directory-heading">
+      <div className="rounded-2xl border border-slate-200/80 bg-white px-5 py-6 shadow-xs sm:rounded-3xl sm:px-8 sm:py-8 lg:px-10">
+        <h2
+          id="country-directory-heading"
+          className="border-b border-slate-200/80 pb-4 text-base font-bold text-slate-950 sm:text-lg"
+        >
+          Top countries to visit
+        </h2>
 
-        {/* Directory Grid with Numbered Items */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-y-4 gap-x-4 pt-6 sm:pt-8 text-xs sm:text-sm text-slate-700">
-          {items.map((item, index) => (
-            <Link
-              key={`${item}-${index}`}
-              href={getHref(item)}
-              className="group flex items-start gap-1.5 transition-all duration-200 hover:translate-x-1 hover:text-pub-secondary"
-            >
-              <span className="font-semibold text-slate-900 group-hover:text-pub-secondary transition-colors duration-200">
-                {index + 1}.
-              </span>
-              <span className="truncate group-hover:underline">{item}</span>
-            </Link>
-          ))}
-        </div>
+        {loading && countries.length === 0 ? (
+          <div
+            className="grid grid-cols-2 gap-x-4 gap-y-5 pt-6 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6"
+            aria-label="Loading countries"
+          >
+            {Array.from({ length: 12 }, (_, index) => (
+              <span
+                key={index}
+                className="h-5 animate-pulse rounded bg-slate-100 motion-reduce:animate-none"
+              />
+            ))}
+          </div>
+        ) : countries.length > 0 ? (
+          <ol className="grid grid-cols-2 gap-x-4 gap-y-4 pt-6 text-sm text-slate-700 sm:grid-cols-3 sm:pt-8 md:grid-cols-4 lg:grid-cols-6">
+            {countries.map((country, index) => (
+              <li key={country}>
+                <Link
+                  href={destinationUrl(country)}
+                  className="group flex min-h-8 items-center gap-2 rounded-md outline-none transition-colors hover:text-pub-secondary focus-visible:ring-2 focus-visible:ring-pub-secondary focus-visible:ring-offset-2"
+                >
+                  <span
+                    className="w-6 shrink-0 text-right font-semibold tabular-nums text-slate-900 transition-colors group-hover:text-pub-secondary"
+                    aria-hidden="true"
+                  >
+                    {index + 1}.
+                  </span>
+                  <span className="min-w-0 truncate group-hover:underline group-hover:underline-offset-4">
+                    {country}
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ol>
+        ) : (
+          <p className="pt-6 text-sm text-slate-600" role={loadFailed ? "alert" : undefined}>
+            Countries are being updated. Please check again shortly.
+          </p>
+        )}
       </div>
     </section>
   );

@@ -87,6 +87,48 @@ export const BLOG_CATEGORIES = [
   "News & Updates",
 ];
 
+export type BlogTocItem = {
+  level: number;
+  text: string;
+  anchor: string;
+};
+
+export function headingToAnchor(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
+/** Auto-generate Table of Contents from headings in plain-text / markdown content */
+export function generateTableOfContents(content: string = ""): BlogTocItem[] {
+  if (!content) return [];
+  const lines = content.split(/\r?\n/);
+  const toc: BlogTocItem[] = [];
+  for (const line of lines) {
+    const trimmed = line.trim();
+    const headingMatch = trimmed.match(/^(#{2,3})\s+(.+)/);
+    if (headingMatch) {
+      const level = headingMatch[1].length;
+      const text = headingMatch[2].trim();
+      const anchor = headingToAnchor(text);
+      if (text && anchor) {
+        toc.push({ level, text, anchor });
+      }
+    } else {
+      const numMatch = trimmed.match(/^(\d+)\.\s+([A-Z0-9].*)/);
+      if (numMatch) {
+        const text = `${numMatch[1]}. ${numMatch[2].trim()}`;
+        const anchor = headingToAnchor(numMatch[2].trim());
+        if (text && anchor) {
+          toc.push({ level: 3, text, anchor });
+        }
+      }
+    }
+  }
+  return toc;
+}
+
 /** Extract structured FAQs and clean body text from raw blog content */
 export function extractFaqsFromContent(rawContent: string = ""): {
   cleanContent: string;
@@ -338,8 +380,9 @@ export function formatBlogTextToHtml(raw: string = ""): string {
     if (lines.length === 1 && numberedHeadingMatch) {
       const num = numberedHeadingMatch[1];
       const title = numberedHeadingMatch[2];
+      const anchor = headingToAnchor(title);
       out.push(
-        `<h3 class="text-xl sm:text-2xl font-black text-slate-950 mt-10 mb-3 flex items-center gap-3">` +
+        `<h3 id="${anchor}" class="scroll-mt-24 text-xl sm:text-2xl font-black text-slate-950 mt-10 mb-3 flex items-center gap-3">` +
           `<span class="flex h-8 w-8 items-center justify-center rounded-xl bg-sky-600 text-sm font-black text-white shadow-xs shrink-0">${num}</span>` +
           `<span>${title}</span>` +
         `</h3>`
@@ -351,12 +394,13 @@ export function formatBlogTextToHtml(raw: string = ""): string {
     if (lines.length === 1 && /^#+\s+/.test(lines[0])) {
       const level = lines[0].match(/^(#+)/)?.[1].length || 2;
       const headingText = lines[0].replace(/^#+\s*/, "");
+      const anchor = headingToAnchor(headingText);
       if (level === 1) {
-        out.push(`<h2 class="text-2xl sm:text-3xl font-black text-slate-950 mt-10 mb-4 tracking-tight">${headingText}</h2>`);
+        out.push(`<h2 id="${anchor}" class="scroll-mt-24 text-2xl sm:text-3xl font-black text-slate-950 mt-10 mb-4 tracking-tight">${headingText}</h2>`);
       } else if (level === 2) {
-        out.push(`<h2 class="text-xl sm:text-2xl font-black text-slate-900 mt-9 mb-3.5 tracking-tight">${headingText}</h2>`);
+        out.push(`<h2 id="${anchor}" class="scroll-mt-24 text-xl sm:text-2xl font-black text-slate-900 mt-9 mb-3.5 tracking-tight">${headingText}</h2>`);
       } else {
-        out.push(`<h3 class="text-lg sm:text-xl font-bold text-slate-900 mt-7 mb-2.5">${headingText}</h3>`);
+        out.push(`<h3 id="${anchor}" class="scroll-mt-24 text-lg sm:text-xl font-bold text-slate-900 mt-7 mb-2.5">${headingText}</h3>`);
       }
       continue;
     }

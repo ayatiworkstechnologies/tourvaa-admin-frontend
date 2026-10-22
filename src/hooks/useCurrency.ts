@@ -18,9 +18,8 @@ type CurrencyState = {
   /** ISO2 country code (e.g. "IN") the visitor is browsing as - IP-detected
    * by default (see loadCurrency below), manually override-able via
    * setCountry, and persisted the same way as the display currency. This is
-   * a browsing/display preference only: it never changes what a booking is
-   * actually charged (see formatExact's docstring for that same rule on
-   * currency). */
+   * a browsing preference. Customer checkout explicitly sends the selected
+   * display currency so the booking can lock it for gateway payment. */
   countryCode: string;
   /** Why the current country was selected. This never contains an IP address. */
   countrySource: "cdn" | "ip" | "locale" | "saved" | "manual" | "unknown";

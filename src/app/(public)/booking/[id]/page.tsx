@@ -1281,6 +1281,7 @@ export default function DynamicTourBookingPage() {
         agreed_terms: acceptTerms,
         agreed_cancellation_policy: acceptTerms,
         payment_type: customerPaymentMethod === "deposit" ? "partial" : "full",
+        display_currency: displayCurrency,
       });
       const booking = res.data?.data?.booking;
       if (typeof window !== "undefined" && tour) {
@@ -3018,7 +3019,7 @@ export default function DynamicTourBookingPage() {
 
                     {priceEstimate.currency.toUpperCase() !== displayCurrency.toUpperCase() && (
                       <p className="mt-2 text-[11px] font-semibold text-amber-800 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
-                        You will be charged in {formatExact(Number(priceEstimate.final_amount), priceEstimate.currency)} &mdash; converted to {displayCurrency} for viewing convenience.
+                        Your payment gateway will charge you in {displayCurrency}. The converted total and exchange rate are locked when your booking is created.
                       </p>
                     )}
                   </>

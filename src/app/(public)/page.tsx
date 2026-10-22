@@ -89,7 +89,7 @@ export default function Home() {
       )}
       <HomeExtraSections after="testimonials" />
 
-      {/* 10. Directory / Popular Destination Searches Tabs Grid */}
+      {/* 10. CMS-controlled country directory */}
       {shown("directory") && (
         <div className="relative z-10 mx-auto max-w-[1400px] px-5 py-10 sm:py-14">
           <Reveal variant="fade-up">

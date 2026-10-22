@@ -50,7 +50,19 @@ type CompanyForm = {
   currency: string;
 };
 
-const BUSINESS_TYPES = ["transport_tour_operator", "tour_provider", "activity_provider", "other"];
+const BUSINESS_TYPES = [
+  { value: "tour_operator", label: "Tour Operator" },
+  { value: "transport_tour_operator", label: "Transport Tour Operator" },
+  { value: "destination_management_company", label: "Destination Management Company (DMC)" },
+  { value: "tour_provider", label: "Tour Provider" },
+  { value: "activity_provider", label: "Activity Provider" },
+  { value: "attraction_ticket_provider", label: "Attraction / Ticket Provider" },
+  { value: "accommodation_provider", label: "Accommodation Provider" },
+  { value: "transport_provider", label: "Transport Provider" },
+  { value: "guide_service", label: "Guide Service" },
+  { value: "equipment_rental", label: "Equipment Rental" },
+  { value: "other", label: "Other" },
+] as const;
 
 export default function CompanyInfoTab({ onSaved }: { onSaved?: () => void }) {
   const toast = useToast();
@@ -321,8 +333,8 @@ export default function CompanyInfoTab({ onSaved }: { onSaved?: () => void }) {
               <select required value={form.supplier_type} onChange={e => set("supplier_type", e.target.value)}
                 className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-emerald-500">
                 <option value="">Select type</option>
-                {BUSINESS_TYPES.map(t => (
-                  <option key={t} value={t}>{t.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase())}</option>
+                {BUSINESS_TYPES.map(({ value, label }) => (
+                  <option key={value} value={value}>{label}</option>
                 ))}
               </select>
             </label>

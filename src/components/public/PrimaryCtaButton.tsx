@@ -9,11 +9,11 @@ import { LuArrowRight as ArrowRight } from "react-icons/lu";
  * tour card actions) so they all stay visually identical by construction. */
 
 const SIZE_CLASSES = {
-  // The radius, weight and generous horizontal padding intentionally match
+  // The radius and weight intentionally match
   // the public-site reference CTA (navy body + orange directional arrow).
   // Keep this component as the single source of truth for public primary
   // actions rather than introducing page-specific primary button styles.
-  md: "gap-3 rounded-[20px] px-8 py-4 text-base sm:text-lg",
+  md: "gap-2.5 rounded-[20px] px-6 py-3 text-sm sm:text-base",
   sm: "gap-2 rounded-xl px-5 py-3 text-xs sm:text-sm",
 } as const;
 

@@ -311,6 +311,8 @@ const legacyWishlist = read("src/app/(public)/wishlist/page.tsx");
 const retiredCart = read("src/app/(public)/cart/page.tsx");
 const contactPage = read("src/app/(public)/contact/page.tsx");
 const publicTourCard = read("src/components/public/TourCard.tsx");
+const publicHomeTypes = read("src/components/public/home/homeTypes.ts");
+const countryTourListing = read("src/components/public/CountryTourListing.tsx");
 const countryToursSection = read("src/components/public/country/CountryToursSection.tsx");
 check("public and customer headers no longer expose cart", !publicHeader.includes('href="/cart"') && !customerHeader.includes('href="/cart"'));
 // The customer portal renders its own sidebar + header chrome, so it deliberately
@@ -361,6 +363,12 @@ check(
     contactPage.includes("href={messageSupportHref}"),
 );
 check("country and catalogue cards show active discount badges", countryToursSection.includes('variant="search"') && (publicTourCard.match(/\{discounted && <DiscountCardBadge percentage=\{tour\.discount_percentage!\} \/>\}/g) || []).length >= 3);
+check(
+  "supplier-funded offers show the pre-discount storefront price on every public card",
+  publicTourCard.includes("tour.storefront_original_price_per_person ?? tour.original_price_per_person") &&
+    publicHomeTypes.includes("tour.storefront_original_price_per_person ?? tour.original_price_per_person") &&
+    countryTourListing.includes("t.storefront_original_price_per_person ?? t.original_price_per_person"),
+);
 
 const login = read("src/app/(public)/login/page.tsx");
 const register = read("src/app/(public)/register/page.tsx");

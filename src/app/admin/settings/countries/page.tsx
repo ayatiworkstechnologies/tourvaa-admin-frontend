@@ -292,14 +292,16 @@ function CountriesTab({ canCreate, canEdit, canDisableAll }: { canCreate: boolea
       canEdit={canEdit}
       canDisableAll={canDisableAll}
       fields={[
-        { name: "country_name", label: "Country name" },
-        { name: "country_code", label: "ISO2 code" },
+        { name: "country_name", label: "Country name", required: true },
+        { name: "country_code", label: "ISO-2 code", required: true },
         { name: "phone_code", label: "Phone code" },
         { name: "currency_code", label: "Currency code" },
+        { name: "flag_emoji", label: "Flag emoji" },
       ]}
       columns={[
+        { key: "flag_emoji", header: "Flag", className: "w-12 text-2xl text-center" },
         { key: "country_name", header: "Country" },
-        { key: "country_code", header: "ISO2" },
+        { key: "country_code", header: "ISO-2" },
         { key: "phone_code", header: "Phone" },
         { key: "currency_code", header: "Currency" },
       ]}
