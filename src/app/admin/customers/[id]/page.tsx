@@ -55,7 +55,7 @@ export default function CustomerDetailPage() {
   const toast = useToast();
   const { confirm, dialog } = useConfirm();
   const { hasPermission } = useAuthContext();
-  const { format } = useCurrency();
+  const { formatExact } = useCurrency();
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [bookings, setBookings] = useState<BookingHistory[]>([]);
   const [payments, setPayments] = useState<PaymentHistory[]>([]);
@@ -273,6 +273,12 @@ export default function CustomerDetailPage() {
     customer?.payment_summary?.paid ?? customer?.amount_paid ?? 0;
   const totalPending =
     customer?.payment_summary?.pending ?? customer?.amount_pending ?? 0;
+  const hasMixedCurrencies = Boolean(customer?.has_mixed_currencies) || (customer?.amounts_by_currency?.length ?? 0) > 1;
+  const summaryMoney = (field: "paid" | "pending", fallback: number) => {
+    if (hasMixedCurrencies) return "Multiple currencies";
+    const amounts = customer?.amounts_by_currency || [];
+    return formatExact(amounts[0]?.[field] ?? fallback, amounts[0]?.currency || customer?.currency || "USD");
+  };
 
   return (
     <ModuleWrapper title="Customer Detail" requiredPermission="customers.view">
@@ -385,7 +391,7 @@ export default function CustomerDetailPage() {
                 Amount Paid
               </p>
               <p className="mt-1 text-xl font-black text-emerald-600">
-                {format(totalPaid)}
+                {summaryMoney("paid", totalPaid)}
               </p>
             </div>
 
@@ -397,7 +403,7 @@ export default function CustomerDetailPage() {
                 Outstanding Due
               </p>
               <p className="mt-1 text-xl font-black text-amber-700">
-                {format(totalPending)}
+                {summaryMoney("pending", totalPending)}
               </p>
             </div>
           </section>
