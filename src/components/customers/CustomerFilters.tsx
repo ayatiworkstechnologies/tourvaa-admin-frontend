@@ -111,8 +111,6 @@ export default function CustomerFilters({ filters, onChange }: Props) {
             <option value="newest">Newest first</option>
             <option value="oldest">Oldest first</option>
             <option value="name_az">Name A to Z</option>
-            <option value="highest_amount_paid">Highest paid</option>
-            <option value="highest_pending_amount">Highest pending</option>
           </select>
         </div>
       </div>

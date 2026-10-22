@@ -48,7 +48,7 @@ function dateText(value?: string | null) {
 
 export default function SupplierPayoutsAdminPage() {
   const toast = useToast();
-  const { formatExact: money } = useCurrency();
+  const { code: displayCurrency, formatExact: money } = useCurrency();
   const [payouts, setPayouts] = useState<Payout[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");
@@ -132,7 +132,10 @@ export default function SupplierPayoutsAdminPage() {
   }, [currencies, summaryCurrency]);
 
   const summary = useMemo(() => {
-    const currency = summaryCurrency ?? currencies[0] ?? "USD";
+    // Empty summaries should reflect the selected site/display currency.
+    // Existing payouts keep their own recorded currency, so we do not relabel
+    // or convert a real USD settlement merely because the header is on INR.
+    const currency = summaryCurrency ?? currencies[0] ?? displayCurrency;
     const currencyPayouts = payouts.filter((p) => (p.currency || "USD").toUpperCase() === currency);
     const pendingRows = currencyPayouts.filter((p) => p.status === "pending");
     const approvedRows = currencyPayouts.filter((p) => p.status === "approved");
@@ -147,7 +150,7 @@ export default function SupplierPayoutsAdminPage() {
       approvedCount: approvedRows.length,
       paidCount: paidRows.length,
     };
-  }, [payouts, summaryCurrency, currencies]);
+  }, [payouts, summaryCurrency, currencies, displayCurrency]);
 
   const latestPending = payouts.find((p) => p.status === "pending") ?? null;
   const paginatedPayouts = visiblePayouts.slice((page - 1) * pageSize, page * pageSize);

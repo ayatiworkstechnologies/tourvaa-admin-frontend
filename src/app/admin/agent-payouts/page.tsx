@@ -48,7 +48,7 @@ function dateText(value?: string | null) {
 
 export default function AgentPayoutsAdminPage() {
   const toast = useToast();
-  const { formatExact: money } = useCurrency();
+  const { code: displayCurrency, formatExact: money } = useCurrency();
   const [payouts, setPayouts] = useState<Payout[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");
@@ -132,7 +132,12 @@ export default function AgentPayoutsAdminPage() {
   }, [currencies, summaryCurrency]);
 
   const summary = useMemo(() => {
-    const currency = summaryCurrency ?? currencies[0] ?? "USD";
+    // An empty state has no settlement currency of its own. Use the currency
+    // selected in the global header so zero-value cards never misleadingly
+    // show USD after an admin selected INR. Once real payouts exist, their
+    // recorded settlement currency remains authoritative (and is never FX
+    // converted for reconciliation).
+    const currency = summaryCurrency ?? currencies[0] ?? displayCurrency;
     const currencyPayouts = payouts.filter((p) => (p.currency || "USD").toUpperCase() === currency);
     const pendingRows = currencyPayouts.filter((p) => p.status === "pending");
     const approvedRows = currencyPayouts.filter((p) => p.status === "approved");
@@ -147,7 +152,7 @@ export default function AgentPayoutsAdminPage() {
       approvedCount: approvedRows.length,
       paidCount: paidRows.length,
     };
-  }, [payouts, summaryCurrency, currencies]);
+  }, [payouts, summaryCurrency, currencies, displayCurrency]);
 
   const latestPending = payouts.find((p) => p.status === "pending") ?? null;
   const paginatedPayouts = visiblePayouts.slice((page - 1) * pageSize, page * pageSize);

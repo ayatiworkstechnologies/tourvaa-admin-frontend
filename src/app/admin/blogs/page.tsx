@@ -44,13 +44,16 @@ export default function AdminBlogsPage() {
   const [page, setPage] = useState(1);
   const pageSize = 12;
 
-  const loadBlogs = useCallback(async (isSilent = false) => {
+  const loadBlogs = useCallback(async (isSilent = false, searchTerm = "") => {
     if (isSilent) setIsRefreshing(true);
     else setLoading(true);
 
     try {
       const res = await api.get("/cms/blogs", {
-        params: { page: 1, limit: 200 },
+        // Search is performed by the API so this screen remains responsive as
+        // the editorial library grows; status remains an instant local view
+        // filter over the returned, permission-safe result set.
+        params: { page: 1, limit: 200, search: searchTerm.trim() || undefined },
       });
       const items = res.data?.items ?? res.data?.data ?? [];
       setBlogs(Array.isArray(items) ? items : []);
@@ -64,8 +67,11 @@ export default function AdminBlogsPage() {
   }, [toast]);
 
   useEffect(() => {
-    void loadBlogs(false);
-  }, [loadBlogs]);
+    const timeout = window.setTimeout(() => {
+      void loadBlogs(Boolean(search.trim()), search);
+    }, search.trim() ? 250 : 0);
+    return () => window.clearTimeout(timeout);
+  }, [loadBlogs, search]);
 
   // Filtered blogs based on search & status
   const filteredBlogs = useMemo(() => {
@@ -311,7 +317,7 @@ export default function AdminBlogsPage() {
             <div className="flex flex-wrap items-center gap-2.5">
               <button
                 type="button"
-                onClick={() => void loadBlogs(true)}
+              onClick={() => void loadBlogs(true, search)}
                 disabled={isRefreshing}
                 className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/10 px-3.5 py-2.5 text-xs font-bold text-white hover:bg-white/20 transition shadow-2xs disabled:opacity-50"
               >

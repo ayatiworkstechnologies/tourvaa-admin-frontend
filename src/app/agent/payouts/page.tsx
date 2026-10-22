@@ -30,7 +30,9 @@ function statusClass(status?: string) {
 }
 
 export default function AgentPayoutsPage() {
-  const { format: money } = useCurrency();
+  // Ledger values are settled commission records, not browse prices. Keep
+  // their recorded currency instead of converting or default-labeling them.
+  const { code: activeCurrency, formatExact: money } = useCurrency();
   const [earnings, setEarnings] = useState<LedgerEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -60,9 +62,9 @@ export default function AgentPayoutsPage() {
     { key: "tour", header: "Tour", className: "font-bold text-dash-text", render: (entry) => entry.tour_name || "Tour booking" },
     { key: "booking", header: "Booking", render: (entry) => entry.booking_id ? <Link href={`/agent/bookings/${entry.booking_id}`} className="font-bold text-dash-brand hover:underline">{entry.booking_code || `Booking #${entry.booking_id}`}</Link> : "-" },
     { key: "rate", header: "Commission", className: "text-right", render: (entry) => `${entry.commission_percentage ?? 0}%` },
-    { key: "earned", header: "Earned", className: "text-right font-bold text-dash-text", render: (entry) => money(entry.commission_amount || 0, entry.currency || "USD") },
-    { key: "paid", header: "Paid", className: "hidden text-right sm:table-cell", render: (entry) => money(entry.amount_paid || 0, entry.currency || "USD") },
-    { key: "outstanding", header: "Outstanding", className: "hidden text-right md:table-cell", render: (entry) => money(entry.amount_pending || 0, entry.currency || "USD") },
+    { key: "earned", header: "Earned", className: "text-right font-bold text-dash-text", render: (entry) => money(entry.commission_amount || 0, entry.currency || activeCurrency) },
+    { key: "paid", header: "Paid", className: "hidden text-right sm:table-cell", render: (entry) => money(entry.amount_paid || 0, entry.currency || activeCurrency) },
+    { key: "outstanding", header: "Outstanding", className: "hidden text-right md:table-cell", render: (entry) => money(entry.amount_pending || 0, entry.currency || activeCurrency) },
     { key: "status", header: "Status", render: (entry) => <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-bold ${statusClass(entry.status)}`}>{entry.status || "pending"}</span> },
   ];
 

@@ -40,10 +40,13 @@ export default function CustomerTable({
   onUnblock,
   onReset,
 }: Props) {
-  // Customer paid/pending values are roll-up dashboard summaries rather than
-  // settlement records. They should therefore follow the admin's selected
-  // display currency, just as the customer detail page does.
-  const { format: money } = useCurrency();
+  const { formatExact: money } = useCurrency();
+  const amountText = (customer: Customer, field: "paid" | "pending") => {
+    const amounts = customer.amounts_by_currency || [];
+    if (customer.has_mixed_currencies || amounts.length > 1) return "Multiple currencies";
+    const amount = amounts[0]?.[field] ?? (field === "paid" ? customer.amount_paid : customer.amount_pending) ?? 0;
+    return money(amount, amounts[0]?.currency || customer.currency || "USD");
+  };
   const columns: DataTableColumn<Customer>[] = [
     {
       key: "no",
@@ -115,6 +118,11 @@ export default function CustomerTable({
           <span className="text-[11px] font-medium text-slate-500">
             ({customer.completed_tours ?? 0} done · {customer.upcoming_tours ?? 0} up)
           </span>
+          {Number(customer.cancelled_tours ?? 0) > 0 && (
+            <span className="text-[11px] font-medium text-rose-600">
+              {customer.cancelled_tours} cancelled
+            </span>
+          )}
         </div>
       ),
     },
@@ -122,13 +130,13 @@ export default function CustomerTable({
       key: "paid",
       header: "Paid",
       className: "font-bold text-emerald-600 tabular-nums whitespace-nowrap",
-      render: (customer) => money(customer.amount_paid || 0),
+      render: (customer) => amountText(customer, "paid"),
     },
     {
       key: "pending",
       header: "Pending",
       className: "font-bold text-amber-700 tabular-nums whitespace-nowrap",
-      render: (customer) => money(customer.amount_pending || 0),
+      render: (customer) => amountText(customer, "pending"),
     },
     {
       key: "created",

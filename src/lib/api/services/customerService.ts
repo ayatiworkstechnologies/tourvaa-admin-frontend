@@ -41,6 +41,11 @@ export type Customer = {
   upcoming_tours: number;
   amount_paid: number;
   amount_pending: number;
+  /** Live, exact booking balances. Mixed currencies are never collapsed into
+   * one converted or unlabeled total. */
+  currency?: string | null;
+  has_mixed_currencies?: boolean;
+  amounts_by_currency?: { currency: string; paid: number; pending: number }[];
   booking_summary?: {
     total: number;
     completed: number;
