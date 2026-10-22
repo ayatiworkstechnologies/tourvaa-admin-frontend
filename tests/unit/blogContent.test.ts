@@ -22,4 +22,16 @@ describe("legacy blog FAQ content", () => {
     expect(result.cleanContent).toBe(raw);
     expect(result.faqs).toEqual([]);
   });
+
+  it("recovers repeated legacy FAQ arrays left behind by marker sanitisation", () => {
+    const raw = `Article body.\n\n[\n  {\n    "question": "First question?",\n    "answer": "First answer."\n  }\n]\n\n[\n  {\n    "question": "Second question?",\n    "answer": "Second answer."\n  }\n]`;
+
+    const result = extractFaqsFromContent(raw);
+
+    expect(result.cleanContent).toBe("Article body.");
+    expect(result.faqs).toEqual([
+      { question: "First question?", answer: "First answer." },
+      { question: "Second question?", answer: "Second answer." },
+    ]);
+  });
 });

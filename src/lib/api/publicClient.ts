@@ -274,6 +274,7 @@ export type CmsBlog = {
   banner_alt?: string | null;
   author: string | null;
   tags: string[] | null;
+  faqs?: { question: string; answer: string }[] | null;
   seo_title: string | null;
   seo_description: string | null;
   status: string;

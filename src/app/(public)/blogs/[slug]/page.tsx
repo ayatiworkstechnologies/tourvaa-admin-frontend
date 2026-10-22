@@ -32,7 +32,8 @@ export default async function BlogDetailPage({ params }: { params: Promise<{ slu
   const image = post.featured_image ? mediaUrl(post.featured_image) : FALLBACK_IMAGE;
 
   // Extract plain-text FAQs and format natural text into beautiful paragraphs
-  const { cleanContent, faqs } = extractFaqsFromContent(post.content || "");
+  const { cleanContent, faqs: legacyFaqs } = extractFaqsFromContent(post.content || "");
+  const faqs = post.faqs?.length ? post.faqs : legacyFaqs;
   const humanContent = cleanHtmlToHumanText(cleanContent);
   const formattedHtml = formatBlogTextToHtml(humanContent);
 

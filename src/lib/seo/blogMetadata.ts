@@ -13,6 +13,7 @@ export type ServerBlog = {
   banner_alt?: string | null;
   author: string | null;
   tags?: string[] | null;
+  faqs?: { question: string; answer: string }[] | null;
   published_at: string | null;
   created_at: string;
   updated_at: string;

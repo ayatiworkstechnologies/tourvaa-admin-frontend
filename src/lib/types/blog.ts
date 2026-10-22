@@ -8,13 +8,19 @@ export type BlogItem = {
   banner_title?: string | null;
   banner_alt?: string | null;
   author?: string | null;
+  category?: string | null;
   tags?: string[] | null;
+  faqs?: BlogFaqItem[] | null;
   seo_title?: string | null;
   seo_description?: string | null;
-  status: "draft" | "published";
+  og_image?: string | null;
+  related_tour_ids?: number[] | null;
+  scheduled_at?: string | null;
+  status: "draft" | "published" | "scheduled";
   published_at?: string | null;
   updated_at?: string | null;
   created_at?: string | null;
+  view_count?: number | null;
 };
 
 export type BlogFaqItem = {
@@ -31,10 +37,14 @@ export type BlogFormData = {
   banner_title: string;
   banner_alt: string;
   author: string;
+  category: string;
   tags: string[];
   seo_title: string;
   seo_description: string;
-  status: "draft" | "published";
+  og_image: string;
+  related_tour_ids: number[];
+  scheduled_at: string;
+  status: "draft" | "published" | "scheduled";
   faqs?: BlogFaqItem[];
 };
 
@@ -47,12 +57,35 @@ export const DEFAULT_BLOG_FORM: BlogFormData = {
   banner_title: "",
   banner_alt: "",
   author: "Tourvaa Editorial",
+  category: "",
   tags: ["Travel Guide"],
   seo_title: "",
   seo_description: "",
+  og_image: "",
+  related_tour_ids: [],
+  scheduled_at: "",
   status: "draft",
   faqs: [],
 };
+
+export const BLOG_CATEGORIES = [
+  "Travel Guide",
+  "Destination Spotlight",
+  "Adventure & Outdoors",
+  "Cultural Heritage",
+  "Food & Cuisine",
+  "Luxury Escapes",
+  "Budget Travel",
+  "Family Travel",
+  "Solo Travel",
+  "Wildlife & Safari",
+  "Beach & Islands",
+  "Mountains & Trekking",
+  "City Breaks",
+  "Travel Tips & Hacks",
+  "Visa & Entry Guide",
+  "News & Updates",
+];
 
 /** Extract structured FAQs and clean body text from raw blog content */
 export function extractFaqsFromContent(rawContent: string = ""): {
@@ -78,11 +111,11 @@ export function extractFaqsFromContent(rawContent: string = ""): {
     }
   }
 
-  // Older editor builds appended the FAQ array directly to the article
-  // without the hidden marker. Recover that trailing JSON so legacy posts do
-  // not expose implementation data on the public page or in the editor.
-  const legacyJsonMatch = contentWithoutMarker.match(/(?:^|\n)\s*(\[\s*\{[\s\S]*?"question"[\s\S]*?"answer"[\s\S]*?\}\s*\])\s*$/);
-  if (legacyJsonMatch) {
+  // Older editor builds appended one or more raw FAQ arrays after stripping
+  // their marker. Recover every standalone FAQ array, not only the final one;
+  // repeated saves otherwise leave JSON in the article and show 0 FAQs.
+  const legacyJsonMatches = Array.from(contentWithoutMarker.matchAll(/(?:^|\n)\s*(\[\s*\{[\s\S]*?\}\s*\])(?=\s*(?:\n|$))/g));
+  for (const legacyJsonMatch of legacyJsonMatches) {
     try {
       const parsed = JSON.parse(legacyJsonMatch[1]);
       if (Array.isArray(parsed)) {
@@ -98,7 +131,7 @@ export function extractFaqsFromContent(rawContent: string = ""): {
             const normalized = { question: item.question.trim(), answer: item.answer.trim() };
             if (!faqs.some((faq) => faq.question === normalized.question)) faqs.push(normalized);
           });
-          contentWithoutMarker = contentWithoutMarker.slice(0, legacyJsonMatch.index).trim();
+          contentWithoutMarker = contentWithoutMarker.replace(legacyJsonMatch[0], "\n").trim();
         }
       }
     } catch {
@@ -141,13 +174,6 @@ export function extractFaqsFromContent(rawContent: string = ""): {
     .trim();
 
   return { cleanContent: clean, faqs };
-}
-
-/** Embed structured FAQs into content safely without exposing HTML to the user */
-export function embedFaqsIntoContent(content: string, faqs: BlogFaqItem[] = []): string {
-  const base = content.replace(/<!--TOURVAA_FAQS_START-->[\s\S]*?<!--TOURVAA_FAQS_END-->/g, "").trim();
-  if (!faqs || faqs.length === 0) return base;
-  return `${base}\n\n<!--TOURVAA_FAQS_START-->\n${JSON.stringify(faqs, null, 2)}\n<!--TOURVAA_FAQS_END-->`;
 }
 
 /**
