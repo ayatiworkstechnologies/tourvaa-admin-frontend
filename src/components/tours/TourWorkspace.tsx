@@ -326,7 +326,7 @@ export function TourWorkspaceContent({
 }) {
   const colors = theme[role];
   return (
-    <div className={`mt-4 rounded-2xl border bg-white p-5 sm:p-7 ${colors.contentBorder} ${colors.contentShadow} ${className}`}>
+    <div className={`mt-4 rounded-2xl border bg-white p-5 pb-28 sm:p-7 sm:pb-28 ${colors.contentBorder} ${colors.contentShadow} ${className}`}>
       {stepLabel && (
         <div className={`mb-5 flex items-center gap-2 border-b pb-4 ${colors.divider}`}>
           <span className={`h-1.5 w-1.5 rounded-full ${colors.progressBar}`} />

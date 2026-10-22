@@ -2,7 +2,7 @@
 
 import { ErrorSummary, FormField, fieldClass, focusField } from "@/components/tours/FormKit";
 import { validateActivity, type FieldErrors } from "@/lib/tours/tourValidation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { LuPlus as Plus, LuSave as Save, LuX as X } from "react-icons/lu";
 import {
   OptionalActivity,
@@ -40,7 +40,17 @@ export default function TourOptionalActivityTab({ tourId }: { tourId: string }) 
   const [editing, setEditing] = useState<OptionalActivity | null>(null);
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<FieldErrors>({});
+  const editorRef = useRef<HTMLFormElement>(null);
   const clearError = (field: string) => setErrors((prev) => { if (!prev[field]) return prev; const next = { ...prev }; delete next[field]; return next; });
+
+  const openEditor = (item: OptionalActivity) => {
+    setErrors({});
+    setEditing(item);
+    window.requestAnimationFrame(() => {
+      editorRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      editorRef.current?.querySelector<HTMLInputElement>("#activity_name")?.focus();
+    });
+  };
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -112,7 +122,7 @@ export default function TourOptionalActivityTab({ tourId }: { tourId: string }) 
         </div>
         <button
           type="button"
-          onClick={() => setEditing(empty())}
+          onClick={() => openEditor(empty())}
           className="inline-flex items-center gap-2 rounded-xl bg-dash-brand px-4 py-2 text-sm font-bold text-white"
         >
           <Plus size={16} /> Add Activity
@@ -145,7 +155,7 @@ export default function TourOptionalActivityTab({ tourId }: { tourId: string }) 
                 <p className="mt-2 text-sm font-bold text-dash-text">+{item.price_per_person} <span className="font-normal text-dash-subtle">per person</span></p>
               )}
               <div className="mt-3 flex gap-2">
-                <button type="button" onClick={() => setEditing({ ...item })} className="rounded-lg border border-dash-border px-3 py-1.5 text-xs font-semibold hover:bg-[#F2F4F7]">Edit</button>
+                <button type="button" onClick={() => openEditor({ ...item })} className="min-h-11 rounded-lg border border-dash-border px-3 py-1.5 text-xs font-semibold hover:bg-[#F2F4F7]">Edit</button>
                 <button type="button" onClick={() => remove(item.id!)} className="rounded-lg border border-[#FFCDD2] px-3 py-1.5 text-xs font-semibold text-red-500 hover:bg-[#FFF0F0]">Delete</button>
               </div>
             </div>
@@ -154,7 +164,7 @@ export default function TourOptionalActivityTab({ tourId }: { tourId: string }) 
       </div>
 
       {editing && (
-        <form onSubmit={save} noValidate className="rounded-xl border-2 border-dash-brand bg-white p-6">
+        <form ref={editorRef} onSubmit={save} noValidate className="scroll-mt-6 rounded-2xl border-2 border-dash-brand bg-white p-5 sm:p-6">
           <ErrorSummary errors={errors} />
           <div className="mb-4 flex items-center justify-between">
             <h3 className="font-bold text-dash-text">{editing.id ? "Edit Activity" : "New Activity"}</h3>
@@ -248,9 +258,9 @@ export default function TourOptionalActivityTab({ tourId }: { tourId: string }) 
               />
             </label>
           </div>
-          <div className="mt-4 flex justify-end gap-3">
-            <button type="button" onClick={() => setEditing(null)} className="rounded-xl border border-dash-border px-4 py-2 text-sm font-semibold">Cancel</button>
-            <button type="submit" disabled={saving} className="inline-flex items-center gap-2 rounded-xl bg-dash-brand px-5 py-2 text-sm font-bold text-white disabled:opacity-60">
+          <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end sm:gap-3">
+            <button type="button" onClick={() => setEditing(null)} className="min-h-11 rounded-xl border border-dash-border px-4 py-2 text-sm font-semibold">Cancel</button>
+            <button type="submit" disabled={saving} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-dash-brand px-5 py-2 text-sm font-bold text-white disabled:opacity-60">
               <Save size={14} /> {saving ? "Saving..." : "Save Activity"}
             </button>
           </div>

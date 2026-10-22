@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { LuPlus as Plus, LuPencil as Pencil, LuTrash2 as Trash2, LuSave as Save, LuX as X } from "react-icons/lu";
 import { GalleryImage, getGallery, createGalleryImage, updateGalleryImage, deleteGalleryImage } from "@/lib/api/services/tourDetailService";
 import { getApiErrorMessage } from "@/lib/utils/errorHandler";
@@ -20,6 +20,15 @@ export default function TourGalleryTab({ tourId }: { tourId: string }) {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<GalleryImage | null>(null);
   const [saving, setSaving] = useState(false);
+  const editorRef = useRef<HTMLFormElement>(null);
+
+  const openEditor = (item: GalleryImage) => {
+    setEditing(item);
+    window.requestAnimationFrame(() => {
+      editorRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      editorRef.current?.querySelector<HTMLInputElement>("#image_title")?.focus();
+    });
+  };
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -77,8 +86,8 @@ export default function TourGalleryTab({ tourId }: { tourId: string }) {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-bold text-dash-text">Gallery &amp; Images</h2>
-        <button type="button" onClick={() => setEditing({ ...empty(), display_order: items.length })}
-          className="inline-flex items-center gap-2 rounded-xl bg-dash-brand px-4 py-2 text-sm font-bold text-white">
+        <button type="button" onClick={() => openEditor({ ...empty(), display_order: items.length })}
+          className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-dash-brand px-4 py-2 text-sm font-bold text-white">
           <Plus size={16} /> Add Image
         </button>
       </div>
@@ -101,7 +110,7 @@ export default function TourGalleryTab({ tourId }: { tourId: string }) {
               <span className="inline-block mt-1 rounded-full bg-[#F2F4F7] px-2 py-0.5 text-xs text-dash-subtle">{item.image_type}</span>
             </div>
             <div className="absolute right-2 top-2 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-              <button type="button" onClick={() => setEditing({ ...item })} className="rounded-lg bg-white/90 p-1.5 shadow"><Pencil size={12} /></button>
+              <button type="button" onClick={() => openEditor({ ...item })} aria-label={`Edit ${item.image_title || "image"}`} className="min-h-11 min-w-11 rounded-lg bg-white/90 p-1.5 shadow"><Pencil size={12} /></button>
               <button type="button" onClick={() => remove(item.id!)} className="rounded-lg bg-white/90 p-1.5 shadow text-red-500"><Trash2 size={12} /></button>
             </div>
           </div>
@@ -109,7 +118,7 @@ export default function TourGalleryTab({ tourId }: { tourId: string }) {
       </div>
 
       {editing && (
-        <form onSubmit={save} className="rounded-xl border-2 border-dash-brand bg-white p-6">
+        <form ref={editorRef} onSubmit={save} className="scroll-mt-6 rounded-2xl border-2 border-dash-brand bg-white p-5 sm:p-6">
           <div className="mb-4 flex items-center justify-between">
             <h3 className="font-bold">{editing.id ? "Edit Image" : "Add Image"}</h3>
             <button type="button" onClick={() => setEditing(null)}><X size={18} /></button>
@@ -126,7 +135,7 @@ export default function TourGalleryTab({ tourId }: { tourId: string }) {
             {[["image_title", "Title"], ["image_alt_text", "Alt text"]].map(([key, lbl]) => (
               <label key={key}>
                 <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">{lbl}</span>
-                <input value={(editing as Record<string, unknown>)[key] as string ?? ""}
+                <input id={key} value={(editing as Record<string, unknown>)[key] as string ?? ""}
                   onChange={(e) => setEditing((p) => p ? { ...p, [key]: e.target.value } : p)}
                   className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand" />
               </label>
@@ -150,9 +159,9 @@ export default function TourGalleryTab({ tourId }: { tourId: string }) {
                 className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand" />
             </label>
           </div>
-          <div className="mt-4 flex justify-end gap-3">
-            <button type="button" onClick={() => setEditing(null)} className="rounded-xl border border-dash-border px-4 py-2 text-sm font-semibold">Cancel</button>
-            <button type="submit" disabled={saving} className="inline-flex items-center gap-2 rounded-xl bg-dash-brand px-5 py-2 text-sm font-bold text-white disabled:opacity-60">
+          <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end sm:gap-3">
+            <button type="button" onClick={() => setEditing(null)} className="min-h-11 rounded-xl border border-dash-border px-4 py-2 text-sm font-semibold">Cancel</button>
+            <button type="submit" disabled={saving} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-dash-brand px-5 py-2 text-sm font-bold text-white disabled:opacity-60">
               <Save size={14} /> {saving ? "Saving..." : "Save Image"}
             </button>
           </div>

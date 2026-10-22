@@ -225,6 +225,8 @@ export type ContentBlockTabConfig = {
     type: BlockFieldType;
     hint?: string;
     default?: string;
+    /** Maximum number of repeated records allowed for this CMS field. */
+    maxItems?: number;
     // For type "records": the inputs of each repeated entry. "csv" edits an array as comma-separated text.
     // "asset" uploads an image (e.g. a team member photo or gallery image) and stores its URL.
     subfields?: { key: string; label: string; type: "text" | "textarea" | "csv" | "asset" }[];
@@ -816,7 +818,8 @@ export const CONTENT_BLOCK_TABS: ContentBlockTabConfig[] = [
         key: "items",
         label: "Metric Cards",
         type: "records",
-        hint: "Leave empty to use the built-in stats.",
+        hint: "Up to 4 cards. Leave empty to use the built-in stats.",
+        maxItems: 4,
         subfields: [
           { key: "value", label: "Value (e.g. 500+)", type: "text" },
           { key: "label", label: "Label (e.g. Curated Expeditions)", type: "text" },
@@ -837,8 +840,10 @@ export const CONTENT_BLOCK_TABS: ContentBlockTabConfig[] = [
         key: "items",
         label: "Value Cards",
         type: "records",
-        hint: "Leave empty to use the built-in cards.",
+        hint: "Up to 5 cards. Leave empty to use the built-in cards.",
+        maxItems: 5,
         subfields: [
+          { key: "image", label: "Background Image", type: "asset" },
           { key: "badge", label: "Badge (e.g. Direct Pricing)", type: "text" },
           { key: "title", label: "Title", type: "text" },
           { key: "description", label: "Description", type: "textarea" },
@@ -858,7 +863,8 @@ export const CONTENT_BLOCK_TABS: ContentBlockTabConfig[] = [
         key: "items",
         label: "Team Members",
         type: "records",
-        hint: "Leave empty to use the built-in team.",
+        hint: "Up to 8 members. Four cards appear per desktop row; additional members continue on the next row.",
+        maxItems: 8,
         subfields: [
           { key: "photo", label: "Photo", type: "asset" },
           { key: "name", label: "Name", type: "text" },
@@ -1476,10 +1482,13 @@ export function ContentBlockPanel({ tab, onChanged }: { tab: ContentBlockTabConf
                       })}
                       <button
                         type="button"
+                        disabled={typeof f.maxItems === "number" && (JSON.parse(values[f.key] || "[]") as Record<string, string>[]).length >= f.maxItems}
                         onClick={() => setValues((v) => ({ ...v, [f.key]: JSON.stringify([...(JSON.parse(v[f.key] || "[]") as Record<string, string>[]), {}]) }))}
-                        className="rounded-xl border border-dashed border-[#9CCFF0] px-3 py-2 text-xs font-bold text-[#0284C7] hover:bg-[#F7FBFF]"
+                        className="rounded-xl border border-dashed border-[#9CCFF0] px-3 py-2 text-xs font-bold text-[#0284C7] hover:bg-[#F7FBFF] disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-dash-subtle disabled:hover:bg-transparent"
                       >
-                        + Add
+                        {typeof f.maxItems === "number" && (JSON.parse(values[f.key] || "[]") as Record<string, string>[]).length >= f.maxItems
+                          ? `Maximum ${f.maxItems} cards reached`
+                          : "+ Add"}
                       </button>
                     </div>
                   ) : f.type === "list" ? (

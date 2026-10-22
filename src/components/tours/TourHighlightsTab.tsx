@@ -2,7 +2,7 @@
 
 import { ErrorSummary, FormField, fieldClass, focusField } from "@/components/tours/FormKit";
 import { validateHighlight, type FieldErrors } from "@/lib/tours/tourValidation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { LuPlus as Plus, LuSave as Save, LuX as X } from "react-icons/lu";
 import { TourHighlight, getHighlights, createHighlight, updateHighlight, deleteHighlight } from "@/lib/api/services/tourDetailService";
 import { getApiErrorMessage } from "@/lib/utils/errorHandler";
@@ -22,6 +22,16 @@ export default function TourHighlightsTab({ tourId }: { tourId: string }) {
   const [editing, setEditing] = useState<TourHighlight | null>(null);
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<FieldErrors>({});
+  const editorRef = useRef<HTMLFormElement>(null);
+
+  const openEditor = (item: TourHighlight) => {
+    setErrors({});
+    setEditing(item);
+    window.requestAnimationFrame(() => {
+      editorRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      editorRef.current?.querySelector<HTMLInputElement>("#title")?.focus();
+    });
+  };
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -88,7 +98,7 @@ export default function TourHighlightsTab({ tourId }: { tourId: string }) {
         <h2 className="text-xl font-bold text-dash-text">Tour Highlights</h2>
         <button
           type="button"
-          onClick={() => setEditing({ ...empty(), display_order: items.length })}
+          onClick={() => openEditor({ ...empty(), display_order: items.length })}
           className="inline-flex shrink-0 whitespace-nowrap items-center gap-2 rounded-xl bg-dash-brand px-4 py-2.5 text-sm font-bold text-white shadow-xs hover:bg-dash-brand-hover transition"
         >
           <Plus size={16} /> Add Highlight
@@ -110,7 +120,7 @@ export default function TourHighlightsTab({ tourId }: { tourId: string }) {
               <p className="font-semibold text-dash-text">{item.title}</p>
               <p className="mt-1 text-sm text-dash-subtle">{item.short_description}</p>
               <div className="mt-3 flex gap-2">
-                <button type="button" onClick={() => setEditing({ ...item })} className="rounded-lg border border-dash-border px-3 py-1.5 text-xs font-semibold text-dash-text hover:bg-slate-50 transition">Edit</button>
+                <button type="button" onClick={() => openEditor({ ...item })} className="min-h-11 rounded-lg border border-dash-border px-3 py-1.5 text-xs font-semibold text-dash-text hover:bg-slate-50 transition">Edit</button>
                 <button type="button" onClick={() => remove(item.id!)} className="rounded-lg border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 transition">Delete</button>
               </div>
             </div>
@@ -119,7 +129,7 @@ export default function TourHighlightsTab({ tourId }: { tourId: string }) {
       </div>
 
       {editing && (
-        <form onSubmit={save} noValidate className="rounded-xl border-2 border-dash-brand bg-white p-6 shadow-sm">
+        <form ref={editorRef} onSubmit={save} noValidate className="scroll-mt-6 rounded-2xl border-2 border-dash-brand bg-white p-5 shadow-sm sm:p-6">
           <ErrorSummary errors={errors} />
           <div className="mb-4 flex items-center justify-between">
             <h3 className="font-bold text-dash-text">{editing.id ? "Edit Highlight" : "New Highlight"}</h3>
@@ -159,9 +169,9 @@ export default function TourHighlightsTab({ tourId }: { tourId: string }) {
                 className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand" />
             </label>
           </div>
-          <div className="mt-4 flex justify-end gap-3">
-            <button type="button" onClick={() => setEditing(null)} className="rounded-xl border border-dash-border px-4 py-2 text-sm font-semibold hover:bg-slate-50 transition">Cancel</button>
-            <button type="submit" disabled={saving} className="inline-flex items-center gap-2 rounded-xl bg-dash-brand px-5 py-2 text-sm font-bold text-white hover:bg-dash-brand-hover transition disabled:opacity-60 shadow-xs">
+          <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end sm:gap-3">
+            <button type="button" onClick={() => setEditing(null)} className="min-h-11 rounded-xl border border-dash-border px-4 py-2 text-sm font-semibold hover:bg-slate-50 transition">Cancel</button>
+            <button type="submit" disabled={saving} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-dash-brand px-5 py-2 text-sm font-bold text-white hover:bg-dash-brand-hover transition disabled:opacity-60 shadow-xs">
               <Save size={14} /> {saving ? "Saving..." : "Save Highlight"}
             </button>
           </div>

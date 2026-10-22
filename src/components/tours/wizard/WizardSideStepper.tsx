@@ -51,7 +51,7 @@ export function WizardSideStepper({
 
       <nav
         aria-label="Tour editor steps"
-        className={`sticky top-4 hidden w-52 shrink-0 self-start rounded-2xl border bg-white p-2 shadow-[0_8px_24px_-22px_rgba(24,76,140,.7)] lg:block ${colors.contentBorder}`}
+        className={`sticky top-24 hidden w-60 shrink-0 self-start rounded-2xl border bg-white p-2 shadow-[0_8px_24px_-22px_rgba(24,76,140,.7)] lg:block ${colors.contentBorder}`}
       >
         <ol className="space-y-0.5">
           {steps.map((step, index) => {
@@ -90,7 +90,7 @@ export function WizardSideStepper({
                     )}
                   </span>
                   <span className="min-w-0 flex-1">
-                    <span className={`block truncate text-[11.5px] font-bold leading-tight ${active ? colors.progressText : "text-dash-body"}`}>
+                    <span title={step.label} className={`block truncate text-[11.5px] font-bold leading-tight ${active ? colors.progressText : "text-dash-body"}`}>
                       {step.label}
                     </span>
                     {step.optional && <span className="block text-[9.5px] font-semibold leading-tight text-dash-subtle">Optional</span>}

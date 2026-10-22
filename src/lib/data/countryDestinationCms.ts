@@ -8,6 +8,47 @@ function countrySlug(value: string) {
   return value.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 }
 
+type PublicCountryResponse = {
+  items?: Array<{ country_name?: string }>;
+};
+
+// These destination URLs were published by the public site before every
+// country had a CMS guide. Keep them resolvable while content is being
+// migrated; arbitrary paths must not be treated as destinations.
+const LEGACY_DESTINATION_GUIDE_SLUGS = new Set([
+  "australia", "canada", "china", "croatia", "egypt", "france", "greece",
+  "iceland", "india", "indonesia", "ireland", "italy", "japan", "morocco",
+  "new-zealand", "norway", "portugal", "qatar", "singapore", "spain",
+  "sri-lanka", "switzerland", "thailand", "turkey", "united-arab-emirates",
+  "united-kingdom", "united-states", "vietnam",
+]);
+
+export function isLegacyDestinationGuideSlug(slugOrName: string): boolean {
+  return LEGACY_DESTINATION_GUIDE_SLUGS.has(countrySlug(slugOrName));
+}
+
+/**
+ * Destination guides are optional CMS content. A country can be active and
+ * bookable before its long-form guide has been authored, so callers need a
+ * server-safe way to distinguish that state from an unknown URL.
+ */
+export async function isPublicDestinationCountryForServer(slugOrName: string): Promise<boolean> {
+  const normalizedSlug = countrySlug(slugOrName);
+  if (!normalizedSlug) return false;
+
+  try {
+    const response = await fetch(`${API_BASE}/api/public/countries`, { cache: "no-store" });
+    if (!response.ok) return false;
+
+    const payload = await response.json() as PublicCountryResponse;
+    return Array.isArray(payload.items) && payload.items.some(
+      (country) => countrySlug(country.country_name || "") === normalizedSlug,
+    );
+  } catch {
+    return false;
+  }
+}
+
 /**
  * Read a destination guide directly from the backend during server rendering.
  * Browser-relative `/api` calls only work after hydration; using the proxy

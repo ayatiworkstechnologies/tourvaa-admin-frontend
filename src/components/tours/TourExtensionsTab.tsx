@@ -2,7 +2,7 @@
 
 import { ErrorSummary, FormField, fieldClass, focusField } from "@/components/tours/FormKit";
 import { validateExtension, type FieldErrors } from "@/lib/tours/tourValidation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { LuPlus as Plus, LuPencil as Pencil, LuTrash2 as Trash2, LuSave as Save, LuX as X } from "react-icons/lu";
 import { TourExtension, getExtensions, createExtension, updateExtension, deleteExtension } from "@/lib/api/services/tourDetailService";
 import { getApiErrorMessage } from "@/lib/utils/errorHandler";
@@ -38,7 +38,17 @@ export default function TourExtensionsTab({ tourId }: { tourId: string }) {
   const [editing, setEditing] = useState<TourExtension | null>(null);
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<FieldErrors>({});
+  const editorRef = useRef<HTMLFormElement>(null);
   const clearError = (field: string) => setErrors((prev) => { if (!prev[field]) return prev; const next = { ...prev }; delete next[field]; return next; });
+
+  const openEditor = (item: TourExtension) => {
+    setErrors({});
+    setEditing(item);
+    window.requestAnimationFrame(() => {
+      editorRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      editorRef.current?.querySelector<HTMLElement>("input, button")?.focus();
+    });
+  };
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -106,7 +116,7 @@ export default function TourExtensionsTab({ tourId }: { tourId: string }) {
         </div>
         <button
           type="button"
-          onClick={() => setEditing({ ...empty(), display_order: items.length })}
+          onClick={() => openEditor({ ...empty(), display_order: items.length })}
           className="inline-flex items-center gap-2 rounded-xl bg-dash-brand px-4 py-2 text-sm font-bold text-white"
         >
           <Plus size={16} /> Add Extension
@@ -126,7 +136,7 @@ export default function TourExtensionsTab({ tourId }: { tourId: string }) {
               <p className="mt-1 text-sm font-semibold text-dash-brand">Extra: {item.extra_price} <span className="font-normal text-dash-subtle">({PRICE_TYPE_LABELS[item.price_type] ?? item.price_type})</span></p>
             </div>
             <div className="flex gap-2">
-              <button type="button" onClick={() => setEditing({ ...item })} className="rounded-lg border border-dash-border p-2 hover:bg-[#F2F4F7]"><Pencil size={14} /></button>
+              <button type="button" onClick={() => openEditor({ ...item })} aria-label={`Edit ${item.extension_title || "extension"}`} className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-dash-border p-2 hover:bg-[#F2F4F7]"><Pencil size={14} /></button>
               <button type="button" onClick={() => remove(item.id!)} className="rounded-lg border border-[#FFCDD2] p-2 text-red-500 hover:bg-[#FFF0F0]"><Trash2 size={14} /></button>
             </div>
           </div>
@@ -134,7 +144,7 @@ export default function TourExtensionsTab({ tourId }: { tourId: string }) {
       ))}
 
       {editing && (
-        <form onSubmit={save} noValidate className="rounded-2xl border-2 border-dash-brand bg-white p-6 shadow-[0_1px_4px_0_rgb(0,0,0,0.04)]">
+        <form ref={editorRef} onSubmit={save} noValidate className="scroll-mt-6 rounded-2xl border-2 border-dash-brand bg-white p-5 shadow-[0_1px_4px_0_rgb(0,0,0,0.04)] sm:p-6">
           <ErrorSummary errors={errors} />
           <div className="mb-4 flex items-center justify-between">
             <h3 className="font-bold">{editing.id ? "Edit Extension" : "New Extension"}</h3>
@@ -218,9 +228,9 @@ export default function TourExtensionsTab({ tourId }: { tourId: string }) {
               />
             </label>
           </div>
-          <div className="mt-4 flex justify-end gap-3">
-            <button type="button" onClick={() => setEditing(null)} className="rounded-xl border border-dash-border px-4 py-2 text-sm font-semibold">Cancel</button>
-            <button type="submit" disabled={saving} className="inline-flex items-center gap-2 rounded-xl bg-dash-brand px-5 py-2 text-sm font-bold text-white disabled:opacity-60">
+          <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end sm:gap-3">
+            <button type="button" onClick={() => setEditing(null)} className="min-h-11 rounded-xl border border-dash-border px-4 py-2 text-sm font-semibold">Cancel</button>
+            <button type="submit" disabled={saving} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-dash-brand px-5 py-2 text-sm font-bold text-white disabled:opacity-60">
               <Save size={14} /> {saving ? "Saving..." : "Save"}
             </button>
           </div>

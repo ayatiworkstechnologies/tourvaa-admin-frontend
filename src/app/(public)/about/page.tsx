@@ -211,7 +211,7 @@ const DEFAULT_CTA = {
 
 type MetricItem = { value?: string; label?: string; sub?: string };
 type TeamItem = { name?: string; role?: string; specialty?: string; photo?: string; bio?: string };
-type ValueItem = { badge?: string; title?: string; description?: string };
+type ValueItem = { badge?: string; title?: string; description?: string; image?: string };
 type AwardItem = { title?: string; text?: string };
 type GalleryItem = { image?: string; location?: string };
 type GalleryBlock = { items?: GalleryItem[] };
@@ -259,14 +259,23 @@ export default function AboutPage() {
   const cta = useAboutBlock("about_page_cta", DEFAULT_CTA);
 
   const gallery = galleryBlock.items?.length ? galleryBlock.items.map((it, i) => ({ image: it.image || DEFAULT_GALLERY[i % DEFAULT_GALLERY.length].image, location: it.location || "" })) : DEFAULT_GALLERY;
-  const metrics = metricsBlock.items?.length
-    ? metricsBlock.items.map((it, i) => ({ value: it.value || "", label: it.label || "", sub: it.sub || "", icon: METRIC_ICON_COLOR[i % METRIC_ICON_COLOR.length].icon, color: METRIC_ICON_COLOR[i % METRIC_ICON_COLOR.length].color }))
+  // Metrics are intentionally capped at four: that is the visual capacity of
+  // this compact trust strip and matches the CMS editor constraint.
+  const metricItems = metricsBlock.items?.slice(0, 4);
+  const metrics = metricItems?.length
+    ? metricItems.map((it, i) => ({ value: it.value || "", label: it.label || "", sub: it.sub || "", icon: METRIC_ICON_COLOR[i % METRIC_ICON_COLOR.length].icon, color: METRIC_ICON_COLOR[i % METRIC_ICON_COLOR.length].color }))
     : DEFAULT_METRICS;
-  const values = valuesHeading.items?.length
-    ? valuesHeading.items.map((it, i) => ({ number: String(i + 1).padStart(2, "0"), title: it.title || "", desc: it.description || "", badge: it.badge || "", icon: VALUE_ICONS[i % VALUE_ICONS.length], image: DEFAULT_VALUES[i % DEFAULT_VALUES.length].image }))
+  // This focused trust section is designed for at most five cards. Each
+  // card can now bring its own CMS-managed background image.
+  const valueItems = valuesHeading.items?.slice(0, 5);
+  const values = valueItems?.length
+    ? valueItems.map((it, i) => ({ number: String(i + 1).padStart(2, "0"), title: it.title || "", desc: it.description || "", badge: it.badge || "", icon: VALUE_ICONS[i % VALUE_ICONS.length], image: it.image || DEFAULT_VALUES[i % DEFAULT_VALUES.length].image }))
     : DEFAULT_VALUES;
-  const team = teamHeading.items?.length
-    ? teamHeading.items.map((it) => ({ name: it.name || "", role: it.role || "", specialty: it.specialty || "", image: it.photo || "", bio: it.bio || "" }))
+  // Four cards fit per desktop row. A capped, wrapping collection avoids an
+  // overly long team page while keeping partial rows visually centred.
+  const teamItems = teamHeading.items?.slice(0, 8);
+  const team = teamItems?.length
+    ? teamItems.map((it, i) => ({ name: it.name || "", role: it.role || "", specialty: it.specialty || "", image: it.photo || DEFAULT_TEAM[i % DEFAULT_TEAM.length].image, bio: it.bio || "" }))
     : DEFAULT_TEAM;
   const awards = awardsHeading.items?.length
     ? awardsHeading.items.map((it, i) => ({ title: it.title || "", text: it.text || "", icon: AWARD_ICONS[i % AWARD_ICONS.length] }))
@@ -459,8 +468,16 @@ export default function AboutPage() {
             </div>
           </div>
 
-          {/* 4 Metric Badges in Elevated White Cards */}
-          <div className="mt-10 grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+          {/* Up to four metric cards. Partial rows are deliberately centred. */}
+          <div className={`mt-10 grid gap-4 sm:gap-6 ${
+            metrics.length === 1
+              ? "mx-auto max-w-sm grid-cols-1"
+              : metrics.length === 2
+                ? "mx-auto max-w-2xl grid-cols-1 sm:grid-cols-2"
+                : metrics.length === 3
+                  ? "mx-auto max-w-5xl grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
+                  : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-4"
+          }`}>
             {metrics.map((m, index) => {
               const Icon = m.icon;
               return (
@@ -491,7 +508,7 @@ export default function AboutPage() {
           </div>
         </section>
 
-        {/* ── 3. Why Choose Tourvaa (5 Premium Value Cards) ── */}
+        {/* ── 3. Why Choose Tourvaa (up to 3 premium value cards) ── */}
         <section className="mx-auto max-w-[1400px] px-4 sm:px-6 pt-20 sm:pt-28">
           <div data-reveal className="text-center">
             <span className="text-xs sm:text-sm font-bold uppercase tracking-wider text-pub-secondary">
@@ -505,7 +522,17 @@ export default function AboutPage() {
             </p>
           </div>
 
-          <div className="mt-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5">
+          <div className={`mt-12 grid gap-5 ${
+            values.length === 1
+              ? "mx-auto max-w-sm grid-cols-1"
+              : values.length === 2
+                ? "mx-auto max-w-2xl grid-cols-1 sm:grid-cols-2"
+                : values.length === 3
+                  ? "mx-auto max-w-5xl grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
+                  : values.length === 4
+                    ? "mx-auto max-w-6xl grid-cols-1 sm:grid-cols-2 lg:grid-cols-4"
+                    : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-5"
+          }`}>
             {values.map((v, index) => {
               const Icon = v.icon;
 
@@ -568,19 +595,19 @@ export default function AboutPage() {
             </p>
           </div>
 
-          <div className="mt-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="mt-10 flex flex-wrap justify-center gap-6">
             {team.map((member, index) => (
               <div
                 key={index}
                 data-reveal
                 style={delay(index * 60)}
-                className="group overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-4 shadow-xs hover:border-slate-300 hover:shadow-md transition-all duration-200"
+                className="group w-full sm:basis-[calc(50%-0.75rem)] lg:basis-[calc(25%-1.125rem)] overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-4 shadow-xs hover:border-slate-300 hover:shadow-md transition-all duration-200"
               >
                 <div className="relative h-60 w-full overflow-hidden rounded-xl bg-slate-100">
                   <img
                     src={member.image}
                     alt={member.name}
-                    className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                    className="h-full w-full object-cover object-top transition duration-500 group-hover:scale-105"
                   />
                   <span className="absolute bottom-2.5 left-2.5 rounded-md bg-black/60 backdrop-blur-xs px-2 py-0.5 text-[10px] font-bold text-white">
                     {member.specialty}
