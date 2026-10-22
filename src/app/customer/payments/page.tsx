@@ -36,9 +36,11 @@ function statusClass(status?: string) {
 }
 
 export default function CustomerPaymentsPage() {
-  const { format } = useCurrency();
+  // Payment rows are completed/authorized transaction records. Keep their
+  // gateway settlement currency rather than converting them for browsing.
+  const { formatExact } = useCurrency();
   const money = (value: string | number | undefined, currency = "USD") =>
-    value == null || value === "" ? "-" : format(value, currency);
+    value == null || value === "" ? "-" : formatExact(value, currency);
   const [rows, setRows] = useState<Payment[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);

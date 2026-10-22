@@ -38,7 +38,9 @@ function statusClass(status?: string) {
 }
 
 export default function CustomerCancellationsPage() {
-  const { format: money } = useCurrency();
+  // A refund is a recorded financial event and must retain the booking's
+  // transaction currency, independently of the header display preference.
+  const { formatExact: money } = useCurrency();
   const [rows, setRows] = useState<Cancellation[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
