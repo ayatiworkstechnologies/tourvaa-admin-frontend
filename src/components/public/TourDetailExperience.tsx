@@ -1187,11 +1187,6 @@ export default function TourDetailExperience({
   const originalTourPrice =
     adults * originalUnitPrice + children * originalChildUnitPrice;
   const groupDiscount = 0;
-  const promoActive = Boolean(
-    tour.discount_percentage &&
-    tour.discount_percentage > 0 &&
-    (originalUnitPrice > unitPrice || originalChildUnitPrice > childUnitPrice),
-  );
   const fallbackTotalAmount = Math.max(0, tourPrice);
 
   // The selector's total is refined by the server booking quote preview.
@@ -1314,16 +1309,29 @@ export default function TourDetailExperience({
   const startingOriginalPrice = Number(
     cheapestRow?.original_price_per_person ?? startingUnitPrice,
   );
+  // Current APIs include the raw storefront stage on each pricing row.  Older
+  // cached responses did not, however, which made a real percentage offer
+  // show only its final price.  Reconstruct the reference price from the
+  // advertised percentage in that backwards-compatible case.  When supplier
+  // and Tourvaa offers are both present, their sequential application is
+  // preserved rather than treating the displayed sum as one percentage.
+  const offerMultiplier = supplierDiscountPercent || tourvaaDiscountPercent
+    ? (1 - supplierDiscountPercent / 100) * (1 - tourvaaDiscountPercent / 100)
+    : 1 - Number(tour.discount_percentage ?? 0) / 100;
+  const fallbackStartingRawOriginalPrice = offerMultiplier > 0 && offerMultiplier < 1
+    ? startingUnitPrice / offerMultiplier
+    : startingOriginalPrice;
   const startingRawOriginalPrice = Number(
     cheapestRow?.storefront_original_price_per_person ??
-      (tourvaaDiscountPercent > 0 && supplierDiscountPercent > 0
-        ? startingOriginalPrice / (1 - supplierDiscountPercent / 100)
-        : startingOriginalPrice),
+      (startingOriginalPrice > startingUnitPrice
+        ? startingOriginalPrice / Math.max(0.0001, 1 - supplierDiscountPercent / 100)
+        : fallbackStartingRawOriginalPrice),
   );
   const startingDiscountSaving = Math.max(
     0,
     startingRawOriginalPrice - startingUnitPrice,
   );
+  const hasStartingPromotion = hasSpecialOffer && startingDiscountSaving > 0.005;
   const startingTierLabel = cheapestRow
     ? groupTierLabel(cheapestRow.persons_from, cheapestRow.persons_to)
     : "";
@@ -2034,12 +2042,12 @@ export default function TourDetailExperience({
                     / person
                   </span>
                 </div>
-                {promoActive && startingRawOriginalPrice > startingUnitPrice && (
+                {hasStartingPromotion && (
                   <span className="text-base sm:text-lg text-slate-400 line-through font-semibold">
                     {format(startingRawOriginalPrice, tourCurrency)}
                   </span>
                 )}
-                {promoActive && startingDiscountSaving > 0 ? (
+                {hasStartingPromotion ? (
                   <span className="rounded-lg bg-emerald-500/20 border border-emerald-400/30 px-2 py-0.5 text-xs font-bold text-emerald-300">
                     Save {format(startingDiscountSaving, tourCurrency)} per person
                   </span>

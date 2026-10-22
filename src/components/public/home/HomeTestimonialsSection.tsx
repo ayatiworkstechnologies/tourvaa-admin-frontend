@@ -19,6 +19,27 @@ export interface HomeTestimonialsSectionProps {
   loading?: boolean;
 }
 
+function TestimonialStars({ rating }: { rating: number }) {
+  const normalizedRating = Math.max(0, Math.min(5, rating));
+  return (
+    <div className="flex items-center gap-0.5 shrink-0" aria-label={`${normalizedRating} out of 5 stars`}>
+      {Array.from({ length: 5 }, (_, index) => {
+        const fill = Math.max(0, Math.min(1, normalizedRating - index));
+        return (
+          <span key={index} className="relative block h-[13px] w-[13px]" aria-hidden="true">
+            <Star size={13} className="absolute inset-0 text-slate-200" />
+            {fill > 0 && (
+              <span className="absolute inset-y-0 left-0 overflow-hidden" style={{ width: `${fill * 100}%` }}>
+                <Star size={13} className="text-[#e85d26] fill-[#e85d26]" />
+              </span>
+            )}
+          </span>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function HomeTestimonialsSection({
   initialReviews,
   loading: initialLoading,
@@ -215,17 +236,7 @@ export default function HomeTestimonialsSection({
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-0.5 shrink-0 text-[#e85d26]">
-                          {Array.from({ length: review.rating || 5 }).map(
-                            (_, i) => (
-                              <Star
-                                key={i}
-                                size={13}
-                                className="fill-[#e85d26] text-[#e85d26]"
-                              />
-                            ),
-                          )}
-                        </div>
+                        <TestimonialStars rating={review.rating || 5} />
                       </div>
                     </article>
                   );

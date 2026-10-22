@@ -469,7 +469,7 @@ export const TABS: TabConfig[] = [
     formFields: [
       { key: "reviewer_name", label: "Reviewer Name", type: "text", required: true },
       { key: "country", label: "Reviewer Location/Country (e.g. Kerala, India)", type: "text" },
-      { key: "rating", label: "Rating (1-5)", type: "number", required: true, min: 1, max: 5, step: 1 },
+      { key: "rating", label: "Rating (1-5, half stars allowed)", type: "number", required: true, min: 1, max: 5, step: 0.5 },
       { key: "review_text", label: "Review Text", type: "textarea" },
       { key: "reviewer_image", label: "Reviewer Image", type: "asset" },
       { key: "tour_name", label: "Tour Name", type: "text" },
