@@ -236,6 +236,21 @@ type SupplierAssignmentPayload = {
   reason?: string;
 };
 
+export type BookingModificationRequest = {
+  id: number;
+  booking_id: number;
+  status: "pending" | "approved" | "rejected";
+  requester_user_id: number;
+  requester_type: "customer" | "agent" | "supplier";
+  proposed_changes: Record<string, unknown>;
+  original_values: Record<string, unknown>;
+  reason?: string | null;
+  decision_reason?: string | null;
+  decision_history: Array<Record<string, unknown>>;
+  reviewed_at?: string | null;
+  created_at?: string;
+};
+
 export async function getBookings(filters: BookingFilters = {}) {
   const response = await api.get<PaginatedBookings & { status: string }>("/bookings/", {
     params: filters,
@@ -256,6 +271,38 @@ export async function createBooking(booking: BookingCreate) {
 
 export async function updateBooking(bookingId: number | string, booking: Partial<BookingCreate>) {
   const response = await api.put<ApiDataResponse<Booking>>(`/bookings/${bookingId}`, booking);
+  return response.data.data;
+}
+
+export async function requestBookingModification(
+  bookingId: number | string,
+  proposedChanges: Partial<BookingCreate>,
+  reason: string,
+) {
+  const response = await api.post<ApiDataResponse<BookingModificationRequest>>(
+    `/bookings/${bookingId}/modifications`,
+    { proposed_changes: proposedChanges, reason },
+  );
+  return response.data.data;
+}
+
+export async function getBookingModifications(bookingId: number | string) {
+  const response = await api.get<ApiDataResponse<BookingModificationRequest[]>>(
+    `/bookings/${bookingId}/modifications`,
+  );
+  return response.data.data;
+}
+
+export async function decideBookingModification(
+  bookingId: number | string,
+  modificationId: number,
+  decision: "approve" | "reject",
+  reason = "",
+) {
+  const response = await api.post<ApiDataResponse<BookingModificationRequest>>(
+    `/bookings/${bookingId}/modifications/${modificationId}/${decision}`,
+    { reason },
+  );
   return response.data.data;
 }
 
