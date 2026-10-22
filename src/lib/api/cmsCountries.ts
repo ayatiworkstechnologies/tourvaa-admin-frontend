@@ -4,20 +4,17 @@ export type CmsCountryOption = {
   id: number;
   name: string;
   code: string;
-  status: string;
 };
 
 type CountryRecord = {
   id?: number;
   country_name?: string;
   country_code?: string;
-  status?: string;
 };
 
 export function formatCmsCountryOption(country: CmsCountryOption): string {
   const code = country.code ? ` (${country.code})` : "";
-  const status = country.status === "active" ? "" : " — Inactive";
-  return `${country.name}${code}${status}`;
+  return `${country.name}${code}`;
 }
 
 /**
@@ -35,7 +32,6 @@ export async function fetchCmsCountryOptions(): Promise<CmsCountryOption[]> {
       id: Number(country.id),
       name: String(country.country_name || "").trim(),
       code: String(country.country_code || "").trim().toUpperCase(),
-      status: String(country.status || "inactive").trim().toLowerCase(),
     }))
     .filter((country) => country.id > 0 && country.name)
     .sort((left, right) => left.name.localeCompare(right.name));

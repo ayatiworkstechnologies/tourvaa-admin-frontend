@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
   LuBookOpen as BookOpen,
@@ -23,6 +23,7 @@ import {
 import api from "@/lib/api/client";
 import { useToast } from "@/hooks/useToast";
 import AdminAssetUpload from "@/components/operations/AdminAssetUpload";
+import SearchableSelect from "@/components/ui/SearchableSelect";
 import { CountryDestinationInfo, CountryDestinationSectionKey, MonthlyWeather, PlaceToVisit, WhyVisitReason } from "@/lib/types/countryDestination";
 import {
   CURATED_COUNTRY_INFOS,
@@ -88,6 +89,7 @@ export default function CountryDestinationInfoPanel({
   const [saving, setSaving] = useState<boolean>(false);
   const [info, setInfo] = useState<CountryDestinationInfo | null>(null);
   const chapterNavRef = useRef<HTMLDivElement>(null);
+  const countryLoadRequestRef = useRef(0);
   const usesControlledCountries = controlledCountryOptions !== undefined;
   const countryOptions = controlledCountryOptions ?? localCountryOptions;
   const countriesLoading = usesControlledCountries
@@ -97,6 +99,10 @@ export default function CountryDestinationInfoPanel({
     ? (controlledCountriesError || "")
     : localCountriesError;
   const selectedCountryName = controlledCountryName || localCountryName;
+  const countryPickerOptions = useMemo(() => countryOptions.map((country) => ({
+    value: country.name,
+    label: formatCmsCountryOption(country),
+  })), [countryOptions]);
 
   const selectCountry = (countryName: string) => {
     if (!controlledCountryName) setLocalCountryName(countryName);
@@ -129,9 +135,30 @@ export default function CountryDestinationInfoPanel({
     return () => { active = false; };
   }, [usesControlledCountries]);
 
+  const buildCountryTemplate = useCallback((countryName: string) => {
+    const slug = slugifyTourSegment(countryName);
+    const selectedCountry = countryOptions.find(
+      (country) => country.name.toLowerCase() === countryName.toLowerCase(),
+    );
+    const template = CURATED_COUNTRY_INFOS[slug] || getFallbackCountryDestinationInfo(
+      countryName,
+      selectedCountry?.code || "XX",
+      selectedCountry?.id || 999,
+    );
+
+    return {
+      ...template,
+      country_id: selectedCountry?.id || template.country_id,
+      country_name: selectedCountry?.name || countryName,
+      country_slug: slug,
+      country_code: selectedCountry?.code || template.country_code || "XX",
+    };
+  }, [countryOptions]);
+
   // Fetch or initialize the country destination info.
   const loadCountryData = useCallback(async (countryName: string) => {
     if (!countryName) return;
+    const requestId = ++countryLoadRequestRef.current;
     setLoading(true);
     setInfo(null);
     const slug = slugifyTourSegment(countryName);
@@ -142,32 +169,37 @@ export default function CountryDestinationInfoPanel({
 
       if (blockData && blockData.country_name) {
         // Merge with defaults to ensure all fields exist
-        const base =
-          CURATED_COUNTRY_INFOS[slug] ||
-          getFallbackCountryDestinationInfo(countryName, slug);
-        setInfo({ ...base, ...blockData });
+        const base = buildCountryTemplate(countryName);
+        if (requestId !== countryLoadRequestRef.current) return;
+        setInfo({
+          ...base,
+          ...blockData,
+          country_id: base.country_id,
+          country_name: base.country_name,
+          country_slug: base.country_slug,
+          country_code: base.country_code,
+        });
       } else {
         // Load default curated or generated
-        const fallback =
-          CURATED_COUNTRY_INFOS[slug] ||
-          getFallbackCountryDestinationInfo(countryName, slug);
-        setInfo(fallback);
+        if (requestId !== countryLoadRequestRef.current) return;
+        setInfo(buildCountryTemplate(countryName));
       }
     } catch {
       // 404 block doesn't exist yet, use default
-      const fallback =
-        CURATED_COUNTRY_INFOS[slug] ||
-        getFallbackCountryDestinationInfo(countryName, slug);
-      setInfo(fallback);
+      if (requestId !== countryLoadRequestRef.current) return;
+      setInfo(buildCountryTemplate(countryName));
     } finally {
-      setLoading(false);
+      if (requestId === countryLoadRequestRef.current) setLoading(false);
     }
-  }, []);
+  }, [buildCountryTemplate]);
 
   useEffect(() => {
     if (selectedCountryName) {
       void loadCountryData(selectedCountryName);
     }
+    return () => {
+      countryLoadRequestRef.current += 1;
+    };
   }, [selectedCountryName, loadCountryData]);
 
   // Save handler
@@ -195,11 +227,7 @@ export default function CountryDestinationInfoPanel({
   // Reset to curated defaults
   const handleResetToDefaults = () => {
     if (!info) return;
-    const slug = slugifyTourSegment(info.country_name);
-    const fallback =
-      CURATED_COUNTRY_INFOS[slug] ||
-      getFallbackCountryDestinationInfo(info.country_name, slug);
-    setInfo(fallback);
+    setInfo(buildCountryTemplate(info.country_name));
     toast.info(`Reset to curated default template for ${info.country_name}. Click Save to persist.`);
   };
 
@@ -241,13 +269,12 @@ export default function CountryDestinationInfoPanel({
 
   const currentSlug = info.country_slug || slugifyTourSegment(info.country_name);
   const liveUrl = `/destinations/${currentSlug}`;
-  const selectedCountry = countryOptions.find((country) => country.name === selectedCountryName);
 
   return (
     <div className="space-y-5">
       {/* ── Top Header & Country Picker ── */}
-      <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xs">
-        <div className="border-b border-slate-200 bg-gradient-to-r from-slate-950 via-slate-900 to-blue-950 px-5 py-3.5 text-[11px] font-bold uppercase tracking-[0.16em] text-blue-200">
+      <section className="relative overflow-visible rounded-2xl border border-slate-200 bg-white shadow-xs">
+        <div className="rounded-t-2xl border-b border-slate-200 bg-gradient-to-r from-slate-950 via-slate-900 to-blue-950 px-5 py-3.5 text-[11px] font-bold uppercase tracking-[0.16em] text-blue-200">
           <span className="inline-flex items-center gap-2"><Compass size={14} /> Country guide workspace</span>
         </div>
         <div className="p-5">
@@ -306,30 +333,21 @@ export default function CountryDestinationInfoPanel({
 
         {/* Country Selector Dropdown Strip */}
         <div className="mt-5 pt-4 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center gap-3">
-          <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+          <label htmlFor="country-guide-picker" className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
             Editing country
           </label>
-          <div className="relative max-w-xs w-full">
-            <select
-              value={selectedCountryName}
-              onChange={(e) => selectCountry(e.target.value)}
-              className="w-full rounded-xl border border-slate-200 bg-slate-50/60 hover:bg-white px-3.5 py-2 text-sm font-semibold text-slate-800 outline-none transition focus:border-slate-800 focus:bg-white focus:ring-2 focus:ring-slate-900/10 shadow-2xs cursor-pointer"
-            >
-              {countryOptions.map((c) => (
-                <option key={c.id} value={c.name}>
-                  {formatCmsCountryOption(c)}
-                </option>
-              ))}
-            </select>
-          </div>
+          <SearchableSelect
+            id="country-guide-picker"
+            value={selectedCountryName}
+            onChange={selectCountry}
+            options={countryPickerOptions}
+            placeholder="Select country"
+            searchPlaceholder="Search any country or code"
+            className="w-full max-w-xs"
+          />
           <span className="text-xs text-slate-500 font-medium">
             Live route <code className="bg-slate-100 text-slate-800 px-2 py-0.5 rounded-md text-[11px] font-mono font-semibold">{liveUrl}</code>
           </span>
-          {selectedCountry && selectedCountry.status !== "active" && (
-            <span className="rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-bold text-amber-800 ring-1 ring-amber-200">
-              Inactive — hidden from public country selectors
-            </span>
-          )}
         </div>
         </div>
       </section>
