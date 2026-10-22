@@ -52,6 +52,9 @@ export type Booking = {
   children_count: number;
   total_travellers: number;
   currency: string;
+  optional_activity_amount?: string;
+  accommodation_amount?: string;
+  extension_amount?: string;
   final_amount: string;
   amount_paid: string;
   amount_pending: string;

@@ -5,8 +5,8 @@ import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
 import ModuleWrapper from "@/components/common/ModuleWrapper";
 import Loader from "@/components/ui/Loader";
-import DatePicker from "@/components/ui/DatePicker";
-import { Booking, getBookingDetail, getBookingPaymentLink } from "@/lib/api/services/bookingService";
+import { Booking, type BookingLineItem, getBookingDetail, getBookingPaymentLink } from "@/lib/api/services/bookingService";
+import { getCalendar, type CalendarEntry } from "@/lib/api/services/tourDetailService";
 import BookingStatusBadge from "@/components/bookings/BookingStatusBadge";
 import AdminBookingConversationHistory from "@/components/messaging/AdminBookingConversationHistory";
 import SupplierPicker from "@/components/bookings/SupplierPicker";
@@ -161,6 +161,13 @@ function formatTravellerDate(value?: string | null) {
   return date.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
 }
 
+function localDateKey(date = new Date()) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 // Visual Stepper for the booking execution workflow styled in Admin Theme
 function BookingJourneyStepper({ status }: { status: string }) {
   const steps = [
@@ -302,6 +309,9 @@ export default function BookingDetailPage() {
   const [newTravelDate, setNewTravelDate] = useState("");
   const [dateChangeReason, setDateChangeReason] = useState("");
   const [changingDate, setChangingDate] = useState(false);
+  const [travelDateOptions, setTravelDateOptions] = useState<CalendarEntry[]>([]);
+  const [loadingTravelDates, setLoadingTravelDates] = useState(false);
+  const [travelDatesError, setTravelDatesError] = useState("");
 
   // Communication state
   const [showMsgModal, setShowMsgModal] = useState(false);
@@ -328,6 +338,50 @@ export default function BookingDetailPage() {
   useEffect(() => {
     void fetchBooking();
   }, [fetchBooking]);
+
+  useEffect(() => {
+    if (!showDateModal || !booking?.tour_id) return;
+
+    let cancelled = false;
+    setLoadingTravelDates(true);
+    setTravelDatesError("");
+    void getCalendar(booking.tour_id)
+      .then((entries) => {
+        if (!cancelled) setTravelDateOptions(entries);
+      })
+      .catch((err: unknown) => {
+        if (!cancelled) {
+          setTravelDateOptions([]);
+          setTravelDatesError(getApiErrorMessage(err));
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingTravelDates(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [showDateModal, booking?.tour_id]);
+
+  const requiredSeats = Math.max(
+    0,
+    Number(booking?.adults_count ?? booking?.no_of_adults ?? 0) +
+      Number(booking?.children_count ?? booking?.no_of_children ?? 0),
+  );
+  const currentTravelDate = booking?.tour_date?.slice(0, 10) ?? "";
+  const today = localDateKey();
+  const availableTravelDates = travelDateOptions.filter((entry) => {
+    const date = entry.tour_date?.slice(0, 10);
+    const remainingSeats = Math.max(0, Number(entry.available_seats || 0) - Number(entry.booked_seats || 0));
+    return (
+      Boolean(date) &&
+      date >= today &&
+      date !== currentTravelDate &&
+      ["available", "active"].includes(entry.status) &&
+      remainingSeats >= requiredSeats
+    );
+  });
 
   async function changeStatus(e: React.FormEvent) {
     e.preventDefault();
@@ -474,6 +528,26 @@ export default function BookingDetailPage() {
   const activityItems = booking?.optional_activities || [];
   const accommodationItems = booking?.accommodations || [];
   const extensionItems = booking?.extensions || [];
+  // Older reservations can have a persisted add-on amount but no individual
+  // snapshot rows. Keep the amount visible to Operations without inventing a
+  // product name that was not stored with the booking.
+  const fallbackAddOnItem = (amount: string | undefined, label: string): BookingLineItem[] =>
+    Number(amount || 0) > 0
+      ? [{ name: `${label} (line-item details unavailable)`, total_price: amount }]
+      : [];
+  const displayedActivityItems = activityItems.length
+    ? activityItems
+    : fallbackAddOnItem(booking?.optional_activity_amount, "Optional activities");
+  const displayedAccommodationItems = accommodationItems.length
+    ? accommodationItems
+    : fallbackAddOnItem(booking?.accommodation_amount, "Accommodation add-ons");
+  const displayedExtensionItems = extensionItems.length
+    ? extensionItems
+    : fallbackAddOnItem(booking?.extension_amount, "Tour extensions");
+  const hasAddOnFallback =
+    (activityItems.length === 0 && displayedActivityItems.length > 0) ||
+    (accommodationItems.length === 0 && displayedAccommodationItems.length > 0) ||
+    (extensionItems.length === 0 && displayedExtensionItems.length > 0);
   const travellers = booking?.travellers || [];
   const communications = booking?.communications || [];
   // Portal conversations are rendered above through BookingConversation.  Keep
@@ -679,7 +753,7 @@ export default function BookingDetailPage() {
                   <button
                     type="button"
                     onClick={() => {
-                      setNewTravelDate(booking.tour_date || "");
+                      setNewTravelDate("");
                       setShowDateModal(true);
                     }}
                     className="inline-flex items-center gap-2 rounded-xl border border-dash-border bg-white px-4 py-2.5 text-xs font-bold text-dash-body shadow-xs hover:bg-dash-bg hover:text-dash-text transition active:scale-95"
@@ -811,7 +885,7 @@ export default function BookingDetailPage() {
                 <button
                   type="button"
                   onClick={() => {
-                    setNewTravelDate(booking.tour_date || "");
+                    setNewTravelDate("");
                     setShowDateModal(true);
                   }}
                   className="text-xs font-bold text-dash-brand hover:text-dash-brand-hover"
@@ -916,7 +990,7 @@ export default function BookingDetailPage() {
                     <button
                       type="button"
                       onClick={() => {
-                        setNewTravelDate(booking.tour_date || "");
+                        setNewTravelDate("");
                         setShowDateModal(true);
                       }}
                       className="text-xs font-bold text-dash-brand hover:text-dash-brand-hover inline-flex items-center gap-1"
@@ -939,9 +1013,13 @@ export default function BookingDetailPage() {
                 <DetailPanel
                   title="Add-ons"
                   icon={<Ticket size={18} />}
-                  subtitle="Optional activities, hotel upgrades, and itinerary extensions"
+                  subtitle={
+                    booking.booking_source === "agent"
+                      ? "Optional activities, hotel upgrades, and extensions selected by the agent"
+                      : "Optional activities, hotel upgrades, and extensions selected by the customer"
+                  }
                 >
-                  {activityItems.length === 0 && accommodationItems.length === 0 && extensionItems.length === 0 ? (
+                  {displayedActivityItems.length === 0 && displayedAccommodationItems.length === 0 && displayedExtensionItems.length === 0 ? (
                     <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-dash-border py-8 text-center">
                       <Sparkles size={28} className="text-dash-subtle" />
                       <p className="mt-2 text-sm font-bold text-dash-text">No Add-ons Selected</p>
@@ -949,10 +1027,15 @@ export default function BookingDetailPage() {
                     </div>
                   ) : (
                     <div className="space-y-5">
+                      {hasAddOnFallback && (
+                        <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                          This booking has a saved add-on total, but individual add-on snapshots are unavailable. The amount below remains part of the booking total.
+                        </p>
+                      )}
                       {[
-                        { label: "Optional Activities", items: activityItems, icon: Sparkles },
-                        { label: "Accommodations", items: accommodationItems, icon: Bed },
-                        { label: "Extensions", items: extensionItems, icon: Compass },
+                        { label: "Optional Activities", items: displayedActivityItems, icon: Sparkles },
+                        { label: "Accommodations", items: displayedAccommodationItems, icon: Bed },
+                        { label: "Extensions", items: displayedExtensionItems, icon: Compass },
                       ]
                         .filter((group) => group.items.length > 0)
                         .map((group) => {
@@ -1601,20 +1684,44 @@ export default function BookingDetailPage() {
 
                 <form onSubmit={changeTravelDate} className="mt-4 space-y-4">
                   <p className="text-xs text-dash-muted">
-                    Seat availability is checked automatically against tour calendar availability for the selected new departure date.
+                    Only active tour departures with enough seats for this booking are shown. This booking requires {requiredSeats} seat{requiredSeats === 1 ? "" : "s"}.
                   </p>
 
                   <div>
                     <label className="block text-xs font-bold uppercase tracking-wider text-dash-muted mb-1.5">
                       New Travel Date
                     </label>
-                    <DatePicker
-                      value={newTravelDate}
-                      onChange={setNewTravelDate}
-                      required
-                      placeholder="Select new travel date"
-                      buttonClassName="w-full rounded-xl border border-dash-border bg-white px-3.5 py-2.5 text-sm text-dash-text outline-none focus:border-dash-brand focus:ring-4 focus:ring-dash-brand/10"
-                    />
+                    {loadingTravelDates ? (
+                      <div className="flex items-center gap-2 rounded-xl border border-dash-border bg-dash-bg px-3.5 py-3 text-sm text-dash-muted">
+                        <Loader2 className="animate-spin" size={15} /> Loading available departures...
+                      </div>
+                    ) : travelDatesError ? (
+                      <div className="rounded-xl border border-rose-200 bg-rose-50 px-3.5 py-3 text-sm text-rose-700">
+                        Could not load available departures: {travelDatesError}
+                      </div>
+                    ) : availableTravelDates.length === 0 ? (
+                      <div className="rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-3 text-sm text-amber-800">
+                        No other departure currently has enough seats for this booking.
+                      </div>
+                    ) : (
+                      <select
+                        value={newTravelDate}
+                        onChange={(event) => setNewTravelDate(event.target.value)}
+                        required
+                        className="w-full rounded-xl border border-dash-border bg-white px-3.5 py-2.5 text-sm text-dash-text outline-none focus:border-dash-brand focus:ring-4 focus:ring-dash-brand/10"
+                      >
+                        <option value="">Select an available departure</option>
+                        {availableTravelDates.map((entry) => {
+                          const date = entry.tour_date.slice(0, 10);
+                          const remainingSeats = Math.max(0, Number(entry.available_seats || 0) - Number(entry.booked_seats || 0));
+                          return (
+                            <option key={entry.id ?? date} value={date}>
+                              {formatTravellerDate(date)} - {remainingSeats} seat{remainingSeats === 1 ? "" : "s"} available
+                            </option>
+                          );
+                        })}
+                      </select>
+                    )}
                   </div>
 
                   <div>
@@ -1641,7 +1748,7 @@ export default function BookingDetailPage() {
                     </button>
                     <button
                       type="submit"
-                      disabled={changingDate || !newTravelDate}
+                      disabled={changingDate || loadingTravelDates || !newTravelDate}
                       className="flex items-center gap-2 rounded-xl bg-dash-brand px-5 py-2.5 text-xs font-bold text-white hover:bg-dash-brand-hover disabled:opacity-50 shadow-sm"
                     >
                       {changingDate ? <Loader2 className="animate-spin" size={14} /> : null}

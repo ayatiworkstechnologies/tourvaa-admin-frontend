@@ -865,8 +865,8 @@ export const CONTENT_BLOCK_TABS: ContentBlockTabConfig[] = [
         key: "items",
         label: "Team Members",
         type: "records",
-        hint: "Up to 8 members. Four cards appear per desktop row; additional members continue on the next row.",
-        maxItems: 8,
+        hint: "Up to 5 members. All five cards share one centred desktop row and wrap cleanly on smaller screens.",
+        maxItems: 5,
         subfields: [
           { key: "photo", label: "Photo", type: "asset" },
           { key: "name", label: "Name", type: "text" },
@@ -889,8 +889,8 @@ export const CONTENT_BLOCK_TABS: ContentBlockTabConfig[] = [
         key: "items",
         label: "Awards",
         type: "records",
-        hint: "Up to 10 awards. Five cards appear per desktop row; additional awards continue on the next row.",
-        maxItems: 10,
+        hint: "Up to 5 awards. All five cards share one centred desktop row and wrap cleanly on smaller screens.",
+        maxItems: 5,
         subfields: [
           { key: "title", label: "Title", type: "text" },
           { key: "text", label: "Description", type: "text" },

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { LuCircleAlert as AlertCircle, LuArrowLeft as ArrowLeft, LuBan as Ban, LuBell as Bell, LuCalendarDays as CalendarDays, LuCalendarCheck as CalendarCheck, LuCircleCheckBig as CheckCircle2, LuClock as Clock, LuLoaderCircle as Loader2, LuMessageSquare as MessageSquare, LuPlay as Play, LuSend as Send, LuUser as User, LuCircleX as XCircle, LuX as X } from "react-icons/lu";
+import { LuCircleAlert as AlertCircle, LuArrowLeft as ArrowLeft, LuBan as Ban, LuBed as Bed, LuBell as Bell, LuCalendarDays as CalendarDays, LuCalendarCheck as CalendarCheck, LuCircleCheckBig as CheckCircle2, LuClock as Clock, LuCompass as Compass, LuLoaderCircle as Loader2, LuMessageSquare as MessageSquare, LuPlay as Play, LuSend as Send, LuSparkles as Sparkles, LuTicket as Ticket, LuUser as User, LuCircleX as XCircle, LuX as X } from "react-icons/lu";
 import api from "@/lib/api/client";
 import {
   SupplierPageHeader,
@@ -42,6 +42,14 @@ type StatusHistory = {
   created_at: string;
 };
 
+type BookingAddOn = {
+  id?: number;
+  activity_name_snapshot?: string;
+  accommodation_name_snapshot?: string;
+  extension_name_snapshot?: string;
+  quantity?: number;
+};
+
 type Booking = {
   id: number;
   booking_code: string;
@@ -55,6 +63,7 @@ type Booking = {
   total_travellers?: number;
   adults_count?: number;
   booking_status: string;
+  booking_source?: "customer" | "agent" | "admin" | null;
   supplier_acceptance_status?: string;
   payment_status?: string;
   final_amount?: string | number;
@@ -70,6 +79,9 @@ type Booking = {
   customer_email?: string;
   customer_phone?: string;
   travellers?: Traveller[];
+  optional_activities?: BookingAddOn[];
+  accommodations?: BookingAddOn[];
+  extensions?: BookingAddOn[];
   created_at?: string;
   cancellation_reason?: string;
   supplier_payment_summary?: {
@@ -440,6 +452,27 @@ export default function SupplierBookingDetailPage() {
   const [downloadingIcs, setDownloadingIcs] = useState(false);
   const [messageThread, setMessageThread] = useState<BookingConversationThread | null>(null);
 
+  const addOnGroups = [
+    {
+      label: "Optional Activities",
+      icon: Sparkles,
+      items: booking?.optional_activities ?? [],
+      name: (item: BookingAddOn) => item.activity_name_snapshot,
+    },
+    {
+      label: "Accommodation Upgrades",
+      icon: Bed,
+      items: booking?.accommodations ?? [],
+      name: (item: BookingAddOn) => item.accommodation_name_snapshot,
+    },
+    {
+      label: "Tour Extensions",
+      icon: Compass,
+      items: booking?.extensions ?? [],
+      name: (item: BookingAddOn) => item.extension_name_snapshot,
+    },
+  ].filter((group) => group.items.length > 0);
+
   const load = useCallback(async () => {
     setLoading(true);
     setError("");
@@ -699,6 +732,50 @@ export default function SupplierBookingDetailPage() {
             <div className="mt-3 rounded-xl bg-dash-bg-muted p-3">
               <p className="text-xs font-bold text-dash-muted">Special Requests</p>
               <p className="mt-1 text-sm text-dash-body">{booking.special_requests ?? booking.customer_notes}</p>
+            </div>
+          )}
+        </div>
+
+        {/* Add-ons selected by the customer or agent during booking */}
+        <div className="rounded-xl border border-dash-border bg-white p-5 shadow-sm lg:col-span-2">
+          <div className="mb-1 flex items-center gap-2">
+            <Ticket size={18} className="text-emerald-600" />
+            <h2 className="font-black text-dash-text">Selected Add-ons</h2>
+          </div>
+          <p className="mb-4 text-xs text-dash-muted">
+            {booking.booking_source === "agent"
+              ? "Items selected by the agent for this reservation."
+              : "Items selected by the customer for this reservation."}
+          </p>
+
+          {addOnGroups.length === 0 ? (
+            <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-dash-border py-7 text-center">
+              <Sparkles size={26} className="text-dash-subtle" />
+              <p className="mt-2 text-sm font-bold text-dash-text">No add-ons selected</p>
+              <p className="mt-0.5 text-xs text-dash-muted">Only the standard tour package needs to be fulfilled.</p>
+            </div>
+          ) : (
+            <div className="grid gap-4 md:grid-cols-3">
+              {addOnGroups.map((group) => {
+                const GroupIcon = group.icon;
+                return (
+                  <section key={group.label} className="rounded-xl border border-dash-border-soft bg-dash-bg p-4">
+                    <h3 className="flex items-center gap-2 text-xs font-black uppercase tracking-wide text-dash-muted">
+                      <GroupIcon size={15} className="text-emerald-600" /> {group.label}
+                    </h3>
+                    <ul className="mt-3 space-y-2">
+                      {group.items.map((item, index) => (
+                        <li key={item.id ?? index} className="flex items-start justify-between gap-3 rounded-lg bg-white px-3 py-2.5 text-sm">
+                          <span className="font-semibold text-dash-text">{group.name(item) || "Selected add-on"}</span>
+                          <span className="shrink-0 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-bold text-emerald-700">
+                            Qty {item.quantity ?? 1}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </section>
+                );
+              })}
             </div>
           )}
         </div>

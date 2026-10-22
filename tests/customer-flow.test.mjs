@@ -357,7 +357,7 @@ check(
     contactPage.includes('? "/supplier/bookings"') &&
     contactPage.includes('const messageSupportHref = isSupplierInquiry') &&
     contactPage.includes('? "/supplier/messages"') &&
-    contactPage.includes("href={bookingSupportHref}") &&
+    contactPage.includes("displaySupportCards[0].button_url : bookingSupportHref") &&
     contactPage.includes("href={messageSupportHref}"),
 );
 check("country and catalogue cards show active discount badges", countryToursSection.includes('variant="search"') && (publicTourCard.match(/\{discounted && <DiscountCardBadge percentage=\{tour\.discount_percentage!\} \/>\}/g) || []).length >= 3);

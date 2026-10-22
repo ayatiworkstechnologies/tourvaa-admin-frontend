@@ -219,7 +219,9 @@ check(
   "admin can make a customer-requested travel date change with calendar validation",
   bookingDetail.includes("Change Travel Date") &&
     bookingDetail.includes("/travel-date") &&
-    bookingDetail.includes("Seat availability is checked"),
+    bookingDetail.includes("getCalendar(booking.tour_id)") &&
+    bookingDetail.includes("Only active tour departures with enough seats") &&
+    bookingDetail.includes("remainingSeats >= requiredSeats"),
 );
 
 const payments = read("src/lib/api/services/paymentService.ts");

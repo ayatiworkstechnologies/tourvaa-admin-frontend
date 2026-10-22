@@ -271,17 +271,17 @@ export default function AboutPage() {
   const values = valueItems?.length
     ? valueItems.map((it, i) => ({ number: String(i + 1).padStart(2, "0"), title: it.title || "", desc: it.description || "", badge: it.badge || "", icon: VALUE_ICONS[i % VALUE_ICONS.length], image: it.image || DEFAULT_VALUES[i % DEFAULT_VALUES.length].image }))
     : DEFAULT_VALUES;
-  // Four cards fit per desktop row. A capped, wrapping collection avoids an
-  // overly long team page while keeping partial rows visually centred.
+  // The CMS and public layout share a five-card cap so every saved member has
+  // a predictable desktop position without creating a mostly empty next row.
   const teamItems = teamHeading.items
     ?.filter((item) => Boolean(item.photo || item.name || item.role || item.specialty || item.bio))
-    .slice(0, 8);
+    .slice(0, 5);
   const team = teamItems?.length
     ? teamItems.map((it, i) => ({ name: it.name || "", role: it.role || "", specialty: it.specialty || "", image: it.photo || DEFAULT_TEAM[i % DEFAULT_TEAM.length].image, bio: it.bio || "" }))
     : DEFAULT_TEAM;
   const awardItems = awardsHeading.items
     ?.filter((item) => Boolean(item.title || item.text))
-    .slice(0, 10);
+    .slice(0, 5);
   const awards = awardItems?.length
     ? awardItems.map((it, i) => ({ title: it.title || "", text: it.text || "", icon: AWARD_ICONS[i % AWARD_ICONS.length] }))
     : DEFAULT_AWARDS;
@@ -600,13 +600,13 @@ export default function AboutPage() {
             </p>
           </div>
 
-          <div className="mt-10 flex flex-wrap justify-center gap-6">
+          <div className="mt-10 flex flex-wrap justify-center gap-5">
             {team.map((member, index) => (
               <div
                 key={index}
                 data-reveal
                 style={delay(index * 60)}
-                className="group w-full sm:basis-[calc(50%-0.75rem)] lg:basis-[calc(25%-1.125rem)] overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-4 shadow-xs hover:border-slate-300 hover:shadow-md transition-all duration-200"
+                className="group w-full sm:basis-[calc(50%-0.625rem)] lg:basis-[calc(20%-1rem)] overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-4 shadow-xs hover:border-slate-300 hover:shadow-md transition-all duration-200"
               >
                 <div className="relative h-60 w-full overflow-hidden rounded-xl bg-slate-100">
                   <img

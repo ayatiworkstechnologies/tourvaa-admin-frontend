@@ -40,7 +40,7 @@ export default function CustomerTable({
   onUnblock,
   onReset,
 }: Props) {
-  const { formatExact: money } = useCurrency();
+  const { format: money } = useCurrency();
   const amountText = (customer: Customer, field: "paid" | "pending") => {
     const amounts = customer.amounts_by_currency || [];
     if (customer.has_mixed_currencies || amounts.length > 1) return "Multiple currencies";
