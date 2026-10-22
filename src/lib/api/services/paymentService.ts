@@ -56,6 +56,7 @@ export type PaymentFilters = {
   booking_id?: number;
   payment_status?: string;
   payment_method?: string;
+  gateway?: string;
   start_date?: string;
   end_date?: string;
 };

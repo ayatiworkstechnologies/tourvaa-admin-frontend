@@ -243,6 +243,9 @@ export default function PaymentsPage() {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
+  const [paymentStatus, setPaymentStatus] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState("");
+  const [gateway, setGateway] = useState("");
   const [totalPayments, setTotalPayments] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
@@ -259,7 +262,7 @@ export default function PaymentsPage() {
   const fetchPayments = useCallback(async () => {
     setIsLoading(true);
     try {
-      const res = await getPayments({ page: currentPage, limit: PAGE_SIZE, search: debouncedSearch });
+      const res = await getPayments({ page: currentPage, limit: PAGE_SIZE, search: debouncedSearch, payment_status: paymentStatus, payment_method: paymentMethod, gateway });
       setPayments(res.items ?? (res as { data?: Payment[] }).data ?? []);
       setTotalPayments(res.total ?? 0);
       setTotalPages(res.total_pages ?? 1);
@@ -269,10 +272,17 @@ export default function PaymentsPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [currentPage, debouncedSearch]);
+  }, [currentPage, debouncedSearch, paymentStatus, paymentMethod, gateway]);
 
   useEffect(() => { void fetchPayments(); }, [fetchPayments]);
-  useEffect(() => { setCurrentPage(1); }, [debouncedSearch]);
+  useEffect(() => { setCurrentPage(1); }, [debouncedSearch, paymentStatus, paymentMethod, gateway]);
+
+  const hasFilters = Boolean(paymentStatus || paymentMethod || gateway);
+  const clearFilters = () => {
+    setPaymentStatus("");
+    setPaymentMethod("");
+    setGateway("");
+  };
 
   const fetchStats = useCallback(async () => {
     try {
@@ -433,6 +443,29 @@ export default function PaymentsPage() {
               <p className="mt-1 text-xl font-black text-dash-text">{value}</p>
             </div>
           ))}
+        </section>
+
+        <section className="flex flex-wrap items-end gap-3 rounded-2xl border border-dash-border-soft bg-white p-4 shadow-[0_1px_4px_0_rgb(0,0,0,0.04)]">
+          <label className="min-w-44 flex-1">
+            <span className="mb-1 block text-[11px] font-bold uppercase tracking-wide text-dash-subtle">Payment status</span>
+            <select value={paymentStatus} onChange={(event) => setPaymentStatus(event.target.value)} className="h-10 w-full rounded-xl border border-dash-border bg-white px-3 text-sm font-semibold text-dash-text outline-none focus:border-dash-brand">
+              <option value="">All statuses</option>
+              {STATUSES.map((status) => <option key={status} value={status}>{status.replaceAll("_", " ")}</option>)}
+            </select>
+          </label>
+          <label className="min-w-40 flex-1">
+            <span className="mb-1 block text-[11px] font-bold uppercase tracking-wide text-dash-subtle">Method</span>
+            <select value={paymentMethod} onChange={(event) => setPaymentMethod(event.target.value)} className="h-10 w-full rounded-xl border border-dash-border bg-white px-3 text-sm font-semibold text-dash-text outline-none focus:border-dash-brand">
+              <option value="">All methods</option><option value="card">Card</option><option value="upi">UPI</option><option value="bank_transfer">Bank transfer</option><option value="cash">Cash</option><option value="other">Other</option>
+            </select>
+          </label>
+          <label className="min-w-40 flex-1">
+            <span className="mb-1 block text-[11px] font-bold uppercase tracking-wide text-dash-subtle">Gateway</span>
+            <select value={gateway} onChange={(event) => setGateway(event.target.value)} className="h-10 w-full rounded-xl border border-dash-border bg-white px-3 text-sm font-semibold text-dash-text outline-none focus:border-dash-brand">
+              <option value="">All gateways</option><option value="stripe">Stripe</option><option value="paypal">PayPal</option><option value="manual">Manual</option>
+            </select>
+          </label>
+          <button type="button" disabled={!hasFilters} onClick={clearFilters} className="h-10 rounded-xl border border-dash-border px-4 text-sm font-bold text-dash-muted hover:bg-dash-bg disabled:cursor-not-allowed disabled:opacity-40">Clear filters</button>
         </section>
 
         <DataTable

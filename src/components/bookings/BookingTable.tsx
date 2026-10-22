@@ -154,7 +154,14 @@ export default function BookingTable({
       key: "payment_status",
       header: "Payment",
       className: "whitespace-nowrap",
-      render: (booking) => <BookingStatusBadge value={booking.payment_status} />,
+      render: (booking) => (
+        <div>
+          <BookingStatusBadge value={booking.payment_status} />
+          {booking.payment_capture_retry_pending && (
+            <p className="mt-1 text-[10px] font-bold text-red-600">Capture retrying</p>
+          )}
+        </div>
+      ),
     },
     {
       key: "payment_due_date",

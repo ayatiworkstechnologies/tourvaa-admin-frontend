@@ -63,6 +63,7 @@ export type Booking = {
   booking_status: string;
   supplier_acceptance_status: string;
   payment_status: string;
+  payment_capture_retry_pending?: boolean;
   payment_type: string;
   notes?: string | null;
   customer_notes?: string | null;
