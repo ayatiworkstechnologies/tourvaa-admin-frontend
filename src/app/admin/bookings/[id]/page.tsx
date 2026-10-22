@@ -1364,7 +1364,7 @@ export default function BookingDetailPage() {
                         <>
                           <DetailField
                             label="Total Booking Amount"
-                            value={formatExact(booking.agent_payment_summary.total_booking_amount, booking.currency)}
+                            value={formatExact(booking.agent_payment_summary.total_booking_amount, booking.agent_payment_summary.currency)}
                           />
                           <DetailField
                             label="Agent Commission"
@@ -1372,12 +1372,12 @@ export default function BookingDetailPage() {
                           />
                           <DetailField
                             label="Agent Price After Commission"
-                            value={formatExact(booking.agent_payment_summary.agent_price_after_commission, booking.currency)}
+                            value={formatExact(booking.agent_payment_summary.agent_price_after_commission, booking.agent_payment_summary.currency)}
                             highlight
                           />
                           <DetailField
                             label="Agent Commission Amount"
-                            value={formatExact(booking.agent_payment_summary.commission_amount, booking.currency)}
+                            value={formatExact(booking.agent_payment_summary.commission_amount, booking.agent_payment_summary.commission_currency)}
                           />
                           <DetailField
                             label="Invoice Status"
@@ -1393,18 +1393,18 @@ export default function BookingDetailPage() {
                           />
                           <DetailField
                             label="Amount Paid by Agent"
-                            value={formatExact(booking.agent_payment_summary.amount_paid, booking.currency)}
+                            value={formatExact(booking.agent_payment_summary.amount_paid, booking.agent_payment_summary.currency)}
                           />
                         </>
                       ) : (
                         <>
                           <DetailField
                             label="Total Booking Amount"
-                            value={formatExact(booking.agent_payment_summary.total_booking_amount, booking.currency)}
+                            value={formatExact(booking.agent_payment_summary.total_booking_amount, booking.agent_payment_summary.currency)}
                           />
                           <DetailField
                             label="Amount Paid by Agent"
-                            value={formatExact(booking.agent_payment_summary.amount_paid, booking.currency)}
+                            value={formatExact(booking.agent_payment_summary.amount_paid, booking.agent_payment_summary.currency)}
                           />
                           <DetailField
                             label="Agent Commission"
@@ -1412,16 +1412,16 @@ export default function BookingDetailPage() {
                           />
                           <DetailField
                             label="Commission Amount"
-                            value={formatExact(booking.agent_payment_summary.commission_amount, booking.currency)}
+                            value={formatExact(booking.agent_payment_summary.commission_amount, booking.agent_payment_summary.commission_currency)}
                           />
                           <DetailField
                             label="Agent Price After Commission"
-                            value={formatExact(booking.agent_payment_summary.agent_price_after_commission, booking.currency)}
+                            value={formatExact(booking.agent_payment_summary.agent_price_after_commission, booking.agent_payment_summary.currency)}
                             highlight
                           />
                           <DetailField
                             label="Commission Payable to Agent"
-                            value={formatExact(booking.agent_payment_summary.commission_payable, booking.currency)}
+                            value={formatExact(booking.agent_payment_summary.commission_payable, booking.agent_payment_summary.commission_currency)}
                           />
                           <DetailField
                             label="Commission Status"

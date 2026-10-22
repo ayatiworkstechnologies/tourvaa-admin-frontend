@@ -1234,6 +1234,10 @@ export default function DynamicTourBookingPage() {
           adults_count: adultCount,
           children_count: childCount,
           currency: tourCurrency,
+          // Lock the agent's transaction to the same currency currently
+          // selected in the shared header. The tour currency remains the
+          // supplier/accounting source currency on the backend.
+          display_currency: displayCurrency,
           payment_type: "full",
           travellers: buildTravellersPayload(),
           optional_activities: optionalActivitiesPayload,

@@ -67,7 +67,7 @@ check("tour listing converts from each tour currency", listing.includes("format(
 check("tour listing budget labels follow the active display currency while API ranges keep their source currency", listing.includes("const displayBudgetOptions = useMemo") && listing.includes("format(option.max, sourceCurrency)") && listing.includes("displayBudgetOptions.map"));
 check("tour details convert price and add-ons", detailExperience.includes('format(totalAmount, pricingCurrency)') && detailExperience.includes('format(displayedPerPersonPrice, pricingCurrency)'));
 check("booking review converts display amounts", booking.includes("const { code: displayCurrency, format, formatExact }") && booking.includes("format(Number(priceEstimate.final_amount), priceEstimate.currency)"));
-check("checkout sends the currently selected currency for server-side rate locking", booking.includes("display_currency: displayCurrency"));
+check("customer and agent checkout both send the selected currency for server-side rate locking", (booking.match(/display_currency: displayCurrency/g) || []).length >= 2);
 check("checkout explains that the selected gateway currency and rate are locked", booking.includes("Your payment gateway will charge you in") && booking.includes("{displayCurrency}") && booking.includes("exchange rate are locked"));
 check("confirmed booking amount is shown in its own settled currency, not the display currency", booking.includes("formatExact(Number(bookingResult.amount), bookingResult.currency)"));
 check("checkout explains the price breakdown is a display conversion", booking.includes("`Shown in ${displayCurrency}`"));

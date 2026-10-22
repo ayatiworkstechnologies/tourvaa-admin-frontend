@@ -121,6 +121,8 @@ export type SupplierBreakdown = {
 export type AgentPaymentSummary = {
   transaction_type: "Full Payment" | "Booking Reserved";
   is_reserved: boolean;
+  currency: string;
+  commission_currency: string;
   amount_paid: string;
   total_booking_amount: string;
   commission_percentage: string;

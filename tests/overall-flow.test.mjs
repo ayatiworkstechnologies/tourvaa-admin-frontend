@@ -88,14 +88,18 @@ check(
 check(
   "public contact combines a selected country code with a country-validated local mobile number",
   contactPage.includes("<CountryPhoneInput") &&
-    contactPage.includes("phoneValidationError(phoneCountryIso, form.phone)") &&
-    contactPage.includes("combinePhone(dialCodeForIso(phoneCountryIso), form.phone)"),
+    contactPage.includes("phoneValidationError(phoneCountryIso, formValues.phone)") &&
+    contactPage.includes("combinePhone(dialCodeForIso(phoneCountryIso), formValues.phone)"),
 );
 check(
-  "partner cards use live supplier, agent, and contact destinations",
-  contactPage.includes('href="/supplier-portal/login?tab=register"') &&
-    contactPage.includes('href="/agent-portal/login?tab=register"') &&
-    contactPage.includes('href="/contact#contact-form-section"') &&
+  "CMS partner cards retain live supplier, agent, and contact destination fallbacks",
+  contactPage.includes("DEFAULT_PARTNERS") &&
+    contactPage.includes('button_url: "/supplier-portal/login?tab=register"') &&
+    contactPage.includes('button_url: "/agent-portal/login?tab=register"') &&
+    contactPage.includes('button_url: "/contact#contact-form-section"') &&
+    contactPage.includes("partners[0].button_url || DEFAULT_PARTNERS[0].button_url") &&
+    contactPage.includes("partners[1].button_url || DEFAULT_PARTNERS[1].button_url") &&
+    contactPage.includes("partners[2].button_url || DEFAULT_PARTNERS[2].button_url") &&
     !contactPage.includes('href="/portal/supplier/login"') &&
     !contactPage.includes('href="/portal/agent/login"') &&
     !contactPage.includes('href="/portal"'),
