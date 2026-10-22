@@ -48,6 +48,8 @@ type Tour = {
   min_booking_size?: number | null;
   tour_language?: string | null;
   pending_review_kind?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
 };
 
 type ReviewComment = {
@@ -68,6 +70,14 @@ function statusColors(status: string) {
   if (["rejected", "cancelled"].includes(value))
     return "border-red-200 bg-red-50 text-red-600";
   return "border-slate-200 bg-slate-50 text-slate-600";
+}
+
+function auditDate(value?: string | null) {
+  if (!value) return "Not available";
+  const date = new Date(value);
+  return Number.isNaN(date.getTime())
+    ? "Not available"
+    : date.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
 }
 
 const SEVERITY_STYLES: Record<string, string> = {
@@ -430,6 +440,13 @@ export default function TourWizard({ tourId, role }: { tourId?: string; role: "a
           <span className="text-[11px] text-dash-muted">
             {banner ? banner.message : "Changes save inside each section below."}
           </span>
+          {!isSupplier && (
+            <span className="basis-full text-[11px] text-dash-muted sm:basis-auto sm:ml-auto">
+              Created: <b className="font-semibold text-dash-body">{auditDate(tour?.created_at)}</b>
+              <span aria-hidden="true"> · </span>
+              Last updated: <b className="font-semibold text-dash-body">{auditDate(tour?.updated_at)}</b>
+            </span>
+          )}
           {canWithdraw && (
             <button
               type="button"

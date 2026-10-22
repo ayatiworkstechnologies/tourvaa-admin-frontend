@@ -23,6 +23,14 @@ import { publicTourUrl } from "@/lib/utils/tourUrl";
 
 const PAGE_SIZE = 12;
 
+function auditDate(value: unknown) {
+  if (typeof value !== "string" || !value) return "Not available";
+  const date = new Date(value);
+  return Number.isNaN(date.getTime())
+    ? "Not available"
+    : date.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
+}
+
 export default function ToursPage() {
   const toast = useToast();
   const { confirm, dialog } = useConfirm();
@@ -370,6 +378,17 @@ export default function ToursPage() {
                     <p className="text-xs font-semibold text-dash-subtle">
                       Supplier: <span className="text-dash-body">{String(row.supplier_name || "-")}</span>
                     </p>
+
+                    <div className="grid grid-cols-2 gap-2 rounded-xl bg-dash-bg/70 px-3 py-2 text-[10px] leading-4 text-dash-muted">
+                      <span>
+                        <b className="block uppercase tracking-wide text-dash-subtle">Created</b>
+                        {auditDate(row.created_at)}
+                      </span>
+                      <span>
+                        <b className="block uppercase tracking-wide text-dash-subtle">Last updated</b>
+                        {auditDate(row.updated_at)}
+                      </span>
+                    </div>
 
                     <div className="mt-auto flex flex-col gap-2.5 border-t border-[#F0F3F8] pt-3">
                       <div className="flex items-center justify-between gap-3">

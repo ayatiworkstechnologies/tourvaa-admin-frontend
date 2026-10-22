@@ -5,8 +5,10 @@ import Image from "next/image";
 import { LuCheck as Check, LuCopy as Copy, LuExternalLink as ExternalLink, LuFileText as FileText, LuLoaderCircle as Loader2, LuTrash2 as Trash2, LuCloudUpload as UploadCloud } from "react-icons/lu";
 import api from "@/lib/api/client";
 import {
+  IMAGE_ACCEPT,
   IMAGE_AND_PDF_ACCEPT,
   IMAGE_AND_PDF_FORMAT_LABEL,
+  IMAGE_FORMAT_LABEL,
   VIDEO_ACCEPT,
   VIDEO_FORMAT_LABEL,
 } from "@/lib/uploads/imageFormats";
@@ -15,8 +17,8 @@ type Props = {
   label: string;
   value: string;
   onChange: (value: string) => void;
-  /** "video" accepts MP4/WEBM (up to 50MB) instead of images/PDF (up to 10MB). */
-  kind?: "asset" | "video";
+  /** "image" restricts the picker to images; "video" accepts MP4/WEBM (up to 50MB). */
+  kind?: "asset" | "image" | "video";
   /** Public destination in Cloudinary. Private document endpoints do not use this component. */
   assetScope?: "tour" | "cms";
 };
@@ -53,17 +55,20 @@ export default function AdminAssetUpload({ label, value, onChange, kind = "asset
   const [copied, setCopied] = useState(false);
 
   const isVideoKind = kind === "video";
+  const isImageOnly = kind === "image";
   const isPdfLabel = /\bPDF\b/i.test(label);
   const isSupplierItinerary = /itinerary/i.test(label);
-  const accept = isVideoKind ? VIDEO_ACCEPT : IMAGE_AND_PDF_ACCEPT;
-  const formatLabel = isVideoKind ? VIDEO_FORMAT_LABEL : IMAGE_AND_PDF_FORMAT_LABEL;
+  const accept = isVideoKind ? VIDEO_ACCEPT : isImageOnly ? IMAGE_ACCEPT : IMAGE_AND_PDF_ACCEPT;
+  const formatLabel = isVideoKind ? VIDEO_FORMAT_LABEL : isImageOnly ? IMAGE_FORMAT_LABEL : IMAGE_AND_PDF_FORMAT_LABEL;
   const maxSizeLabel = isVideoKind ? "50MB" : "10MB";
   const maxBytes = (isVideoKind ? 50 : 10) * 1024 * 1024;
   const guidance = isVideoKind
     ? "Recommended: 1920 x 1080 px (16:9). MP4 or WebM, maximum 50 MB."
     : isPdfLabel
       ? "PDF files: maximum 10 MB."
-    : "Landscape images: recommended 1200 x 675 px (16:9). Images/PDF maximum 10 MB.";
+      : isImageOnly
+        ? "Article images: JPG, PNG, WEBP, or AVIF, maximum 10 MB."
+        : "Landscape images: recommended 1200 x 675 px (16:9). Images/PDF maximum 10 MB.";
 
   const upload = async (file: File | null) => {
     if (!file) return;

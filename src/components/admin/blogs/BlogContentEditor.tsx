@@ -26,6 +26,7 @@ import {
   formatBlogTextToHtml,
   getWordCount,
 } from "@/lib/types/blog";
+import AdminAssetUpload from "@/components/operations/AdminAssetUpload";
 
 type EditorViewMode = "write" | "split" | "preview";
 
@@ -477,12 +478,24 @@ export default function BlogContentEditor({
             onSubmit={confirmInsertImage}
             className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl space-y-4"
           >
-            <h4 className="text-base font-bold text-slate-900">Insert Article Photo</h4>
             <div>
-              <label className="mb-1 block text-xs font-bold text-slate-600">Photo URL</label>
+              <h4 className="text-base font-bold text-slate-900">Insert Article Photo</h4>
+              <p className="mt-1 text-xs text-slate-500">Upload an image from your computer or use an existing public URL.</p>
+            </div>
+            <AdminAssetUpload
+              label="Upload article photo"
+              value={imageUrl}
+              onChange={setImageUrl}
+              kind="image"
+              assetScope="cms"
+            />
+            <div className="relative py-1 text-center before:absolute before:inset-x-0 before:top-1/2 before:border-t before:border-slate-200">
+              <span className="relative bg-white px-2 text-[11px] font-semibold uppercase tracking-wide text-slate-400">or use URL</span>
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-bold text-slate-600">Photo URL (optional)</label>
               <input
                 type="url"
-                required
                 value={imageUrl}
                 onChange={(e) => setImageUrl(e.target.value)}
                 placeholder="https://images.unsplash.com/..."
