@@ -6,11 +6,14 @@ import { REPORT_TYPES } from "@/lib/api/services/reportService";
 import { ReportSchedule, createReportSchedule, deleteReportSchedule, getReportSchedules } from "@/lib/api/services/reportService";
 import { useToast } from "@/hooks/useToast";
 import { getApiErrorMessage } from "@/lib/utils/errorHandler";
+import { useAuthContext } from "@/providers/AuthProvider";
 
 const CADENCES = ["daily", "weekly", "monthly"];
 
 export default function ReportScheduleSection() {
   const toast = useToast();
+  const { hasPermission } = useAuthContext();
+  const canManageSchedules = hasPermission("reports.export");
   const [schedules, setSchedules] = useState<ReportSchedule[]>([]);
   const [loading, setLoading] = useState(true);
   const [reportType, setReportType] = useState<string>(REPORT_TYPES[0]?.value ?? "summary");
@@ -30,7 +33,12 @@ export default function ReportScheduleSection() {
     }
   }
 
-  useEffect(() => { void load(); }, []);
+  useEffect(() => {
+    if (canManageSchedules) void load();
+    else setLoading(false);
+  }, [canManageSchedules]);
+
+  if (!canManageSchedules) return null;
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -65,7 +73,7 @@ export default function ReportScheduleSection() {
       <h3 className="mb-1 text-lg font-bold text-dash-text">Report Scheduling</h3>
       <div className="mb-4 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800">
         <AlertCircle size={15} className="mt-0.5 shrink-0" />
-        Schedules are saved here but not yet delivered automatically -- automated sending is a follow-up feature. This lets you set up the configuration in advance.
+        Scheduled CSV reports are queued automatically by the server. Delivery follows the selected cadence and requires configured email delivery.
       </div>
 
       <form onSubmit={submit} className="mb-5 flex flex-wrap items-end gap-3">

@@ -22,6 +22,8 @@ export default function InvoicesPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
+  const [bookingIdFilter, setBookingIdFilter] = useState("");
+  const [customerIdFilter, setCustomerIdFilter] = useState("");
   const [downloadingId, setDownloadingId] = useState<number | null>(null);
   const [regeneratingId, setRegeneratingId] = useState<number | null>(null);
   const [emailingId, setEmailingId] = useState<number | null>(null);
@@ -36,7 +38,7 @@ export default function InvoicesPage() {
   const refresh = async (page = currentPage) => {
     setIsLoading(true);
     try {
-      const invoiceResponse = await getInvoices({ page, limit: PAGE_SIZE });
+      const invoiceResponse = await getInvoices({ page, limit: PAGE_SIZE, booking_id: bookingIdFilter ? Number(bookingIdFilter) : undefined, customer_id: customerIdFilter ? Number(customerIdFilter) : undefined });
       setInvoices(invoiceResponse.items || []);
       setTotalInvoices(invoiceResponse.total || 0);
       setTotalPages(invoiceResponse.total_pages || 1);
@@ -126,7 +128,7 @@ export default function InvoicesPage() {
     async function fetchInvoices() {
       setIsLoading(true);
       try {
-        const invoiceResponse = await getInvoices({ page: currentPage, limit: PAGE_SIZE });
+        const invoiceResponse = await getInvoices({ page: currentPage, limit: PAGE_SIZE, booking_id: bookingIdFilter ? Number(bookingIdFilter) : undefined, customer_id: customerIdFilter ? Number(customerIdFilter) : undefined });
 
         if (!shouldUpdateState) return;
 
@@ -146,7 +148,7 @@ export default function InvoicesPage() {
     return () => {
       shouldUpdateState = false;
     };
-  }, [currentPage]);
+  }, [currentPage, bookingIdFilter, customerIdFilter]);
 
   const invoiceColumns: DataTableColumn<Invoice>[] = [
     {
@@ -234,6 +236,15 @@ export default function InvoicesPage() {
             <button disabled={generating} className="rounded-lg bg-dash-brand px-4 py-2 text-white disabled:opacity-50">{generating ? "Generating..." : "Generate"}</button>
           </form>
         )}
+        <div className="flex flex-wrap items-end gap-3 rounded-xl border border-dash-border bg-white p-4">
+          <label className="text-sm font-medium text-dash-body">Booking ID
+            <input type="number" min="1" value={bookingIdFilter} onChange={(event) => { setBookingIdFilter(event.target.value); setCurrentPage(1); }} className="mt-1 block w-40 rounded-lg border border-dash-border px-3 py-2" placeholder="Any booking" />
+          </label>
+          <label className="text-sm font-medium text-dash-body">Customer ID
+            <input type="number" min="1" value={customerIdFilter} onChange={(event) => { setCustomerIdFilter(event.target.value); setCurrentPage(1); }} className="mt-1 block w-40 rounded-lg border border-dash-border px-3 py-2" placeholder="Any customer" />
+          </label>
+          {(bookingIdFilter || customerIdFilter) && <button type="button" onClick={() => { setBookingIdFilter(""); setCustomerIdFilter(""); setCurrentPage(1); }} className="rounded-lg border border-dash-border px-3 py-2 text-sm font-bold text-dash-muted hover:bg-dash-bg">Clear filters</button>}
+        </div>
         <DataTable
           ariaLabel="Invoices"
           columns={invoiceColumns}

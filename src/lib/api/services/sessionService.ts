@@ -69,7 +69,7 @@ export type PaginatedLoginHistory = {
   total_pages: number;
 };
 
-export async function getLoginHistory(filters: { page?: number; limit?: number; status?: string } = {}) {
+export async function getLoginHistory(filters: { page?: number; limit?: number; user_id?: number; status?: string } = {}) {
   const response = await api.get<PaginatedLoginHistory>("/sessions/login-history", { params: filters });
   return response.data;
 }

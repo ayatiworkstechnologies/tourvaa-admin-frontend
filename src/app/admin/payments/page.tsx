@@ -1,8 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { createPortal } from "react-dom";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { LuCircleAlert as AlertCircle, LuCircleCheckBig as CheckCircle2, LuClock as Clock, LuLoaderCircle as Loader2, LuRotateCcw as RotateCcw, LuWallet as Wallet, LuX as X } from "react-icons/lu";
 import axios from "axios";
 import ModuleWrapper from "@/components/common/ModuleWrapper";
@@ -30,6 +29,14 @@ function StatusBadge({ status }: { status: string }) {
       {status.replaceAll("_", " ")}
     </span>
   );
+}
+
+function paymentContactLabel(payment: Payment) {
+  if (payment.customer_name) return payment.customer_name;
+  if (payment.booking_source === "agent") {
+    return payment.agent_name ? "Agent: " + payment.agent_name : "Agent booking";
+  }
+  return payment.customer_id ? "Customer #" + payment.customer_id : "Customer unavailable";
 }
 
 // ── Action modal ──────────────────────────────────────────────────────────────
@@ -155,6 +162,7 @@ function ActionModal({
 // ── Status update popover ─────────────────────────────────────────────────────
 const STATUSES = ["pending", "authorized", "paid", "partially_paid", "failed", "refunded", "partially_refunded", "voided"];
 
+/*
 function StatusSelect({ payment, onDone }: { payment: Payment; onDone: () => void }) {
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -235,6 +243,7 @@ function StatusSelect({ payment, onDone }: { payment: Payment; onDone: () => voi
     </>
   );
 }
+*/
 
 // ── Main page ─────────────────────────────────────────────────────────────────
 export default function PaymentsPage() {
@@ -257,7 +266,6 @@ export default function PaymentsPage() {
   const canCapture = hasPermission("payments.capture");
   const canVoid = hasPermission("payments.void");
   const canRefund = hasPermission("payments.refund");
-  const canEdit = hasPermission("payments.edit");
 
   const fetchPayments = useCallback(async () => {
     setIsLoading(true);
@@ -346,7 +354,7 @@ export default function PaymentsPage() {
       className: "min-w-48",
       render: p => (
         <div className="max-w-52">
-          <p className="truncate font-semibold text-dash-text" title={p.customer_name || `Customer #${p.customer_id}`}>{p.customer_name || `Customer #${p.customer_id}`}</p>
+          <p className="truncate font-semibold text-dash-text" title={paymentContactLabel(p)}>{paymentContactLabel(p)}</p>
           {p.customer_email && <p className="truncate text-xs text-dash-subtle" title={p.customer_email}>{p.customer_email}</p>}
         </div>
       ),
@@ -416,7 +424,6 @@ export default function PaymentsPage() {
                 Refund
               </button>
             )}
-            {canEdit && <StatusSelect payment={p} onDone={refreshAll} />}
           </div>
         );
       },

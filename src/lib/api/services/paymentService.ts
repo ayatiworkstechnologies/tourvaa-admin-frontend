@@ -25,9 +25,12 @@ export type Payment = {
   booking_id: number;
   booking_code?: string | null;
   currency?: string;
-  customer_id: number;
+  customer_id: number | null;
   customer_name?: string | null;
   customer_email?: string | null;
+  booking_source?: string | null;
+  agent_id?: number | null;
+  agent_name?: string | null;
   payment_method: string;
   payment_type: string;
   gateway?: string;
@@ -154,14 +157,5 @@ export async function processRefund(paymentId: number | string, amount: number, 
 
   return response.data.data;
 }
-
-export async function updatePaymentStatus(paymentId: number | string, paymentStatus: string) {
-  const response = await api.patch<ApiDataResponse<Payment>>(`/payments/${paymentId}/status`, {
-    payment_status: paymentStatus,
-  });
-
-  return response.data.data;
-}
-
 
 

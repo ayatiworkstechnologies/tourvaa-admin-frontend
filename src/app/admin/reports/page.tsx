@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { LuDownload as Download, LuLoaderCircle as Loader2, LuTrendingUp as TrendingUp } from "react-icons/lu";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -41,6 +41,7 @@ import {
 import PrintButton from "@/components/reports/PrintButton";
 import { useToast } from "@/hooks/useToast";
 import { useCurrency } from "@/hooks/useCurrency";
+import { useAuthContext } from "@/providers/AuthProvider";
 import { bookingStatusLabel } from "@/lib/constants/bookingStatus";
 
 function formatDate(iso: string): string {
@@ -328,6 +329,7 @@ async function fetchReportRows(reportType: ReportType, periodParams: { period: R
 // page
 export default function ReportsPage() {
   const toast = useToast();
+  const { hasPermission } = useAuthContext();
   const { format: money, formatCompact } = useCurrency();
   const [data, setData] = useState<ReportSnapshot | null>(null);
   const [loading, setLoading] = useState(true);
@@ -347,6 +349,8 @@ export default function ReportsPage() {
   const rowsPageSize = 10;
   const [detailFilters, setDetailFilters] = useState<DetailReportFilters>({});
   const [salesGranularity, setSalesGranularity] = useState<"day" | "week" | "month">("day");
+  const reportRequestSequence = useRef(0);
+  const canExport = hasPermission("reports.export");
 
   const reportMeta = REPORT_TYPES.find((r) => r.value === reportType)!;
   const supportsDetailFilters = reportType === "booking-report" || reportType === "payment-report";
@@ -375,6 +379,7 @@ export default function ReportsPage() {
   }, []);
 
   const fetchRows = useCallback(async () => {
+    const requestId = ++reportRequestSequence.current;
     setRowsLoading(true);
     setRowsError("");
     try {
@@ -384,29 +389,43 @@ export default function ReportsPage() {
       if (reportType === "sales-revenue-report") {
         const report = await getSalesRevenueReport(periodParams, salesGranularity);
         const { time_series, ...totals } = report;
+        if (requestId !== reportRequestSequence.current) return;
         setRows([totals as unknown as ReportRow]);
         setSalesTimeSeries(time_series);
       } else {
         const result = await fetchReportRows(reportType, periodParams, activeDetailFilters);
+        if (requestId !== reportRequestSequence.current) return;
         setRows(result);
         setSalesTimeSeries([]);
       }
       setRowsPage(1);
     } catch {
+      if (requestId !== reportRequestSequence.current) return;
       setRowsError("Could not load this report.");
       setRows([]);
       setSalesTimeSeries([]);
     } finally {
-      setRowsLoading(false);
+      if (requestId === reportRequestSequence.current) setRowsLoading(false);
     }
   }, [reportType, period, customStart, customEnd, reportMeta.periodAware, activeDetailFilters, salesGranularity]);
 
   useEffect(() => {
-    if (period === "custom" && reportMeta.periodAware && (!customStart || !customEnd)) return;
+    if (period === "custom" && reportMeta.periodAware && (!customStart || !customEnd)) {
+      reportRequestSequence.current += 1;
+      setRows([]);
+      setSalesTimeSeries([]);
+      setRowsError("Choose both custom dates to run this report.");
+      setRowsLoading(false);
+      return;
+    }
     void fetchRows();
   }, [fetchRows, period, customStart, customEnd, reportMeta.periodAware]);
 
   async function handleExport() {
+    if (period === "custom" && reportMeta.periodAware && (!customStart || !customEnd)) {
+      toast.error("Choose both custom dates before exporting.");
+      return;
+    }
     setExporting(true);
     try {
       const periodParams = reportMeta.periodAware
@@ -426,6 +445,10 @@ export default function ReportsPage() {
   }
 
   async function handleExportAll() {
+    if (period === "custom" && reportMeta.periodAware && (!customStart || !customEnd)) {
+      toast.error("Choose both custom dates before exporting.");
+      return;
+    }
     setExportingAll(true);
     try {
       const periodParams = reportMeta.periodAware
@@ -583,7 +606,7 @@ export default function ReportsPage() {
             </div>
             <div className="flex flex-wrap gap-2">
               <PrintButton label={`${reportMeta.label} (${period})`} />
-              <button
+              {canExport && <button
                 type="button"
                 onClick={() => void handleExportAll()}
                 disabled={exportingAll || exporting || rowsLoading}
@@ -592,8 +615,8 @@ export default function ReportsPage() {
               >
                 {exportingAll ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
                 Export all Excel
-              </button>
-              <button
+              </button>}
+              {canExport && <button
                 type="button"
                 onClick={() => void handleExport()}
                 disabled={exporting || exportingAll || rowsLoading}
@@ -601,7 +624,7 @@ export default function ReportsPage() {
               >
                 {exporting ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
                 Export CSV
-              </button>
+              </button>}
             </div>
           </div>
 

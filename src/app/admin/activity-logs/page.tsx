@@ -14,6 +14,9 @@ export default function ActivityLogsPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
+  const [entityType, setEntityType] = useState("");
+  const [action, setAction] = useState("");
+  const [actorUserId, setActorUserId] = useState("");
 
   useEffect(() => {
     let shouldUpdateState = true;
@@ -21,7 +24,7 @@ export default function ActivityLogsPage() {
     async function fetchActivityLogs() {
       setIsLoading(true);
       try {
-        const activityLogResponse = await getActivityLogs({ page: currentPage, limit: PAGE_SIZE });
+        const activityLogResponse = await getActivityLogs({ page: currentPage, limit: PAGE_SIZE, entity_type: entityType || undefined, action: action || undefined, actor_user_id: actorUserId ? Number(actorUserId) : undefined });
 
         if (!shouldUpdateState) return;
 
@@ -41,7 +44,7 @@ export default function ActivityLogsPage() {
     return () => {
       shouldUpdateState = false;
     };
-  }, [currentPage]);
+  }, [currentPage, entityType, action, actorUserId]);
 
   const activityLogColumns: DataTableColumn<ActivityLog>[] = [
     {
@@ -64,6 +67,18 @@ export default function ActivityLogsPage() {
         <div>
           <h1 className="text-2xl font-bold text-dash-text">Activity Logs</h1>
           <p className="text-sm text-dash-muted">Audited booking, payment, invoice, and admin actions.</p>
+        </div>
+        <div className="flex flex-wrap items-end gap-3 rounded-xl border border-dash-border bg-white p-4">
+          <label className="text-sm font-medium text-dash-body">Entity type
+            <input value={entityType} onChange={(event) => { setEntityType(event.target.value); setCurrentPage(1); }} className="mt-1 block w-44 rounded-lg border border-dash-border px-3 py-2" placeholder="e.g. booking" />
+          </label>
+          <label className="text-sm font-medium text-dash-body">Action
+            <input value={action} onChange={(event) => { setAction(event.target.value); setCurrentPage(1); }} className="mt-1 block w-44 rounded-lg border border-dash-border px-3 py-2" placeholder="e.g. updated" />
+          </label>
+          <label className="text-sm font-medium text-dash-body">Actor user ID
+            <input type="number" min="1" value={actorUserId} onChange={(event) => { setActorUserId(event.target.value); setCurrentPage(1); }} className="mt-1 block w-36 rounded-lg border border-dash-border px-3 py-2" placeholder="Any user" />
+          </label>
+          {(entityType || action || actorUserId) && <button type="button" onClick={() => { setEntityType(""); setAction(""); setActorUserId(""); setCurrentPage(1); }} className="rounded-lg border border-dash-border px-3 py-2 text-sm font-bold text-dash-muted hover:bg-dash-bg">Clear filters</button>}
         </div>
 
         <DataTable

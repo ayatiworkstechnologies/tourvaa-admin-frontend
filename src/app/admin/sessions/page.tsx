@@ -30,11 +30,15 @@ export default function SessionsPage() {
   const [historyPage, setHistoryPage] = useState(1);
   const [historyTotal, setHistoryTotal] = useState(0);
   const [historyTotalPages, setHistoryTotalPages] = useState(1);
+  const [sessionUserId, setSessionUserId] = useState("");
+  const [sessionStatus, setSessionStatus] = useState("");
+  const [historyUserId, setHistoryUserId] = useState("");
+  const [historyStatus, setHistoryStatus] = useState("");
 
   const fetchLoginHistory = useCallback(async () => {
     setHistoryLoading(true);
     try {
-      const response = await getLoginHistory({ page: historyPage, limit: PAGE_SIZE });
+      const response = await getLoginHistory({ page: historyPage, limit: PAGE_SIZE, user_id: historyUserId ? Number(historyUserId) : undefined, status: historyStatus || undefined });
       setLoginHistory(response.items || []);
       setHistoryTotal(response.total || 0);
       setHistoryTotalPages(response.total_pages || 1);
@@ -43,7 +47,7 @@ export default function SessionsPage() {
     } finally {
       setHistoryLoading(false);
     }
-  }, [historyPage]);
+  }, [historyPage, historyStatus, historyUserId]);
 
   useEffect(() => {
     if (activeTab === "login_history") void fetchLoginHistory();
@@ -52,7 +56,7 @@ export default function SessionsPage() {
   const fetchUserSessions = useCallback(async () => {
     setIsLoading(true);
     try {
-      const sessionResponse = await getSessions({ page: currentPage, limit: PAGE_SIZE });
+      const sessionResponse = await getSessions({ page: currentPage, limit: PAGE_SIZE, user_id: sessionUserId ? Number(sessionUserId) : undefined, status: sessionStatus || undefined });
       setUserSessions(sessionResponse.items || []);
       setTotalSessions(sessionResponse.total || 0);
       setTotalPages(sessionResponse.total_pages || 1);
@@ -62,7 +66,7 @@ export default function SessionsPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [currentPage]);
+  }, [currentPage, sessionStatus, sessionUserId]);
 
   useEffect(() => { void fetchUserSessions(); }, [fetchUserSessions]);
 
@@ -162,6 +166,16 @@ export default function SessionsPage() {
         </div>
 
         {activeTab === "sessions" && (
+          <>
+          <div className="flex flex-wrap items-end gap-3 rounded-xl border border-dash-border bg-white p-4">
+            <label className="text-sm font-medium text-dash-body">User ID
+              <input type="number" min="1" value={sessionUserId} onChange={(event) => { setSessionUserId(event.target.value); setCurrentPage(1); }} className="mt-1 block w-36 rounded-lg border border-dash-border px-3 py-2" placeholder="Any user" />
+            </label>
+            <label className="text-sm font-medium text-dash-body">Session status
+              <select value={sessionStatus} onChange={(event) => { setSessionStatus(event.target.value); setCurrentPage(1); }} className="mt-1 block rounded-lg border border-dash-border px-3 py-2"><option value="">All statuses</option><option value="active">Active</option><option value="revoked">Revoked</option><option value="expired">Expired</option></select>
+            </label>
+            {(sessionUserId || sessionStatus) && <button type="button" onClick={() => { setSessionUserId(""); setSessionStatus(""); setCurrentPage(1); }} className="rounded-lg border border-dash-border px-3 py-2 text-sm font-bold text-dash-muted hover:bg-dash-bg">Clear filters</button>}
+          </div>
           <DataTable
             ariaLabel="Sessions"
             columns={sessionColumns}
@@ -199,9 +213,20 @@ export default function SessionsPage() {
               </div>
             ) : undefined}
           />
+          </>
         )}
 
         {activeTab === "login_history" && (
+          <>
+          <div className="flex flex-wrap items-end gap-3 rounded-xl border border-dash-border bg-white p-4">
+            <label className="text-sm font-medium text-dash-body">User ID
+              <input type="number" min="1" value={historyUserId} onChange={(event) => { setHistoryUserId(event.target.value); setHistoryPage(1); }} className="mt-1 block w-36 rounded-lg border border-dash-border px-3 py-2" placeholder="Any user" />
+            </label>
+            <label className="text-sm font-medium text-dash-body">Login status
+              <select value={historyStatus} onChange={(event) => { setHistoryStatus(event.target.value); setHistoryPage(1); }} className="mt-1 block rounded-lg border border-dash-border px-3 py-2"><option value="">All statuses</option><option value="success">Success</option><option value="failed">Failed</option></select>
+            </label>
+            {(historyUserId || historyStatus) && <button type="button" onClick={() => { setHistoryUserId(""); setHistoryStatus(""); setHistoryPage(1); }} className="rounded-lg border border-dash-border px-3 py-2 text-sm font-bold text-dash-muted hover:bg-dash-bg">Clear filters</button>}
+          </div>
           <DataTable
             ariaLabel="Login history"
             columns={loginHistoryColumns}
@@ -214,6 +239,7 @@ export default function SessionsPage() {
             onPageChange={setHistoryPage}
             emptyTitle="No login attempts recorded"
           />
+          </>
         )}
       </div>
       {dialog}
