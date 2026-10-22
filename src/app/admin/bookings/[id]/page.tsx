@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
 import ModuleWrapper from "@/components/common/ModuleWrapper";
 import Loader from "@/components/ui/Loader";
+import DatePicker from "@/components/ui/DatePicker";
 import { Booking, type BookingLineItem, getBookingDetail, getBookingPaymentLink } from "@/lib/api/services/bookingService";
 import { getCalendar, type CalendarEntry } from "@/lib/api/services/tourDetailService";
 import BookingStatusBadge from "@/components/bookings/BookingStatusBadge";
@@ -382,6 +383,18 @@ export default function BookingDetailPage() {
       remainingSeats >= requiredSeats
     );
   });
+  const travelDateSeatCounts = Object.fromEntries(
+    availableTravelDates.map((entry) => [
+      entry.tour_date.slice(0, 10),
+      Math.max(0, Number(entry.available_seats || 0) - Number(entry.booked_seats || 0)),
+    ]),
+  );
+  const selectedTravelDate = availableTravelDates.find(
+    (entry) => entry.tour_date.slice(0, 10) === newTravelDate,
+  );
+  const selectedTravelDateSeats = selectedTravelDate
+    ? Math.max(0, Number(selectedTravelDate.available_seats || 0) - Number(selectedTravelDate.booked_seats || 0))
+    : null;
 
   async function changeStatus(e: React.FormEvent) {
     e.preventDefault();
@@ -1704,23 +1717,28 @@ export default function BookingDetailPage() {
                         No other departure currently has enough seats for this booking.
                       </div>
                     ) : (
-                      <select
+                      <DatePicker
                         value={newTravelDate}
-                        onChange={(event) => setNewTravelDate(event.target.value)}
+                        onChange={setNewTravelDate}
+                        minDate={availableTravelDates[0]?.tour_date.slice(0, 10)}
+                        maxDate={availableTravelDates.at(-1)?.tour_date.slice(0, 10)}
+                        availableDates={availableTravelDates.map((entry) => entry.tour_date.slice(0, 10))}
+                        availabilityCounts={travelDateSeatCounts}
+                        restrictToAvailableDates
                         required
-                        className="w-full rounded-xl border border-dash-border bg-white px-3.5 py-2.5 text-sm text-dash-text outline-none focus:border-dash-brand focus:ring-4 focus:ring-dash-brand/10"
-                      >
-                        <option value="">Select an available departure</option>
-                        {availableTravelDates.map((entry) => {
-                          const date = entry.tour_date.slice(0, 10);
-                          const remainingSeats = Math.max(0, Number(entry.available_seats || 0) - Number(entry.booked_seats || 0));
-                          return (
-                            <option key={entry.id ?? date} value={date}>
-                              {formatTravellerDate(date)} - {remainingSeats} seat{remainingSeats === 1 ? "" : "s"} available
-                            </option>
-                          );
-                        })}
-                      </select>
+                        clearable
+                        placeholder="Select an available departure"
+                        subtitle="Green dates show departures and remaining seats"
+                        buttonClassName="border-dash-border"
+                      />
+                    )}
+                    {selectedTravelDateSeats !== null && (
+                      <div className="mt-2 flex items-center justify-between rounded-xl border border-emerald-200 bg-emerald-50 px-3.5 py-2.5 text-sm">
+                        <span className="font-semibold text-emerald-900">{formatTravellerDate(newTravelDate)}</span>
+                        <span className="font-bold text-emerald-700">
+                          {selectedTravelDateSeats} seat{selectedTravelDateSeats === 1 ? "" : "s"} available
+                        </span>
+                      </div>
                     )}
                   </div>
 

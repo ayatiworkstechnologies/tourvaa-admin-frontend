@@ -294,6 +294,8 @@ export default function AgentDetailPage() {
   const summaryCurrency = String(
     (summary as { currency?: string } | undefined)?.currency || record?.currency || "USD",
   ).toUpperCase();
+  const hasMixedSummaryCurrencies = Boolean((summary as { has_mixed_currencies?: boolean } | undefined)?.has_mixed_currencies);
+  const summaryMoney = (value: unknown) => hasMixedSummaryCurrencies ? "Multiple currencies" : moneyText(value as string | number | null | undefined, summaryCurrency);
 
   const storedBusinessYears = businessInfo?.years_in_business;
   const yearsInBusiness: DetailValue =
@@ -636,7 +638,7 @@ export default function AgentDetailPage() {
                 {summary?.total_bookings ?? recentBookings.length}
               </p>
               <p className="mt-1 text-xs text-dash-muted">
-                Gross value: <strong>{moneyText(summary?.total_booking_value, summaryCurrency)}</strong>
+                Eligible sales: <strong>{summaryMoney(summary?.sales_booking_value)}</strong>
               </p>
             </div>
 
@@ -651,10 +653,10 @@ export default function AgentDetailPage() {
                 </span>
               </div>
               <p className="mt-2 text-2xl font-black text-dash-text text-emerald-600">
-                {moneyText(summary?.amount_paid, summaryCurrency)}
+                {summaryMoney(summary?.amount_paid)}
               </p>
               <p className="mt-1 text-xs text-dash-muted">
-                Pending settlement: {moneyText(summary?.amount_pending, summaryCurrency)}
+                Outstanding: {summaryMoney(summary?.amount_pending)}
               </p>
             </div>
 

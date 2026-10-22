@@ -232,33 +232,26 @@ export default function CustomerProfilePage() {
         address,
         address_line_1: address,
         nationality,
-        country: nationality,
-        country_name: nationality,
-        passport_no: passportNumber,
         passport_number: passportNumber,
         passport_expiry: passportExpiry,
-        dob,
         date_of_birth: dob,
         gender,
         frequent_flyer: frequentFlyer,
         preferred_airline: preferredAirline,
-        emergency_contact_name: emergencyName,
         emergency_name: emergencyName,
-        emergency_contact_relationship: emergencyRelation,
         emergency_relation: emergencyRelation,
-        emergency_contact_phone: emergencyPhone,
         emergency_phone: emergencyPhone,
-        emergency_contact_email: emergencyEmail,
-        emergency_email: emergencyEmail,
+        ...(emergencyEmail.trim() ? { emergency_email: emergencyEmail.trim() } : {}),
       });
       await refreshSession();
       toast.success("Profile updated successfully.");
       router.push("/customer/dashboard");
     } catch (err: unknown) {
       if (axios.isAxiosError(err)) {
+        const detail = err.response?.data?.detail;
         toast.error(
           err.response?.data?.message ||
-            err.response?.data?.detail ||
+            (Array.isArray(detail) ? detail[0]?.msg : detail) ||
             "Could not save profile.",
         );
       } else {

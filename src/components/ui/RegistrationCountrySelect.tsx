@@ -9,10 +9,11 @@ import { PHONE_COUNTRIES } from "@/lib/utils/phoneCountries";
 type RegistrationCountrySelectProps = {
   value: CountryCode | "";
   onChange: (iso: CountryCode) => void;
+  errorMessage?: string;
 };
 
 /** The country selected here is also the sole source for the telephone dial code. */
-export default function RegistrationCountrySelect({ value, onChange }: RegistrationCountrySelectProps) {
+export default function RegistrationCountrySelect({ value, onChange, errorMessage }: RegistrationCountrySelectProps) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const containerRef = useRef<HTMLDivElement>(null);
@@ -53,7 +54,9 @@ export default function RegistrationCountrySelect({ value, onChange }: Registrat
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-label="Select country"
-        className="flex w-full items-center gap-3 rounded-xl border border-dash-border bg-white px-3 py-2.5 text-left text-sm text-dash-text outline-none transition hover:border-slate-300 focus:border-dash-brand focus:ring-4 focus:ring-sky-100 active:translate-y-px"
+        data-invalid={Boolean(errorMessage) || undefined}
+        aria-describedby={errorMessage ? "registration-country-error" : undefined}
+        className={`flex w-full items-center gap-3 rounded-xl border bg-white px-3 py-2.5 text-left text-sm text-dash-text outline-none transition hover:border-slate-300 focus:ring-4 active:translate-y-px ${errorMessage ? "border-red-400 focus:border-red-400 focus:ring-red-100" : "border-dash-border focus:border-dash-brand focus:ring-sky-100"}`}
       >
         {selected ? (
           <span className="flex h-6 w-9 shrink-0 items-center overflow-hidden rounded-md border border-slate-200 bg-slate-50 p-0.5 shadow-sm"><FlagIcon countryCode={selected.iso} /></span>
@@ -107,6 +110,7 @@ export default function RegistrationCountrySelect({ value, onChange }: Registrat
           </ul>
         </div>
       )}
+      {errorMessage ? <p id="registration-country-error" role="alert" className="mt-1.5 text-xs font-medium text-red-600">{errorMessage}</p> : null}
     </div>
   );
 }

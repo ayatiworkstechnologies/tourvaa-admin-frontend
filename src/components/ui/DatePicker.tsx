@@ -6,7 +6,6 @@ import {
   LuCalendarDays as CalendarDays,
   LuChevronLeft as ChevronLeft,
   LuChevronRight as ChevronRight,
-  LuCircleCheck as CircleCheck,
   LuX as X,
 } from "react-icons/lu";
 
@@ -22,6 +21,8 @@ export type DatePickerProps = {
   className?: string;
   buttonClassName?: string;
   availableDates?: string[];
+  /** Optional remaining-seat count keyed by YYYY-MM-DD for available departure calendars. */
+  availabilityCounts?: Record<string, number>;
   disabledDates?: string[];
   /** Return a reason to block a date dynamically (for example an active offer). */
   disabledDateReason?: (date: string) => string | undefined;
@@ -63,6 +64,7 @@ export default function DatePicker({
   className = "",
   buttonClassName = "",
   availableDates = [],
+  availabilityCounts = {},
   disabledDates = [],
   disabledDateReason,
   restrictToAvailableDates = false,
@@ -270,19 +272,26 @@ export default function DatePicker({
               const selected = value.slice(0, 10) === key;
               const isToday = dateKey(today) === key;
               const available = availableSet.has(key);
+              const availabilityCount = availabilityCounts[key];
+              const availabilityText = Number.isFinite(availabilityCount) ? `${availabilityCount} seats available` : "";
               return (
                 <button
                   key={key}
                   type="button"
                   disabled={dateDisabled}
                   onClick={() => selectDate(date)}
-                  aria-label={`${date.toLocaleDateString("en-US", { dateStyle: "full" })}${disabledReason ? `. Unavailable: ${disabledReason}` : ""}`}
+                  aria-label={`${date.toLocaleDateString("en-US", { dateStyle: "full" })}${availabilityText ? `. ${availabilityText}` : ""}${disabledReason ? `. Unavailable: ${disabledReason}` : ""}`}
                   aria-pressed={selected}
                   title={disabledReason}
-                  className={`relative flex h-10 items-center justify-center rounded-xl text-xs font-bold transition ${selected ? `${accentStyles.selected} shadow-md` : dateDisabled ? disabledReason ? "cursor-not-allowed bg-rose-50 text-rose-300 line-through decoration-rose-300" : "cursor-not-allowed text-slate-300 line-through decoration-slate-300" : outsideMonth ? "text-slate-300 hover:bg-slate-50" : isToday ? accentStyles.soft : "text-slate-700 hover:bg-slate-100 hover:text-slate-950"}`}
+                  className={`relative flex h-11 flex-col items-center justify-center rounded-xl text-xs font-bold leading-none transition ${selected ? `${accentStyles.selected} shadow-md` : dateDisabled ? disabledReason ? "cursor-not-allowed bg-rose-50 text-rose-300 line-through decoration-rose-300" : "cursor-not-allowed text-slate-300 line-through decoration-slate-300" : outsideMonth ? "text-slate-300 hover:bg-slate-50" : isToday ? accentStyles.soft : "text-slate-700 hover:bg-slate-100 hover:text-slate-950"}`}
                 >
-                  {selected ? <CircleCheck size={17} /> : date.getDate()}
-                  {available && !selected && !dateDisabled && <span className={`absolute bottom-1 h-1 w-1 rounded-full ${accentStyles.dot}`} />}
+                  <span>{date.getDate()}</span>
+                  {available && !dateDisabled && Number.isFinite(availabilityCount) && (
+                    <span className={`mt-1 text-[8px] font-black ${selected ? "text-white/90" : "text-emerald-700"}`}>
+                      {availabilityCount} left
+                    </span>
+                  )}
+                  {available && !selected && !dateDisabled && !Number.isFinite(availabilityCount) && <span className={`absolute bottom-1 h-1 w-1 rounded-full ${accentStyles.dot}`} />}
                 </button>
               );
             })}
@@ -290,7 +299,7 @@ export default function DatePicker({
 
           <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3">
             <div className="flex items-center gap-2 text-[10px] font-semibold text-slate-500">
-              {availableSet.size > 0 && <><span className={`h-2 w-2 rounded-full ${accentStyles.dot}`} />Available</>}
+              {availableSet.size > 0 && <><span className={`h-2 w-2 rounded-full ${accentStyles.dot}`} />Available{Object.keys(availabilityCounts).length > 0 ? " (seats left shown)" : ""}</>}
             </div>
             <div className="flex gap-2">
               {clearable && <button type="button" aria-label="Clear selected date" onClick={clearDate} className="rounded-lg px-2.5 py-1.5 text-xs font-bold text-slate-500 hover:bg-slate-100">Clear</button>}

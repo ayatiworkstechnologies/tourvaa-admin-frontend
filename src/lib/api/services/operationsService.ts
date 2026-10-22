@@ -74,9 +74,13 @@ export type ReviewRecord = {
     summary: {
       total_bookings: number;
       total_customers: number;
-      total_booking_value: string;
+      sales_booking_value: string;
       amount_paid: string;
       amount_pending: string;
+      reconciliation_difference: string;
+      currency: string | null;
+      currencies: string[];
+      has_mixed_currencies: boolean;
       confirmed_bookings: number;
       completed_bookings: number;
       cancelled_bookings: number;

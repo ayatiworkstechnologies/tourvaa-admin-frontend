@@ -21,8 +21,15 @@ export type ReportSummary = {
   total_bookings: number;
   confirmed_bookings: number;
   cancelled_bookings: number;
+  /** Gross active booking value for the selected booking month. */
+  gross_sales: string;
+  /** Amount settled against the same bookings; gross = settled + outstanding. */
+  settled_amount: string;
+  outstanding_amount: string;
+  reconciliation_difference: string;
   captured_revenue: string;
   pending_payments: string;
+  /** Invoice documents are audit records and are not additive to gross sales. */
   invoice_total: string;
 };
 

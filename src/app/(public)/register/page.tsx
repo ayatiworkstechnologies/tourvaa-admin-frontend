@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useForm, useWatch } from "react-hook-form";
 import Link from "next/link";
 import Image from "next/image";
 import axios from "axios";
@@ -18,6 +19,7 @@ import api from "@/lib/api/client";
 import { normalizeEmail, registrationEmailValidationError } from "@/lib/utils/validators";
 import CountryPhoneInput from "@/components/ui/CountryPhoneInput";
 import RegistrationCountrySelect from "@/components/ui/RegistrationCountrySelect";
+import FormFieldError from "@/components/ui/FormFieldError";
 import { dialCodeForIso, phoneValidationError } from "@/lib/utils/phoneCountries";
 import { useCurrency } from "@/hooks/useCurrency";
 import { useGeoCountries } from "@/hooks/useGeo";
@@ -35,6 +37,8 @@ const initialForm = {
   mobile_number: "",
   accepted_terms: false,
 };
+
+type RegistrationFormValues = typeof initialForm;
 
 function errorMessage(error: unknown) {
   if (axios.isAxiosError(error)) {
@@ -83,7 +87,20 @@ const PERKS = [
 ];
 
 export default function RegisterPage() {
-  const [form, setForm] = useState(initialForm);
+  const {
+    clearErrors,
+    formState: { errors },
+    handleSubmit,
+    register,
+    setError: setFieldError,
+    setValue,
+    control,
+  } = useForm<RegistrationFormValues>({
+    defaultValues: initialForm,
+    mode: "onBlur",
+    reValidateMode: "onChange",
+  });
+  const form = useWatch({ control });
   const [phoneIso, setPhoneIso] = useState<CountryCode | "">("");
   const { countries, loading: countriesLoading } = useGeoCountries();
   const { setCountry } = useCurrency();
@@ -100,6 +117,8 @@ export default function RegisterPage() {
   });
 
   function startResendCooldown(email: string, token: string) {
+    // This handler runs only after a resend/register action, never during render.
+    // eslint-disable-next-line react-hooks/purity
     const cooldownUntil = Date.now() + RESEND_COOLDOWN_SECONDS * 1000;
     setSentEmail(email);
     setChangeToken(token);
@@ -131,24 +150,29 @@ export default function RegisterPage() {
     return () => window.clearTimeout(timer);
   }, [resendIn, sentEmail]);
 
-  async function submit(event: React.FormEvent) {
-    event.preventDefault();
+  async function submit(formValues: RegistrationFormValues) {
     setError("");
     const selectedCountry = countries.find(
       (country) => country.code.toUpperCase() === phoneIso,
     );
-    const emailError = registrationEmailValidationError(form.email);
-    if (emailError) return setError(emailError);
-    if (!phoneIso) return setError("Select your country before entering your mobile number.");
+    if (!phoneIso) {
+      setFieldError("country_code", { type: "manual", message: "Select your country before entering your mobile number." });
+      return;
+    }
     if (countriesLoading) return setError("Countries are still loading. Please try again.");
-    if (!selectedCountry) return setError("Select a valid country.");
-    const phoneError = phoneValidationError(phoneIso, form.mobile_number);
-    if (phoneError) return setError(phoneError);
-    if (!form.accepted_terms) return setError("Accept the Terms and Privacy Policy to continue.");
+    if (!selectedCountry) {
+      setFieldError("country_code", { type: "manual", message: "Select a valid country." });
+      return;
+    }
+    const phoneError = phoneValidationError(phoneIso, formValues.mobile_number);
+    if (phoneError) {
+      setFieldError("mobile_number", { type: "manual", message: phoneError });
+      return;
+    }
 
     setLoading(true);
     try {
-      const email = normalizeEmail(form.email);
+      const email = normalizeEmail(formValues.email);
       if (changeToken) {
         await api.post("/auth/change-registration-email", {
           change_token: changeToken,
@@ -159,13 +183,13 @@ export default function RegisterPage() {
         startResendCooldown(email, changeToken);
       } else {
         const base = {
-          first_name: form.first_name,
+          first_name: formValues.first_name.trim(),
           email,
           country_id: selectedCountry.id,
           country_iso: phoneIso,
           country_code: dialCodeForIso(phoneIso),
-          mobile_number: form.mobile_number,
-          accepted_terms: form.accepted_terms,
+          mobile_number: formValues.mobile_number,
+          accepted_terms: formValues.accepted_terms,
           account_type: ACCOUNT_TYPE,
           redirect,
         };
@@ -246,7 +270,7 @@ export default function RegisterPage() {
               <p className="mt-1 text-sm text-slate-500">Verify your email to start booking your dream trips.</p>
             </div>
 
-            <form onSubmit={submit} className="space-y-4">
+            <form onSubmit={handleSubmit(submit)} noValidate className="space-y-4">
               <div className="grid grid-cols-3 gap-2">
                 {[
                   { key: "google", label: "Google", icon: FaGoogle },
@@ -273,13 +297,18 @@ export default function RegisterPage() {
                 <div className="relative">
                   <User size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                   <input
-                    required autoComplete="given-name"
-                    value={form.first_name}
-                    onChange={(e) => setForm({ ...form, first_name: e.target.value })}
+                    autoComplete="given-name"
+                    aria-invalid={Boolean(errors.first_name)}
+                    aria-describedby={errors.first_name ? "registration-first-name-error" : undefined}
+                    {...register("first_name", {
+                      required: "Enter your first name.",
+                      validate: (value) => value.trim().length >= 2 || "Enter at least 2 characters.",
+                    })}
                     placeholder="e.g. Alex"
                     className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-4 text-sm placeholder:text-slate-400 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
                   />
                 </div>
+                <FormFieldError id="registration-first-name-error" message={errors.first_name?.message} />
               </div>
 
               {/* Email */}
@@ -288,22 +317,29 @@ export default function RegisterPage() {
                 <div className="relative">
                   <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                   <input
-                    required autoComplete="email" type="email"
-                    value={form.email}
-                    onChange={(e) => setForm({ ...form, email: e.target.value })}
+                    autoComplete="email" type="email"
+                    aria-invalid={Boolean(errors.email)}
+                    aria-describedby={errors.email ? "registration-email-error" : undefined}
+                    {...register("email", {
+                      required: "Enter your email address.",
+                      validate: (value) => registrationEmailValidationError(value) || true,
+                    })}
                     placeholder="alex.smith@example.com"
                     className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-4 text-sm placeholder:text-slate-400 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
                   />
                 </div>
+                <FormFieldError id="registration-email-error" message={errors.email?.message} />
               </div>
 
               {/* Mobile */}
               <div>
                 <RegistrationCountrySelect
                   value={phoneIso}
+                  errorMessage={errors.country_code?.message}
                   onChange={(iso) => {
                     setPhoneIso(iso);
-                    setForm((f) => ({ ...f, country_code: dialCodeForIso(iso) }));
+                    setValue("country_code", dialCodeForIso(iso), { shouldDirty: true, shouldValidate: true });
+                    clearErrors("country_code");
                     void setCountry(iso);
                   }}
                 />
@@ -311,10 +347,14 @@ export default function RegisterPage() {
                   label="Mobile number"
                   required
                   countryIso={phoneIso}
-                  number={form.mobile_number}
+                  number={form.mobile_number ?? ""}
                   showCountryPicker={false}
                   onCountryChange={() => undefined}
-                  onNumberChange={(digits) => setForm((f) => ({ ...f, mobile_number: digits }))}
+                  onNumberChange={(digits) => {
+                    setValue("mobile_number", digits, { shouldDirty: true });
+                    clearErrors("mobile_number");
+                  }}
+                  errorMessage={errors.mobile_number?.message}
                 />
               </div>
 
@@ -322,8 +362,11 @@ export default function RegisterPage() {
               <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3.5 text-xs leading-5 text-slate-600 transition hover:bg-slate-100">
                 <input
                   type="checkbox"
-                  checked={form.accepted_terms}
-                  onChange={(e) => setForm({ ...form, accepted_terms: e.target.checked })}
+                  aria-invalid={Boolean(errors.accepted_terms)}
+                  aria-describedby={errors.accepted_terms ? "registration-terms-error" : undefined}
+                  {...register("accepted_terms", {
+                    validate: (value) => value || "Accept the Terms and Privacy Policy to continue.",
+                  })}
                   className="mt-0.5 h-4 w-4 accent-blue-600 rounded"
                 />
                 <span>
@@ -333,6 +376,7 @@ export default function RegisterPage() {
                   <Link className="font-bold text-blue-600 hover:text-blue-700" href="/privacy-policy">Privacy Policy</Link>.
                 </span>
               </label>
+              <FormFieldError id="registration-terms-error" message={errors.accepted_terms?.message} />
 
               {error && (
                 <div role="alert" className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-600">

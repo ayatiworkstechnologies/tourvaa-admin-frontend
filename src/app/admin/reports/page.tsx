@@ -286,9 +286,11 @@ function buildColumns(reportType: ReportType, money: FormatMoney): DataTableColu
         { key: "total_bookings", header: "Total Bookings" },
         { key: "confirmed_bookings", header: "Confirmed" },
         { key: "cancelled_bookings", header: "Cancelled" },
-        { key: "captured_revenue", header: "Revenue", render: (r) => money(r.captured_revenue) },
-        { key: "pending_payments", header: "Pending", render: (r) => money(r.pending_payments) },
-        { key: "invoice_total", header: "Invoiced", render: (r) => money(r.invoice_total) },
+        { key: "gross_sales", header: "Gross Sales", className: "font-bold text-dash-text", render: (r) => money(r.gross_sales) },
+        { key: "settled_amount", header: "Settled", className: "text-emerald-700", render: (r) => money(r.settled_amount) },
+        { key: "outstanding_amount", header: "Outstanding", className: "text-amber-700", render: (r) => money(r.outstanding_amount) },
+        { key: "reconciliation_difference", header: "Reconciliation", className: "font-bold", render: (r) => money(r.reconciliation_difference) },
+        { key: "invoice_total", header: "Invoice Documents (non-additive)", render: (r) => money(r.invoice_total) },
       ];
   }
 }

@@ -3,6 +3,7 @@
 /* eslint-disable @next/next/no-img-element */
 
 import React, { useEffect, useState } from "react";
+import { useForm, useWatch } from "react-hook-form";
 import type { CountryCode } from "libphonenumber-js/min";
 import { usePublicSettings } from "@/providers/PublicSettingsProvider";
 import Link from "next/link";
@@ -31,6 +32,7 @@ import { getApiErrorMessage } from "@/lib/utils/errorHandler";
 import { combinePhone, validateEmail } from "@/lib/utils/validators";
 import { dialCodeForIso, phoneValidationError } from "@/lib/utils/phoneCountries";
 import CountryPhoneInput from "@/components/ui/CountryPhoneInput";
+import FormFieldError from "@/components/ui/FormFieldError";
 import OfficesWorldMap, {
   OFFICES,
 } from "@/components/public/contact/OfficesWorldMap";
@@ -41,6 +43,15 @@ interface FaqItem {
   question: string;
   answer: string;
 }
+
+type ContactFormValues = {
+  reservation: "yes" | "no";
+  name: string;
+  phone: string;
+  email: string;
+  subject: string;
+  message: string;
+};
 
 const DEFAULT_FAQS: FaqItem[] = [
   {
@@ -256,19 +267,46 @@ export default function ContactPage({ audience }: { audience?: "supplier" | "age
   };
 
   // Inquiry form state
-  const [form, setForm] = useState({
-    reservation: "no",
-    name: "",
-    phone: "",
-    email: "",
-    subject: "General Inquiry",
-    message: "",
+  const {
+    clearErrors,
+    formState: { errors },
+    handleSubmit,
+    register,
+    setError: setFieldError,
+    setValue,
+    control,
+  } = useForm<ContactFormValues>({
+    defaultValues: {
+      reservation: "no",
+      name: "",
+      phone: "",
+      email: "",
+      subject: "General Inquiry",
+      message: "",
+    },
+    mode: "onBlur",
+    reValidateMode: "onChange",
   });
+  const form = useWatch({ control });
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [sent, setSent] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
   const [phoneCountryIso, setPhoneCountryIso] = useState<CountryCode>("IN");
-  const [phoneError, setPhoneError] = useState<string>("");
+
+  useEffect(() => {
+    register("name", {
+      required: "Enter your full name.",
+      validate: (value) => value.trim().length >= 2 || "Enter at least 2 characters.",
+    });
+    register("email", {
+      required: "Enter your email address.",
+      validate: (value) => validateEmail(value.trim()) || "Enter a valid email address.",
+    });
+    register("message", {
+      required: "Tell us how we can help.",
+      validate: (value) => value.trim().length >= 10 || "Enter at least 10 characters so we can help.",
+    });
+  }, [register]);
 
   useEffect(() => {
     const context = audience ?? new URLSearchParams(window.location.search).get("context");
@@ -277,9 +315,15 @@ export default function ContactPage({ audience }: { audience?: "supplier" | "age
   }, [audience]);
 
   useEffect(() => {
-    if (isSupplierInquiry) setForm((current) => ({ ...current, reservation: "no", subject: "Supplier Registration & Onboarding" }));
-    if (isAgentInquiry) setForm((current) => ({ ...current, reservation: "no", subject: "Agent Account Support" }));
-  }, [isAgentInquiry, isSupplierInquiry]);
+    if (isSupplierInquiry) {
+      setValue("reservation", "no");
+      setValue("subject", "Supplier Registration & Onboarding");
+    }
+    if (isAgentInquiry) {
+      setValue("reservation", "no");
+      setValue("subject", "Agent Account Support");
+    }
+  }, [isAgentInquiry, isSupplierInquiry, setValue]);
 
   // Modal state
   const [showInquiryModal, setShowInquiryModal] = useState<boolean>(false);
@@ -298,37 +342,27 @@ export default function ContactPage({ audience }: { audience?: "supplier" | "age
     setTimeout(() => setEmailCopied(false), 2000);
   };
 
-  const submitInquiry = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const email = form.email.trim();
-    const phone = form.phone
-      ? combinePhone(dialCodeForIso(phoneCountryIso), form.phone)
+  const submitInquiry = async (formValues: ContactFormValues) => {
+    const email = formValues.email.trim();
+    const phone = formValues.phone
+      ? combinePhone(dialCodeForIso(phoneCountryIso), formValues.phone)
       : "";
-    if (!form.name.trim() || !form.message.trim()) {
-      setError("Enter your name and message.");
-      return;
-    }
-    if (!validateEmail(email)) {
-      setError("Enter a valid email address.");
-      return;
-    }
-    const mobileError = form.phone ? phoneValidationError(phoneCountryIso, form.phone) : null;
+    const mobileError = formValues.phone ? phoneValidationError(phoneCountryIso, formValues.phone) : null;
     if (mobileError) {
-      setPhoneError(mobileError);
+      setFieldError("phone", { type: "validate", message: mobileError });
       return;
     }
-    setPhoneError("");
     setSubmitting(true);
     setError("");
     try {
       await publicApi.post("/contact", {
-        name: form.name.trim(),
+        name: formValues.name.trim(),
         email,
         phone,
         audience: isSupplierInquiry ? "supplier" : isAgentInquiry ? "agent" : "public",
-        enquiry_type: form.subject || "General Inquiry",
-        subject: form.subject || "General Inquiry",
-        message: `${isSupplierInquiry ? "Existing supplier account: " : isAgentInquiry ? "Existing agent account: " : "Reservation number: "}${form.reservation === "yes" ? "Yes" : "No"}\n\n${form.message}`,
+        enquiry_type: formValues.subject || "General Inquiry",
+        subject: formValues.subject || "General Inquiry",
+        message: `${isSupplierInquiry ? "Existing supplier account: " : isAgentInquiry ? "Existing agent account: " : "Reservation number: "}${formValues.reservation === "yes" ? "Yes" : "No"}\n\n${formValues.message}`,
       });
       setSent(true);
     } catch (err: unknown) {
@@ -619,14 +653,16 @@ export default function ContactPage({ audience }: { audience?: "supplier" | "age
                     type="button"
                     onClick={() => {
                       setSent(false);
-                      setForm({
-                        reservation: "no",
-                        name: "",
-                        phone: "",
-                        email: "",
-                        subject: isSupplierInquiry ? "Supplier Registration & Onboarding" : isAgentInquiry ? "Agent Account Support" : "General Inquiry",
-                        message: "",
-                      });
+                      clearErrors();
+                      setValue("reservation", "no");
+                      setValue("name", "");
+                      setValue("phone", "");
+                      setValue("email", "");
+                      setValue(
+                        "subject",
+                        isSupplierInquiry ? "Supplier Registration & Onboarding" : isAgentInquiry ? "Agent Account Support" : "General Inquiry",
+                      );
+                      setValue("message", "");
                     }}
                     className="mt-6 inline-flex items-center gap-2 rounded-xl bg-[#0B1F3A] px-6 py-3 text-xs font-bold text-white shadow-sm hover:bg-slate-800 transition"
                   >
@@ -653,7 +689,7 @@ export default function ContactPage({ audience }: { audience?: "supplier" | "age
                     </div>
                   )}
 
-                  <form onSubmit={submitInquiry} className="mt-6 space-y-4">
+                  <form onSubmit={handleSubmit(submitInquiry)} noValidate className="mt-6 space-y-4">
                     {/* Booking Status Radio */}
                     <div className="rounded-xl border border-slate-200/90 bg-slate-50/60 p-3.5">
                       <label className="block text-xs font-bold text-slate-800">
@@ -666,7 +702,7 @@ export default function ContactPage({ audience }: { audience?: "supplier" | "age
                             name="reservation"
                             value="no"
                             checked={form.reservation === "no"}
-                            onChange={() => setForm({ ...form, reservation: "no" })}
+                            onChange={() => setValue("reservation", "no")}
                             className="accent-pub-secondary"
                           />
                           <span>{isSupplierInquiry ? "No, I am registering as a supplier" : isAgentInquiry ? "No, I am applying as an agent" : "No, I am planning a new trip"}</span>
@@ -677,7 +713,7 @@ export default function ContactPage({ audience }: { audience?: "supplier" | "age
                             name="reservation"
                             value="yes"
                             checked={form.reservation === "yes"}
-                            onChange={() => setForm({ ...form, reservation: "yes" })}
+                            onChange={() => setValue("reservation", "yes")}
                             className="accent-pub-secondary"
                           />
                           <span>{isSupplierInquiry ? "Yes, I need help with my supplier account" : isAgentInquiry ? "Yes, I need help with my agent account" : "Yes, I have an active reservation"}</span>
@@ -693,33 +729,35 @@ export default function ContactPage({ audience }: { audience?: "supplier" | "age
                         </label>
                         <input
                           type="text"
-                          required
                           value={form.name}
-                          onChange={(e) => setForm({ ...form, name: e.target.value })}
+                          onChange={(e) => { setValue("name", e.target.value, { shouldDirty: true, shouldValidate: true }); clearErrors("name"); }}
+                          aria-invalid={Boolean(errors.name)}
+                          aria-describedby={errors.name ? "contact-name-error" : undefined}
                           placeholder="e.g. Alex Henderson"
                           className="mt-1.5 h-11 w-full rounded-xl border border-slate-200 px-3.5 text-xs sm:text-sm outline-none focus:border-pub-secondary focus:ring-1 focus:ring-pub-secondary/20 transition"
                         />
+                        <FormFieldError id="contact-name-error" message={errors.name?.message} />
                       </div>
 
                       <CountryPhoneInput
                         className="mt-0"
                         countryIso={phoneCountryIso}
-                        number={form.phone}
+                        number={form.phone ?? ""}
                         onCountryChange={(iso) => {
                           setPhoneCountryIso(iso);
-                          setPhoneError("");
+                          clearErrors("phone");
                           setError("");
                         }}
                         onNumberChange={(phone) => {
-                          setForm({ ...form, phone });
-                          setPhoneError("");
+                          setValue("phone", phone, { shouldDirty: true });
+                          clearErrors("phone");
                           setError("");
                         }}
                         label="Phone Number"
                         countryLabel="Select phone country"
                         placeholder="e.g. 98765 43210"
                         helpText="Select the country code, then enter the local mobile number."
-                        errorMessage={phoneError}
+                        errorMessage={errors.phone?.message}
                       />
                     </div>
 
@@ -731,12 +769,14 @@ export default function ContactPage({ audience }: { audience?: "supplier" | "age
                         </label>
                         <input
                           type="email"
-                          required
                           value={form.email}
-                          onChange={(e) => setForm({ ...form, email: e.target.value })}
+                          onChange={(e) => { setValue("email", e.target.value, { shouldDirty: true, shouldValidate: true }); clearErrors("email"); }}
+                          aria-invalid={Boolean(errors.email)}
+                          aria-describedby={errors.email ? "contact-email-error" : undefined}
                           placeholder="alex.henderson@example.com"
                           className="mt-1.5 h-11 w-full rounded-xl border border-slate-200 px-3.5 text-xs sm:text-sm outline-none focus:border-pub-secondary focus:ring-1 focus:ring-pub-secondary/20 transition"
                         />
+                        <FormFieldError id="contact-email-error" message={errors.email?.message} />
                       </div>
 
                       <div>
@@ -745,7 +785,7 @@ export default function ContactPage({ audience }: { audience?: "supplier" | "age
                         </label>
                         <select
                           value={form.subject}
-                          onChange={(e) => setForm({ ...form, subject: e.target.value })}
+                          onChange={(e) => setValue("subject", e.target.value)}
                           className="mt-1.5 h-11 w-full rounded-xl border border-slate-200 px-3.5 text-xs sm:text-sm outline-none focus:border-pub-secondary focus:ring-1 focus:ring-pub-secondary/20 transition bg-white"
                         >
                           {isSupplierInquiry ? (
@@ -776,13 +816,15 @@ export default function ContactPage({ audience }: { audience?: "supplier" | "age
                         How Can We Help You? <span className="text-red-500">*</span>
                       </label>
                       <textarea
-                        required
                         rows={4}
                         value={form.message}
-                        onChange={(e) => setForm({ ...form, message: e.target.value })}
+                        onChange={(e) => { setValue("message", e.target.value, { shouldDirty: true, shouldValidate: true }); clearErrors("message"); }}
+                        aria-invalid={Boolean(errors.message)}
+                        aria-describedby={errors.message ? "contact-message-error" : undefined}
                         placeholder={isSupplierInquiry ? "Tell us about your business, registration stage, documents, or supplier portal question..." : "Tell us about your destination plans, travel dates, or specific questions..."}
                         className="mt-1.5 w-full rounded-xl border border-slate-200 p-3.5 text-xs sm:text-sm outline-none focus:border-pub-secondary focus:ring-1 focus:ring-pub-secondary/20 transition resize-none"
                       />
+                      <FormFieldError id="contact-message-error" message={errors.message?.message} />
                     </div>
 
                     {/* Submit Button */}
@@ -1176,7 +1218,7 @@ export default function ContactPage({ audience }: { audience?: "supplier" | "age
                   </div>
                 )}
 
-                <form onSubmit={submitInquiry} className="mt-4 space-y-3.5">
+                <form onSubmit={handleSubmit(submitInquiry)} noValidate className="mt-4 space-y-3.5">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="block text-[11px] font-bold text-slate-700">
@@ -1184,12 +1226,14 @@ export default function ContactPage({ audience }: { audience?: "supplier" | "age
                       </label>
                       <input
                         type="text"
-                        required
                         value={form.name}
-                        onChange={(e) => setForm({ ...form, name: e.target.value })}
+                        onChange={(e) => { setValue("name", e.target.value, { shouldDirty: true, shouldValidate: true }); clearErrors("name"); }}
+                        aria-invalid={Boolean(errors.name)}
+                        aria-describedby={errors.name ? "contact-modal-name-error" : undefined}
                         placeholder="e.g. Alex Henderson"
                         className="mt-1 h-10 w-full rounded-xl border border-slate-200 px-3 text-xs outline-none focus:border-pub-secondary"
                       />
+                      <FormFieldError id="contact-modal-name-error" message={errors.name?.message} />
                     </div>
                     <div>
                       <label className="block text-[11px] font-bold text-slate-700">
@@ -1198,10 +1242,13 @@ export default function ContactPage({ audience }: { audience?: "supplier" | "age
                       <input
                         type="tel"
                         value={form.phone}
-                        onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                        onChange={(e) => { setValue("phone", e.target.value, { shouldDirty: true }); clearErrors("phone"); }}
+                        aria-invalid={Boolean(errors.phone)}
+                        aria-describedby={errors.phone ? "contact-modal-phone-error" : undefined}
                         placeholder="e.g. +1 (555) 234-5678"
                         className="mt-1 h-10 w-full rounded-xl border border-slate-200 px-3 text-xs outline-none focus:border-pub-secondary"
                       />
+                      <FormFieldError id="contact-modal-phone-error" message={errors.phone?.message} />
                     </div>
                   </div>
 
@@ -1211,12 +1258,14 @@ export default function ContactPage({ audience }: { audience?: "supplier" | "age
                     </label>
                     <input
                       type="email"
-                      required
                       value={form.email}
-                      onChange={(e) => setForm({ ...form, email: e.target.value })}
+                      onChange={(e) => { setValue("email", e.target.value, { shouldDirty: true, shouldValidate: true }); clearErrors("email"); }}
+                      aria-invalid={Boolean(errors.email)}
+                      aria-describedby={errors.email ? "contact-modal-email-error" : undefined}
                       placeholder="alex.henderson@example.com"
                       className="mt-1 h-10 w-full rounded-xl border border-slate-200 px-3 text-xs outline-none focus:border-pub-secondary"
                     />
+                    <FormFieldError id="contact-modal-email-error" message={errors.email?.message} />
                   </div>
 
                   <div>
@@ -1224,13 +1273,15 @@ export default function ContactPage({ audience }: { audience?: "supplier" | "age
                       Message <span className="text-red-500">*</span>
                     </label>
                     <textarea
-                      required
                       rows={3}
                       value={form.message}
-                      onChange={(e) => setForm({ ...form, message: e.target.value })}
+                      onChange={(e) => { setValue("message", e.target.value, { shouldDirty: true, shouldValidate: true }); clearErrors("message"); }}
+                      aria-invalid={Boolean(errors.message)}
+                      aria-describedby={errors.message ? "contact-modal-message-error" : undefined}
                       placeholder="How can we help you?"
                       className="mt-1 w-full rounded-xl border border-slate-200 p-3 text-xs outline-none focus:border-pub-secondary resize-none"
                     />
+                    <FormFieldError id="contact-modal-message-error" message={errors.message?.message} />
                   </div>
 
                   <button
