@@ -604,7 +604,8 @@ export const CONTENT_BLOCK_TABS: ContentBlockTabConfig[] = [
         key: "items",
         label: "Travel style cards",
         type: "records",
-        hint: "Shown on the Destinations page. Leave empty to use the built-in cards.",
+        hint: "Up to 8 cards. Shown on the Destinations page. Leave empty to use the built-in cards.",
+        maxItems: 8,
         subfields: [
           { key: "title", label: "Title", type: "text" },
           { key: "subtitle", label: "Subtitle", type: "textarea" },
@@ -625,7 +626,8 @@ export const CONTENT_BLOCK_TABS: ContentBlockTabConfig[] = [
         key: "items",
         label: "Season cards",
         type: "records",
-        hint: "Shown on the Destinations page. Leave empty to use the built-in seasons.",
+        hint: "Up to 4 cards. Shown on the Destinations page. Leave empty to use the built-in seasons.",
+        maxItems: 4,
         subfields: [
           { key: "season", label: "Season (e.g. Spring (March - May))", type: "text" },
           { key: "tagline", label: "Tagline", type: "textarea" },
@@ -887,7 +889,8 @@ export const CONTENT_BLOCK_TABS: ContentBlockTabConfig[] = [
         key: "items",
         label: "Awards",
         type: "records",
-        hint: "Leave empty to use the built-in awards.",
+        hint: "Up to 10 awards. Five cards appear per desktop row; additional awards continue on the next row.",
+        maxItems: 10,
         subfields: [
           { key: "title", label: "Title", type: "text" },
           { key: "text", label: "Description", type: "text" },
@@ -995,7 +998,8 @@ export const CONTENT_BLOCK_TABS: ContentBlockTabConfig[] = [
         key: "items",
         label: "Partner Cards (Operators, Travel Agents, Distribution, Media, in order)",
         type: "records",
-        hint: "Leave empty to use the built-in cards. Images and links stay fixed to each card's position.",
+        hint: "Up to 4 cards, in this order. Leave empty to use the built-in cards. Images and links stay fixed to each card's position.",
+        maxItems: 4,
         subfields: [
           { key: "badge", label: "Badge", type: "text" },
           { key: "title", label: "Title", type: "text" },
@@ -1016,7 +1020,8 @@ export const CONTENT_BLOCK_TABS: ContentBlockTabConfig[] = [
         key: "items",
         label: "Office Details (New Zealand, Sri Lanka, India, in order)",
         type: "records",
-        hint: "Leave empty to use the built-in office details. City, country and map position stay fixed per office.",
+        hint: "Up to 3 offices, in this order. Leave empty to use the built-in office details. City, country and map position stay fixed per office.",
+        maxItems: 3,
         subfields: [
           { key: "address_line1", label: "Address Line 1", type: "text" },
           { key: "address_line2", label: "Address Line 2", type: "text" },
@@ -1095,7 +1100,8 @@ export const CONTENT_BLOCK_TABS: ContentBlockTabConfig[] = [
         key: "items",
         label: "Category Cards",
         type: "records",
-        hint: "Leave empty to use the built-in categories.",
+        hint: "Up to 8 cards. Leave empty to use the built-in categories.",
+        maxItems: 8,
         subfields: [
           { key: "image", label: "Image", type: "asset" },
           { key: "title", label: "Title", type: "text" },
@@ -1114,7 +1120,8 @@ export const CONTENT_BLOCK_TABS: ContentBlockTabConfig[] = [
         key: "items",
         label: "Article Cards",
         type: "records",
-        hint: "Leave empty to use the built-in articles.",
+        hint: "Up to 8 cards. Leave empty to use the built-in articles.",
+        maxItems: 8,
         subfields: [
           { key: "image", label: "Image", type: "asset" },
           { key: "category", label: "Category Label", type: "text" },
@@ -1135,7 +1142,8 @@ export const CONTENT_BLOCK_TABS: ContentBlockTabConfig[] = [
         key: "items",
         label: "Checklist Cards",
         type: "records",
-        hint: "Leave empty to use the built-in checklist. Icons stay fixed to each card's position.",
+        hint: "Up to 4 cards. Leave empty to use the built-in checklist. Icons stay fixed to each card's position.",
+        maxItems: 4,
         subfields: [
           { key: "title", label: "Title", type: "text" },
           { key: "text", label: "Description", type: "textarea" },
@@ -1167,7 +1175,8 @@ export const CONTENT_BLOCK_TABS: ContentBlockTabConfig[] = [
         key: "items",
         label: "Metric Tiles (3, in order)",
         type: "records" as const,
-        hint: "Leave empty to use the built-in metrics.",
+        hint: "Up to 3 tiles, in this order. Leave empty to use the built-in metrics.",
+        maxItems: 3,
         subfields: [
           { key: "value", label: "Value (e.g. 80+ Countries)", type: "text" as const },
           { key: "label", label: "Label", type: "text" as const },
@@ -1396,6 +1405,7 @@ export function ContentBlockPanel({ tab, onChanged }: { tab: ContentBlockTabConf
           ? (JSON.parse(raw || "[]") as Record<string, string>[])
               .map((rec) => Object.fromEntries((f.subfields ?? []).map((sf) => [sf.key, sf.type === "csv" ? (rec[sf.key] ?? "").split(",").map((v) => v.trim()).filter(Boolean) : (rec[sf.key] ?? "").trim()])))
               .filter((rec) => Object.values(rec).some((v) => (Array.isArray(v) ? v.length : v)))
+              .slice(0, f.maxItems)
           : f.type === "list"
           ? (JSON.parse(raw || "[]") as string[]).map((v) => v.trim()).filter(Boolean)
           : f.key === "features"

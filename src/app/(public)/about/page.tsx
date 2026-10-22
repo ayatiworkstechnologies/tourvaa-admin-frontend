@@ -273,12 +273,17 @@ export default function AboutPage() {
     : DEFAULT_VALUES;
   // Four cards fit per desktop row. A capped, wrapping collection avoids an
   // overly long team page while keeping partial rows visually centred.
-  const teamItems = teamHeading.items?.slice(0, 8);
+  const teamItems = teamHeading.items
+    ?.filter((item) => Boolean(item.photo || item.name || item.role || item.specialty || item.bio))
+    .slice(0, 8);
   const team = teamItems?.length
     ? teamItems.map((it, i) => ({ name: it.name || "", role: it.role || "", specialty: it.specialty || "", image: it.photo || DEFAULT_TEAM[i % DEFAULT_TEAM.length].image, bio: it.bio || "" }))
     : DEFAULT_TEAM;
-  const awards = awardsHeading.items?.length
-    ? awardsHeading.items.map((it, i) => ({ title: it.title || "", text: it.text || "", icon: AWARD_ICONS[i % AWARD_ICONS.length] }))
+  const awardItems = awardsHeading.items
+    ?.filter((item) => Boolean(item.title || item.text))
+    .slice(0, 10);
+  const awards = awardItems?.length
+    ? awardItems.map((it, i) => ({ title: it.title || "", text: it.text || "", icon: AWARD_ICONS[i % AWARD_ICONS.length] }))
     : DEFAULT_AWARDS;
 
   return (
@@ -643,7 +648,7 @@ export default function AboutPage() {
             </p>
           </div>
 
-          <div className="mt-10 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+          <div className="mt-10 flex flex-wrap justify-center gap-4">
             {awards.map((item, index) => {
               const Icon = item.icon;
               return (
@@ -651,7 +656,7 @@ export default function AboutPage() {
                   key={index}
                   data-reveal
                   style={delay(index * 60)}
-                  className="flex flex-col items-start rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs hover:border-slate-300 hover:shadow-sm transition-all"
+                  className="flex w-[calc(50%-0.5rem)] flex-col items-start rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs hover:border-slate-300 hover:shadow-sm transition-all sm:basis-[calc(33.333%-0.667rem)] lg:basis-[calc(20%-0.8rem)]"
                 >
                   <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-50 text-sky-700">
                     <Icon size={20} />
