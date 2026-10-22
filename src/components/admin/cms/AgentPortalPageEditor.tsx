@@ -1,7 +1,9 @@
 "use client";
 
 import PageEditor, { type PageEditorSection } from "./PageEditor";
-import { FooterPanel } from "@/app/admin/cms/cmsShared";
+import { CONTENT_BLOCK_TABS, ContentBlockPanel } from "@/app/admin/cms/cmsShared";
+
+const AGENT_PORTAL_FOOTER = CONTENT_BLOCK_TABS.find((tab) => tab.key === "agent-portal-footer");
 
 const AGENT_PORTAL_SECTIONS: PageEditorSection[] = [
   { key: "hero", label: "Hero Banner", tabs: ["agent-portal-hero"] },
@@ -12,7 +14,7 @@ const AGENT_PORTAL_SECTIONS: PageEditorSection[] = [
   { key: "expectations", label: "What We Expect", tabs: ["agent-portal-expectations"] },
   { key: "faqs", label: "FAQs", tabs: ["agent-portal-faqs"] },
   { key: "cta", label: "Bottom CTA", tabs: ["agent-portal-cta"] },
-  { key: "footer", label: "Footer", render: () => <FooterPanel /> },
+  { key: "footer", label: "Footer", render: () => AGENT_PORTAL_FOOTER ? <ContentBlockPanel tab={AGENT_PORTAL_FOOTER} /> : null },
 ];
 
 export default function AgentPortalPageEditor() {

@@ -122,10 +122,17 @@ export async function exportAudienceReport(audience: ReportAudience, entityId: n
     params: { audience, entity_id: entityId, period: "custom", start_date: startDate, end_date: endDate, format },
     responseType: "blob",
   });
-  const url = window.URL.createObjectURL(new Blob([response.data], { type: "text/csv" }));
+  const mimeTypeByFormat = {
+    csv: "text/csv;charset=utf-8",
+    xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    pdf: "application/pdf",
+  } as const;
+  const url = window.URL.createObjectURL(new Blob([response.data], { type: mimeTypeByFormat[format] }));
   const link = document.createElement("a");
   link.href = url;
-  link.download = `${audience}-report-${startDate}-${endDate}.${format}`;
+  const contentDisposition = response.headers?.["content-disposition"] as string | undefined;
+  const filename = contentDisposition?.match(/filename="?([^";]+)"?/i)?.[1];
+  link.download = filename || `${audience}-report-${startDate}-${endDate}.${format}`;
   document.body.appendChild(link);
   link.click();
   link.remove();

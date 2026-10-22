@@ -113,14 +113,14 @@ export default function AffiliatePortalContent() {
           </div>
         </section>
 
-        <section className="mt-16 bg-pub-bg py-16 sm:mt-20 sm:py-20">
+        <section id="ideal-for" className="mt-16 bg-pub-bg py-16 scroll-mt-24 sm:mt-20 sm:py-20">
           <div className="mx-auto grid max-w-[1180px] gap-10 px-4 sm:px-6 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
             <div className="relative min-h-[300px] overflow-hidden rounded-2xl sm:min-h-[360px]"><Image src="/images/hero-3.jpg" alt="Travel destination surrounded by turquoise water" fill sizes="(max-width: 1024px) 100vw, 520px" className="object-cover" /></div>
             <div><h2 className="text-2xl font-semibold tracking-tight text-pub-fg sm:text-3xl">{idealForBlock.heading || "Designed for travel storytellers"}</h2><p className="mt-3 max-w-xl text-sm leading-6 text-pub-muted">Build referral content around the channels and communities you already manage.</p><ul className="mt-7 grid gap-3 sm:grid-cols-2">{idealFor.map((item) => <li key={item} className="flex items-start gap-2.5 text-sm leading-6 text-pub-fg"><CheckCircle2 size={17} className="mt-0.5 shrink-0 text-pub-secondary" aria-hidden="true" /><span>{item}</span></li>)}</ul></div>
           </div>
         </section>
 
-        <section className="mx-auto mt-16 max-w-[1180px] px-4 sm:mt-20 sm:px-6">
+        <section id="cta" className="mx-auto mt-16 max-w-[1180px] px-4 scroll-mt-24 sm:mt-20 sm:px-6">
           <div className="rounded-2xl bg-pub-primary px-6 py-12 text-center text-white sm:px-12 sm:py-16">
             <Megaphone className="mx-auto text-pub-accent" size={26} aria-hidden="true" />
             <h2 className="mx-auto mt-4 max-w-2xl text-3xl font-bold tracking-tight sm:text-4xl">{cta.heading || DEFAULT_CTA.heading}</h2>

@@ -20,8 +20,11 @@ import {
 } from "react-icons/lu";
 import ModuleWrapper from "@/components/common/ModuleWrapper";
 import DatePicker from "@/components/ui/DatePicker";
+import SearchableSelect from "@/components/ui/SearchableSelect";
 import { useCurrency } from "@/hooks/useCurrency";
 import { useToast } from "@/hooks/useToast";
+import { useAuthContext } from "@/providers/AuthProvider";
+import { getApiErrorMessage } from "@/lib/utils/errorHandler";
 import {
   AudienceOption,
   AudienceReportDetail,
@@ -81,6 +84,7 @@ export default function CreateReportPage() {
     return inputDate(date);
   }, [today]);
   const { format: money } = useCurrency();
+  const { hasPermission } = useAuthContext();
   const toast = useToast();
   const [audience, setAudience] = useState<ReportAudience>("supplier");
   const [entityId, setEntityId] = useState("");
@@ -104,12 +108,21 @@ export default function CreateReportPage() {
   const [bookingStatus, setBookingStatus] = useState("");
   const detailRef = useRef<HTMLDivElement>(null);
   const pageSize = 10;
+  const canExport = hasPermission("reports.export") || hasPermission("reports.admin");
+
+  function invalidateReport() {
+    setRows([]);
+    setHasRun(false);
+    setDetail(null);
+    setDetailError("");
+    setPage(1);
+    setError("");
+  }
 
   useEffect(() => {
     let active = true;
     setEntityId("");
-    setRows([]);
-    setHasRun(false);
+    invalidateReport();
     setSearch("");
     setStatusFilter("");
     setDetail(null);
@@ -117,9 +130,11 @@ export default function CreateReportPage() {
     setOptionsLoading(true);
     getAudienceOptions(audience)
       .then((items) => { if (active) setOptions(items); })
-      .catch(() => { if (active) setError(`Could not load ${audience} list.`); })
+      .catch((reason: unknown) => { if (active) setError(getApiErrorMessage(reason) || `Could not load ${audience} list.`); })
       .finally(() => { if (active) setOptionsLoading(false); });
     return () => { active = false; };
+  // The selected report group defines the entity list and invalidates any
+  // previous result so exports and drill-downs cannot use stale filters.
   }, [audience]);
 
   const selectedName = options.find((item) => String(item.id) === entityId)?.name;
@@ -134,10 +149,10 @@ export default function CreateReportPage() {
       setRows(await getAudienceReport(audience, entityId ? Number(entityId) : undefined, startDate, endDate));
       setHasRun(true);
       setPage(1);
-    } catch {
+    } catch (reason) {
       setRows([]);
       setHasRun(true);
-      setError("Could not create this report. Please check the filters and try again.");
+      setError(getApiErrorMessage(reason) || "Could not create this report. Please check the filters and try again.");
     } finally {
       setRunning(false);
     }
@@ -152,22 +167,22 @@ export default function CreateReportPage() {
     requestAnimationFrame(() => detailRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
     try {
       setDetail(await getAudienceReportDetail(audience, id, startDate, endDate));
-    } catch {
+    } catch (reason) {
       setDetail(null);
-      setDetailError("Could not load the booking-level report. Please try again.");
+      setDetailError(getApiErrorMessage(reason) || "Could not load the booking-level report. Please try again.");
     } finally {
       setDetailLoading(false);
     }
   }
 
   async function download(format: "xlsx" | "pdf" | "csv") {
-    if (dateError || !hasRun) return;
+    if (dateError || !hasRun || !canExport) return;
     setExporting(format);
     try {
       await exportAudienceReport(audience, entityId ? Number(entityId) : undefined, startDate, endDate, format);
       toast.success(`${format.toUpperCase()} report downloaded.`);
-    } catch {
-      toast.error("Could not export this report.");
+    } catch (reason) {
+      toast.error(getApiErrorMessage(reason) || "Could not export this report.");
     } finally {
       setExporting(null);
     }
@@ -220,9 +235,9 @@ export default function CreateReportPage() {
           <div>
             <p className="text-sm font-bold text-dash-brand">Report builder</p>
             <h1 className="mt-1 text-[28px] font-black tracking-tight text-dash-text">Create a focused report</h1>
-            <p className="mt-1 max-w-2xl text-sm text-dash-muted">Select a date range and report group, then view everyone or narrow the result to one record.</p>
+            <p className="mt-1 max-w-2xl text-sm text-dash-muted">Select a date range and report group, then view everyone or narrow the result to one record. Portfolio totals are normalized in USD before being shown in your selected display currency; individual booking rows keep their recorded currency.</p>
           </div>
-          {hasRun && <div className="flex flex-wrap gap-2 print:hidden"><button type="button" onClick={() => window.print()} disabled={rows.length === 0} className="inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-xl border border-dash-border bg-white px-4 text-sm font-bold text-dash-text transition hover:border-dash-brand hover:text-dash-brand active:translate-y-px disabled:opacity-50"><Printer size={17} /> Print</button>{(["xlsx", "pdf", "csv"] as const).map((format) => <button key={format} type="button" onClick={() => void download(format)} disabled={Boolean(exporting) || rows.length === 0} className={`inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-xl px-4 text-sm font-bold transition active:translate-y-px disabled:opacity-50 ${format === "xlsx" ? "bg-dash-brand text-white hover:bg-dash-brand-hover" : "border border-dash-border bg-white text-dash-text hover:border-dash-brand hover:text-dash-brand"}`}>{exporting === format ? <LoaderCircle className="animate-spin" size={17} /> : <Download size={17} />} {format === "xlsx" ? "Excel" : format.toUpperCase()}</button>)}</div>}
+          {hasRun && <div className="flex flex-wrap gap-2 print:hidden"><button type="button" onClick={() => window.print()} disabled={rows.length === 0} className="inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-xl border border-dash-border bg-white px-4 text-sm font-bold text-dash-text transition hover:border-dash-brand hover:text-dash-brand active:translate-y-px disabled:opacity-50"><Printer size={17} /> Print</button>{canExport && (["xlsx", "pdf", "csv"] as const).map((format) => <button key={format} type="button" onClick={() => void download(format)} disabled={Boolean(exporting) || rows.length === 0} className={`inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-xl px-4 text-sm font-bold transition active:translate-y-px disabled:opacity-50 ${format === "xlsx" ? "bg-dash-brand text-white hover:bg-dash-brand-hover" : "border border-dash-border bg-white text-dash-text hover:border-dash-brand hover:text-dash-brand"}`}>{exporting === format ? <LoaderCircle className="animate-spin" size={17} /> : <Download size={17} />} {format === "xlsx" ? "Excel" : format.toUpperCase()}</button>)}</div>}
         </div>
 
         <section className="overflow-hidden rounded-2xl border border-dash-border-soft bg-white shadow-[0_8px_30px_-24px_rgba(23,92,211,.35)]">
@@ -247,11 +262,11 @@ export default function CreateReportPage() {
             <div className="border-t border-dash-border-soft bg-dash-bg/60 p-5 sm:p-6 lg:border-l lg:border-t-0">
               <div className="mb-4 flex items-center gap-2 text-sm font-black text-dash-text"><CalendarDays size={18} className="text-dash-brand" /> Date range</div>
               <div className="grid gap-3 sm:grid-cols-2">
-                <div><label className="mb-1.5 block text-xs font-bold text-dash-body">Start date</label><DatePicker value={startDate} maxDate={endDate || undefined} onChange={setStartDate} placeholder="Start date" className="w-full" /></div>
-                <div><label className="mb-1.5 block text-xs font-bold text-dash-body">End date</label><DatePicker value={endDate} minDate={startDate || undefined} maxDate={inputDate(today)} onChange={setEndDate} placeholder="End date" className="w-full" align="right" /></div>
+                <div><label className="mb-1.5 block text-xs font-bold text-dash-body">Start date</label><DatePicker value={startDate} maxDate={endDate || undefined} onChange={(value) => { setStartDate(value); invalidateReport(); }} placeholder="Start date" className="w-full" /></div>
+                <div><label className="mb-1.5 block text-xs font-bold text-dash-body">End date</label><DatePicker value={endDate} minDate={startDate || undefined} maxDate={inputDate(today)} onChange={(value) => { setEndDate(value); invalidateReport(); }} placeholder="End date" className="w-full" align="right" /></div>
               </div>
               <div className="mt-3 flex flex-wrap gap-2 print:hidden">
-                {[7, 30, 90].map((days) => <button key={days} type="button" onClick={() => { const start = new Date(today); start.setDate(start.getDate() - days); setStartDate(inputDate(start)); setEndDate(inputDate(today)); }} className="rounded-lg border border-dash-border bg-white px-3 py-1.5 text-xs font-bold text-dash-muted transition hover:border-dash-brand hover:text-dash-brand">Last {days} days</button>)}
+                {[7, 30, 90].map((days) => <button key={days} type="button" onClick={() => { const start = new Date(today); start.setDate(start.getDate() - days); setStartDate(inputDate(start)); setEndDate(inputDate(today)); invalidateReport(); }} className="rounded-lg border border-dash-border bg-white px-3 py-1.5 text-xs font-bold text-dash-muted transition hover:border-dash-brand hover:text-dash-brand">Last {days} days</button>)}
               </div>
               {dateError && <p className="mt-2 text-xs font-semibold text-red-600">{dateError}</p>}
             </div>
@@ -260,10 +275,7 @@ export default function CreateReportPage() {
           <div className="flex flex-col gap-4 p-5 sm:p-6 lg:flex-row lg:items-end">
             <div className="flex-1">
               <label htmlFor="report-entity" className="mb-1.5 block text-xs font-bold text-dash-body">{AUDIENCES.find((item) => item.value === audience)?.label}</label>
-              <select id="report-entity" value={entityId} onChange={(event) => setEntityId(event.target.value)} disabled={optionsLoading} className="h-11 w-full rounded-xl border border-dash-border bg-white px-3.5 text-sm font-semibold text-dash-text outline-none focus:border-dash-brand focus:ring-4 focus:ring-blue-100 disabled:opacity-60">
-                <option value="">All {audience}s</option>
-                {options.map((item) => <option key={item.id} value={item.id}>{item.name} (ID {item.id})</option>)}
-              </select>
+              <SearchableSelect id="report-entity" value={entityId} onChange={(value) => { setEntityId(value); invalidateReport(); }} disabled={optionsLoading} placeholder={`All ${audience}s`} searchPlaceholder={`Search ${audience}s by name or ID`} options={[{ value: "", label: `All ${audience}s` }, ...options.map((item) => ({ value: String(item.id), label: `${item.name} (ID ${item.id})` }))]} />
               <p className="mt-1.5 text-xs text-dash-subtle">Choose All for a complete list, or select one {audience} for an ID-based report.</p>
             </div>
             <button type="button" onClick={() => void runReport()} disabled={running || optionsLoading || Boolean(dateError)} className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-dash-brand px-6 text-sm font-black text-white shadow-[0_8px_18px_-10px_rgba(23,92,211,.8)] transition hover:bg-dash-brand-hover active:translate-y-px disabled:cursor-not-allowed disabled:opacity-55 lg:w-auto">

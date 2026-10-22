@@ -1,7 +1,9 @@
 "use client";
 
 import PageEditor, { type PageEditorSection } from "./PageEditor";
-import { FooterPanel } from "@/app/admin/cms/cmsShared";
+import { CONTENT_BLOCK_TABS, ContentBlockPanel } from "@/app/admin/cms/cmsShared";
+
+const SUPPLIER_PORTAL_FOOTER = CONTENT_BLOCK_TABS.find((tab) => tab.key === "supplier-portal-footer");
 
 const SUPPLIER_PORTAL_SECTIONS: PageEditorSection[] = [
   { key: "hero", label: "Hero Banner", tabs: ["supplier-portal-hero"] },
@@ -12,7 +14,7 @@ const SUPPLIER_PORTAL_SECTIONS: PageEditorSection[] = [
   { key: "expectations", label: "What We Expect", tabs: ["supplier-portal-expectations"] },
   { key: "faqs", label: "FAQs", tabs: ["supplier-portal-faqs"] },
   { key: "cta", label: "Bottom CTA", tabs: ["supplier-portal-cta"] },
-  { key: "footer", label: "Footer", render: () => <FooterPanel /> },
+  { key: "footer", label: "Footer", render: () => SUPPLIER_PORTAL_FOOTER ? <ContentBlockPanel tab={SUPPLIER_PORTAL_FOOTER} /> : null },
 ];
 
 export default function SupplierPortalPageEditor() {

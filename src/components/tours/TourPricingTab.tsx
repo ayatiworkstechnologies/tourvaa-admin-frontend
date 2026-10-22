@@ -433,7 +433,7 @@ export default function TourPricingTab({
       icon={Percent}
       iconTone="brand"
       title="Publishable Price"
-      description="Customer price is the supplier rate plus Tourvaa markup. Supplier discounts and commission affect supplier settlement only; Tourvaa storefront discounts are applied after the customer price is calculated."
+      description="Customer price applies an active supplier offer first, then Tourvaa markup, then any Tourvaa storefront offer. Commission affects supplier settlement only."
     >
       {/* Tour-level markup */}
       <div className="mb-4 rounded-xl border border-dash-border bg-dash-bg px-4 py-3">

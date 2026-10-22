@@ -175,12 +175,12 @@ const DEFAULT_CHANNELS = {
 
 const DEFAULT_FAQ_HEADING = { eyebrow: "INSTANT ANSWERS", heading: "Frequently Asked Questions", subtitle: "Quick solutions to the most common queries from travelers and partners." };
 
-type PartnerItem = { badge?: string; title?: string; description?: string };
+type PartnerItem = { badge?: string; title?: string; description?: string; image?: string; button_label?: string; button_url?: string };
 const DEFAULT_PARTNERS: Required<PartnerItem>[] = [
-  { badge: "Tour Suppliers", title: "Tour Operators", description: "List Adventures: Apply to join our vetted supplier network and showcase your multi-day expeditions." },
-  { badge: "Travel Advisors", title: "Travel Agents", description: "Agent Bookings: Unlock top-tier net rates, commission tracking, and client itinerary builders." },
-  { badge: "API & Distribution", title: "Enterprise Solutions", description: "Distribution API: Seamlessly connect Tourvaa inventory into your OTAs, airline loyalty, or white-label platforms." },
-  { badge: "Press Room", title: "Media & Press", description: "Press Kit & Data: Access travel trend reports, press releases, high-res photography, and executive interviews." },
+  { badge: "Tour Suppliers", title: "Tour Operators", description: "List Adventures: Apply to join our vetted supplier network and showcase your multi-day expeditions.", image: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=600&q=80", button_label: "Supplier Portal", button_url: "/supplier-portal/login?tab=register" },
+  { badge: "Travel Advisors", title: "Travel Agents", description: "Agent Bookings: Unlock top-tier net rates, commission tracking, and client itinerary builders.", image: "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=600&q=80", button_label: "Agent Login", button_url: "/agent-portal/login?tab=register" },
+  { badge: "API & Distribution", title: "Enterprise Solutions", description: "Distribution API: Seamlessly connect Tourvaa inventory into your OTAs, airline loyalty, or white-label platforms.", image: "https://images.unsplash.com/photo-1507679799987-c73779587ccf?auto=format&fit=crop&w=600&q=80", button_label: "Explore API Docs", button_url: "/contact#contact-form-section" },
+  { badge: "Press Room", title: "Media & Press", description: "Press Kit & Data: Access travel trend reports, press releases, high-res photography, and executive interviews.", image: "https://images.unsplash.com/photo-1526778548025-fa2f459cd5c1?auto=format&fit=crop&w=600&q=80", button_label: "Brand Assets", button_url: "/about" },
 ];
 const DEFAULT_PARTNERS_HEADING = { eyebrow: "PARTNERSHIP CHANNELS", heading: "Dedicated Solutions for Industry Partners", subtitle: "Specialized business portals and rapid support desks for operators, travel agencies, and media." };
 
@@ -942,8 +942,8 @@ export default function ContactPage({ audience }: { audience?: "supplier" | "age
             <div>
               <div className="relative h-44 w-full overflow-hidden bg-slate-100">
                 <img
-                  src="https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=600&q=80"
-                  alt="Tour operators desk"
+                  src={partners[0].image || DEFAULT_PARTNERS[0].image}
+                  alt={partners[0].title || DEFAULT_PARTNERS[0].title}
                   className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
                 />
                 <span className="absolute top-3 left-3 rounded-md bg-[#0B1F3A]/80 backdrop-blur-xs px-2.5 py-1 text-[10px] font-bold text-white">
@@ -961,10 +961,10 @@ export default function ContactPage({ audience }: { audience?: "supplier" | "age
             </div>
             <div className="p-5 pt-0">
               <Link
-                href="/supplier-portal/login?tab=register"
+                href={partners[0].button_url || DEFAULT_PARTNERS[0].button_url}
                 className="inline-flex items-center gap-1.5 text-xs font-bold text-pub-secondary hover:underline"
               >
-                <span>Supplier Portal</span>
+                <span>{partners[0].button_label || DEFAULT_PARTNERS[0].button_label}</span>
                 <ArrowRight size={12} />
               </Link>
             </div>
@@ -975,8 +975,8 @@ export default function ContactPage({ audience }: { audience?: "supplier" | "age
             <div>
               <div className="relative h-44 w-full overflow-hidden bg-slate-100">
                 <img
-                  src="https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=600&q=80"
-                  alt="Travel agents passport and ticket"
+                  src={partners[1].image || DEFAULT_PARTNERS[1].image}
+                  alt={partners[1].title || DEFAULT_PARTNERS[1].title}
                   className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
                 />
                 <span className="absolute top-3 left-3 rounded-md bg-[#0B1F3A]/80 backdrop-blur-xs px-2.5 py-1 text-[10px] font-bold text-white">
@@ -994,10 +994,10 @@ export default function ContactPage({ audience }: { audience?: "supplier" | "age
             </div>
             <div className="p-5 pt-0">
               <Link
-                href="/agent-portal/login?tab=register"
+                href={partners[1].button_url || DEFAULT_PARTNERS[1].button_url}
                 className="inline-flex items-center gap-1.5 text-xs font-bold text-pub-secondary hover:underline"
               >
-                <span>Agent Login</span>
+                <span>{partners[1].button_label || DEFAULT_PARTNERS[1].button_label}</span>
                 <ArrowRight size={12} />
               </Link>
             </div>
@@ -1008,8 +1008,8 @@ export default function ContactPage({ audience }: { audience?: "supplier" | "age
             <div>
               <div className="relative h-44 w-full overflow-hidden bg-slate-100">
                 <img
-                  src="https://images.unsplash.com/photo-1507679799987-c73779587ccf?auto=format&fit=crop&w=600&q=80"
-                  alt="Distribution solutions"
+                  src={partners[2].image || DEFAULT_PARTNERS[2].image}
+                  alt={partners[2].title || DEFAULT_PARTNERS[2].title}
                   className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
                 />
                 <span className="absolute top-3 left-3 rounded-md bg-[#0B1F3A]/80 backdrop-blur-xs px-2.5 py-1 text-[10px] font-bold text-white">
@@ -1027,10 +1027,10 @@ export default function ContactPage({ audience }: { audience?: "supplier" | "age
             </div>
             <div className="p-5 pt-0">
               <Link
-                href="/contact#contact-form-section"
+                href={partners[2].button_url || DEFAULT_PARTNERS[2].button_url}
                 className="inline-flex items-center gap-1.5 text-xs font-bold text-pub-secondary hover:underline"
               >
-                <span>Explore API Docs</span>
+                <span>{partners[2].button_label || DEFAULT_PARTNERS[2].button_label}</span>
                 <ArrowRight size={12} />
               </Link>
             </div>
@@ -1041,8 +1041,8 @@ export default function ContactPage({ audience }: { audience?: "supplier" | "age
             <div>
               <div className="relative h-44 w-full overflow-hidden bg-slate-100">
                 <img
-                  src="https://images.unsplash.com/photo-1526778548025-fa2f459cd5c1?auto=format&fit=crop&w=600&q=80"
-                  alt="Media press postcards"
+                  src={partners[3].image || DEFAULT_PARTNERS[3].image}
+                  alt={partners[3].title || DEFAULT_PARTNERS[3].title}
                   className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
                 />
                 <span className="absolute top-3 left-3 rounded-md bg-[#0B1F3A]/80 backdrop-blur-xs px-2.5 py-1 text-[10px] font-bold text-white">
@@ -1060,10 +1060,10 @@ export default function ContactPage({ audience }: { audience?: "supplier" | "age
             </div>
             <div className="p-5 pt-0">
               <Link
-                href="/about"
+                href={partners[3].button_url || DEFAULT_PARTNERS[3].button_url}
                 className="inline-flex items-center gap-1.5 text-xs font-bold text-pub-secondary hover:underline"
               >
-                <span>Brand Assets</span>
+                <span>{partners[3].button_label || DEFAULT_PARTNERS[3].button_label}</span>
                 <ArrowRight size={12} />
               </Link>
             </div>
@@ -1095,7 +1095,11 @@ export default function ContactPage({ audience }: { audience?: "supplier" | "age
               const isSelected = activeOfficeId === office.id;
               const defaultMeta = OFFICE_CONTACT_META[office.id];
               const cmsMeta = officeItems[index];
-              const meta = { phone: cmsMeta?.phone || defaultMeta.phone, hours: cmsMeta?.hours || defaultMeta.hours };
+              const meta = {
+                phone: cmsMeta?.phone || defaultMeta.phone,
+                hours: cmsMeta?.hours || defaultMeta.hours,
+                timezone: cmsMeta?.timezone || defaultMeta.timeZone,
+              };
               const addressLine1 = cmsMeta?.address_line1 || office.addressLine1;
               const addressLine2 = cmsMeta?.address_line2 || office.addressLine2;
 
@@ -1135,7 +1139,7 @@ export default function ContactPage({ audience }: { audience?: "supplier" | "age
                       <>
                         <div className="flex items-center gap-1.5 text-[11px] text-slate-500">
                           <Clock size={12} className="text-slate-400 shrink-0" />
-                          <span>{meta.hours}</span>
+                          <span>{meta.hours}{meta.timezone ? ` · ${meta.timezone}` : ""}</span>
                         </div>
                         <div className="flex items-center gap-1.5 text-[11px] text-slate-500 font-semibold pt-1 text-pub-secondary">
                           <Phone size={12} className="shrink-0" />

@@ -101,6 +101,23 @@ function PortalPublicHeaderInner({
 
   const isLoginPage = pathname.endsWith("/login");
   const isSupplier = portalPath.includes("supplier");
+  const isAffiliate = portalPath.includes("affiliate");
+  const sectionLinks = isAffiliate
+    ? [
+        { href: "#overview", label: "Overview" },
+        { href: "#benefits", label: "Benefits" },
+        { href: "#ideal-for", label: "Ideal For" },
+        { href: "#cta", label: "Get Started" },
+      ]
+    : [
+        { href: "#overview", label: "Overview" },
+        { href: "#benefits", label: "Benefits" },
+        { href: "#how-it-works", label: "How It Works" },
+        { href: "#calculator", label: "Calculator" },
+        { href: "#documents", label: "Requirements" },
+        { href: "#guidelines", label: "Guidelines" },
+        { href: "#faq", label: "FAQ" },
+      ];
 
   return (
     <header className="sticky top-0 z-50 border-b border-pub-border bg-white/95 backdrop-blur-md text-pub-fg transition-all shadow-2xs">
@@ -191,48 +208,7 @@ function PortalPublicHeaderInner({
         {/* Desktop Navigation Links */}
         {!isLoginPage && (
           <nav className="hidden md:flex items-center gap-4 lg:gap-6 text-xs font-semibold text-pub-muted">
-            <a
-              href="#overview"
-              className="hover:text-pub-fg transition-colors py-1"
-            >
-              Overview
-            </a>
-            <a
-              href="#benefits"
-              className="hover:text-pub-fg transition-colors py-1"
-            >
-              Benefits
-            </a>
-            <a
-              href="#how-it-works"
-              className="hover:text-pub-fg transition-colors py-1"
-            >
-              How It Works
-            </a>
-            <a
-              href="#calculator"
-              className="hover:text-pub-fg transition-colors py-1"
-            >
-              Calculator
-            </a>
-            <a
-              href="#documents"
-              className="hover:text-pub-fg transition-colors py-1"
-            >
-              Requirements
-            </a>
-            <a
-              href="#guidelines"
-              className="hover:text-pub-fg transition-colors py-1"
-            >
-              Guidelines
-            </a>
-            <a
-              href="#faq"
-              className="hover:text-pub-fg transition-colors py-1"
-            >
-              FAQ
-            </a>
+            {sectionLinks.map((link) => <a key={link.href} href={link.href} className="hover:text-pub-fg transition-colors py-1">{link.label}</a>)}
           </nav>
         )}
 
@@ -312,55 +288,7 @@ function PortalPublicHeaderInner({
                 Page Sections
               </div>
               <div className="grid grid-cols-2 gap-2 text-xs font-semibold">
-                <a
-                  href="#overview"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="rounded-lg bg-slate-50 p-2.5 text-pub-fg hover:bg-slate-100 transition"
-                >
-                  Overview
-                </a>
-                <a
-                  href="#benefits"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="rounded-lg bg-slate-50 p-2.5 text-pub-fg hover:bg-slate-100 transition"
-                >
-                  Benefits
-                </a>
-                <a
-                  href="#how-it-works"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="rounded-lg bg-slate-50 p-2.5 text-pub-fg hover:bg-slate-100 transition"
-                >
-                  How It Works
-                </a>
-                <a
-                  href="#calculator"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="rounded-lg bg-slate-50 p-2.5 text-pub-fg hover:bg-slate-100 transition"
-                >
-                  Calculator
-                </a>
-                <a
-                  href="#documents"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="rounded-lg bg-slate-50 p-2.5 text-pub-fg hover:bg-slate-100 transition"
-                >
-                  Requirements
-                </a>
-                <a
-                  href="#guidelines"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="rounded-lg bg-slate-50 p-2.5 text-pub-fg hover:bg-slate-100 transition"
-                >
-                  Guidelines
-                </a>
-                <a
-                  href="#faq"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="rounded-lg bg-slate-50 p-2.5 text-pub-fg hover:bg-slate-100 transition"
-                >
-                  FAQ
-                </a>
+                {sectionLinks.map((link) => <a key={link.href} href={link.href} onClick={() => setMobileMenuOpen(false)} className="rounded-lg bg-slate-50 p-2.5 text-pub-fg hover:bg-slate-100 transition">{link.label}</a>)}
               </div>
             </div>
           )}

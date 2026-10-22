@@ -998,12 +998,15 @@ export const CONTENT_BLOCK_TABS: ContentBlockTabConfig[] = [
         key: "items",
         label: "Partner Cards (Operators, Travel Agents, Distribution, Media, in order)",
         type: "records",
-        hint: "Up to 4 cards, in this order. Leave empty to use the built-in cards. Images and links stay fixed to each card's position.",
+        hint: "Up to 4 cards, in this order. Leave empty to use the built-in cards. Each card supports its own image, button label and destination.",
         maxItems: 4,
         subfields: [
           { key: "badge", label: "Badge", type: "text" },
           { key: "title", label: "Title", type: "text" },
           { key: "description", label: "Description", type: "textarea" },
+          { key: "image", label: "Card Image", type: "asset" },
+          { key: "button_label", label: "Button Label", type: "text" },
+          { key: "button_url", label: "Button Destination (e.g. /supplier-portal/login?tab=register)", type: "text" },
         ],
       },
     ],
@@ -1020,7 +1023,7 @@ export const CONTENT_BLOCK_TABS: ContentBlockTabConfig[] = [
         key: "items",
         label: "Office Details (New Zealand, Sri Lanka, India, in order)",
         type: "records",
-        hint: "Up to 3 offices, in this order. Leave empty to use the built-in office details. City, country and map position stay fixed per office.",
+        hint: "Up to 3 offices, in this order. Save address, phone, hours and time zone for each office. City, country and map position stay fixed per office.",
         maxItems: 3,
         subfields: [
           { key: "address_line1", label: "Address Line 1", type: "text" },
@@ -1362,6 +1365,20 @@ export const CONTENT_BLOCK_TABS: ContentBlockTabConfig[] = [
       { key: "heading", label: "Heading", type: "text" },
       { key: "subtitle", label: "Subtitle", type: "textarea" },
       { key: "cta_text", label: "Button Text", type: "text" },
+    ],
+  },
+  {
+    key: "affiliate-portal-footer", label: "Portal Footer", blockKey: "affiliate_portal_footer",
+    fields: [
+      { key: "site_name", label: "Brand Heading", type: "text" },
+      { key: "description", label: "Brand Description", type: "textarea" },
+      { key: "sections", label: "Footer Link Columns", type: "records", hint: "Each link goes on a separate line as: Link label | /link-url", subfields: [
+        { key: "title", label: "Column Heading", type: "text" },
+        { key: "link_lines", label: "Links", type: "textarea" },
+      ] },
+      { key: "facebook", label: "Facebook URL", type: "url" }, { key: "instagram", label: "Instagram URL", type: "url" },
+      { key: "youtube", label: "YouTube URL", type: "url" }, { key: "whatsapp", label: "WhatsApp URL", type: "url" },
+      { key: "twitter", label: "X URL", type: "url" }, { key: "linkedin", label: "LinkedIn URL", type: "url" },
     ],
   },
 ];

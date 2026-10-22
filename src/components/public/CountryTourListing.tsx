@@ -3,7 +3,7 @@
 import Link from "next/link";
 import PrimaryCtaButton from "@/components/public/PrimaryCtaButton";
 import MarketingImage from "@/components/public/MarketingImage";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   LuChevronDown as ChevronDown,
@@ -171,7 +171,7 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
     setSearchTerm(querySearch);
   }, [querySearch]);
 
-  const updateQueryParam = (updates: Record<string, string | null | undefined>) => {
+  const updateQueryParam = useCallback((updates: Record<string, string | null | undefined>) => {
     const params = new URLSearchParams(searchParams.toString());
     Object.entries(updates).forEach(([key, val]) => {
       if (!val) {
@@ -184,7 +184,7 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
       params.set("page", "1");
     }
     router.replace(`${countrySlug ? `/tours/${countrySlug}` : "/tours"}?${params.toString()}`, { scroll: false });
-  };
+  }, [countrySlug, router, searchParams]);
 
   const handleSearchSubmit = (text: string) => {
     const trimmed = text.trim();
@@ -378,21 +378,25 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
     return () => { active = false; };
   }, [countrySlug, queryCountry, queryCategory, router, searchParams]);
 
-  // Subcategories are scoped to the selected category (see public_subcategories) --
-  // refetch whenever the category changes, and drop any previously selected
-  // subcategory that no longer belongs to it.
+  // Subcategories are scoped to the selected category (see public_subcategories).
+  // Preserve a valid URL-selected subcategory while its option list loads;
+  // clearing it eagerly caused the UI to show an unfiltered result even
+  // though the URL still contained the subcategory query.
   useEffect(() => {
     let active = true;
     fetchPublicSubcategories(queryCategory || undefined)
       .then((subs) => {
-        if (active) setSubcategories(subs);
+        if (!active) return;
+        setSubcategories(subs);
+        if (querySubcategory && !subs.some((sub) => sub.slug === querySubcategory)) {
+          updateQueryParam({ subcategory: null });
+        }
       })
       .catch(() => {
         if (active) setSubcategories([]);
       });
-    setSelectedSubcategory("");
     return () => { active = false; };
-  }, [queryCategory]);
+  }, [queryCategory, querySubcategory, updateQueryParam]);
 
   // The actual tour list fetch -- re-runs only when a real filter or the
   // page changes, each one mapped straight to routers.public.public_tours's

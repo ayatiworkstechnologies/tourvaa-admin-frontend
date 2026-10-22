@@ -43,7 +43,7 @@ function responseItems<T>(payload: { data?: T[]; items?: T[] }) {
 
 async function fetchCountries(): Promise<GeoCountry[]> {
   if (_countriesCache) return _countriesCache;
-  const res = await api.get("/countries", { params: { limit: 500 } });
+  const res = await api.get("/geo/countries");
   _countriesCache = responseItems<Record<string, unknown>>(res.data).map((item) => ({
     id: Number(item.id),
     name: String(item.country_name ?? item.name ?? ""),
@@ -56,7 +56,7 @@ async function fetchCountries(): Promise<GeoCountry[]> {
 
 async function fetchStates(countryId: number): Promise<GeoState[]> {
   if (_statesCache.has(countryId)) return _statesCache.get(countryId)!;
-  const res = await api.get("/states", { params: { country_id: countryId, limit: 500 } });
+  const res = await api.get("/geo/states", { params: { country_id: countryId } });
   const data = responseItems<Record<string, unknown>>(res.data).map((item) => ({
     id: Number(item.id),
     name: String(item.state_name ?? item.name ?? ""),
@@ -69,8 +69,8 @@ async function fetchStates(countryId: number): Promise<GeoState[]> {
 async function fetchCities(stateId?: number | null, countryId?: number | null): Promise<GeoCity[]> {
   const cacheKey = stateId ? `state:${stateId}` : countryId ? `country:${countryId}` : "none";
   if (_citiesCache.has(cacheKey)) return _citiesCache.get(cacheKey)!;
-  const params = stateId ? { state_id: stateId, limit: 500 } : { country_id: countryId, limit: 500 };
-  const res = await api.get("/cities", { params });
+  const params = stateId ? { state_id: stateId } : { country_id: countryId };
+  const res = await api.get("/geo/cities", { params });
   const data = responseItems<Record<string, unknown>>(res.data).map((item) => ({
     id: Number(item.id),
     name: String(item.city_name ?? item.name ?? ""),

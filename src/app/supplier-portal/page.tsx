@@ -318,7 +318,7 @@ export default function SupplierPortalLandingPage() {
       <section id="overview" className="mx-auto max-w-[1380px] px-4 sm:px-6 pt-4 sm:pt-6 scroll-mt-24">
         <div className="relative min-h-[440px] sm:min-h-[480px] md:min-h-[520px] w-full overflow-hidden rounded-[24px] sm:rounded-[32px] bg-pub-primary flex items-center justify-center p-6 sm:p-12 shadow-xl">
           <Image
-            src="/images/agent-portal-hero.png"
+            src="/images/supplier-portal-hero.png"
             alt="New Zealand coastal landscape"
             fill
             priority

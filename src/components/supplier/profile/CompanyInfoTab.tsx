@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/useToast";
 import { useGeoCities, useGeoCountries, useGeoStates } from "@/hooks/useGeo";
 import ProfileImageUpload from "@/components/ui/ProfileImageUpload";
 import CountryPhoneInput from "@/components/ui/CountryPhoneInput";
+import SearchableSelect from "@/components/ui/SearchableSelect";
 import CurrencySelect from "@/components/ui/CurrencySelect";
 import { combinePhone, validateMobile, mobileHelp, validatePassword, passwordHelp } from "@/lib/utils/validators";
 import { dialCodeForIso, isoForDialCode } from "@/lib/utils/phoneCountries";
@@ -350,9 +351,8 @@ export default function CompanyInfoTab({ onSaved }: { onSaved?: () => void }) {
             {/* Country */}
             <label className="block">
               <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Country <span className="text-red-500">*</span></span>
-              <select required value={form.country_id}
-                onChange={e => {
-                  const nextCountryId = e.target.value;
+              <SearchableSelect value={form.country_id}
+                onChange={(nextCountryId) => {
                   setSelectedStateId("");
                   setForm(f => {
                     // Auto-fill currency from the newly selected country unless
@@ -361,10 +361,10 @@ export default function CompanyInfoTab({ onSaved }: { onSaved?: () => void }) {
                     return { ...f, country_id: nextCountryId, city_id: "", currency: f.currency || match?.currency_code || "" };
                   });
                 }}
-                className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-emerald-500">
-                <option value="">Select country</option>
-                {countries.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </select>
+                options={countries.map((country) => ({ value: String(country.id), label: country.name }))}
+                placeholder="Select country"
+                searchPlaceholder="Search countries"
+              />
             </label>
 
             {/* Currency */}
@@ -381,23 +381,13 @@ export default function CompanyInfoTab({ onSaved }: { onSaved?: () => void }) {
             {/* State */}
             <label className="block">
               <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">State</span>
-              <select value={selectedStateId} disabled={!form.country_id}
-                onChange={e => { setSelectedStateId(e.target.value); setForm(f => ({ ...f, city_id: "" })); }}
-                className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-emerald-500 disabled:bg-dash-bg">
-                <option value="">{form.country_id ? "Select state" : "Select country first"}</option>
-                {states.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-              </select>
+              <SearchableSelect value={selectedStateId} disabled={!form.country_id} onChange={(stateId) => { setSelectedStateId(stateId); setForm(f => ({ ...f, city_id: "" })); }} options={states.map((state) => ({ value: String(state.id), label: state.name }))} placeholder={form.country_id ? "Select state" : "Select country first"} searchPlaceholder="Search states" />
             </label>
 
             {/* City */}
             <label className="block sm:col-span-2">
               <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">City</span>
-              <select value={form.city_id} disabled={!form.country_id}
-                onChange={e => set("city_id", e.target.value)}
-                className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-emerald-500 disabled:bg-dash-bg">
-                <option value="">{form.country_id ? "Select city" : "Select country first"}</option>
-                {cities.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </select>
+              <SearchableSelect value={form.city_id} disabled={!form.country_id} onChange={(cityId) => set("city_id", cityId)} options={cities.map((city) => ({ value: String(city.id), label: city.name }))} placeholder={form.country_id ? "Select city" : "Select country first"} searchPlaceholder="Search cities" />
             </label>
 
             <label className="block">
