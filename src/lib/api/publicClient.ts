@@ -221,7 +221,7 @@ export type PublicTourDetail = PublicTour & {
 
 export type PublicCategory = { id: number; category_name: string; slug: string; description: string; image: string | null; tour_count?: number };
 export type PublicSubcategory = { id: number; subcategory_name: string; slug: string; category_name: string };
-export type PublicCountry = { id: number; country_name: string; country_code: string; currency_code?: string; flag_emoji?: string; tour_count?: number };
+export type PublicCountry = { id: number; country_name: string; slug: string; country_code: string; currency_code?: string; flag_emoji?: string; tour_count?: number };
 export type PublicCity = { id: number; city_name: string; country_id: number; tour_count?: number };
 export type CmsBanner = { id: number; title: string; subtitle: string | null; image: string | null; video: string | null; cta_text: string | null; cta_url: string | null; sort_order: number; is_active: boolean };
 export type CmsDestination = { id: number; title: string; image: string | null; description: string | null; href: string | null; rating?: number | null; package_count?: number | null; sort_order: number; is_active: boolean; country_id?: number | null; city_id?: number | null };
@@ -232,7 +232,7 @@ export type CmsFooterSection = { id: number; title: string; links: CmsFooterLink
 export type CmsPopularTour = { id: number; tour_id: number; tour_title: string; tour_code: string; sort_order: number; is_active: boolean };
 export type CmsHandpickedTour = { id: number; tour_id: number; tour_title: string; tour_code: string; sort_order: number; is_active: boolean };
 export type CmsFavouriteCountry = { id: number; country_id: number | null; title: string; snippet: string | null; image: string | null; href: string | null; sort_order: number; is_active: boolean };
-export type CmsCountryPage = { id: number; country_id: number; country_name: string; hero_title: string | null; hero_description: string | null; hero_image: string | null; showcase_title: string | null; showcase_description: string | null; showcase_image: string | null; seo_title: string | null; seo_description: string | null; is_active: boolean };
+export type CmsCountryPage = { id: number; country_id: number; country_name: string; country_slug: string; hero_title: string | null; hero_description: string | null; hero_image: string | null; showcase_title: string | null; showcase_description: string | null; showcase_image: string | null; seo_title: string | null; seo_description: string | null; is_active: boolean };
 export type CmsContentBlock<T extends Record<string, unknown> = Record<string, unknown>> = { key: string; data: Partial<T>; updated_at: string | null };
 export type HeroExtrasBlock = {
   rating: number; review_count: number; review_source: string;
@@ -320,6 +320,11 @@ export async function fetchPublicCountries() {
 export async function fetchCountryPages() {
   const res = await publicApi.get("/country-pages");
   return (res.data.items || []) as CmsCountryPage[];
+}
+
+export async function fetchCountryPageBySlug(slug: string) {
+  const res = await publicApi.get(`/country-pages/${encodeURIComponent(slug)}`);
+  return res.data.data as CmsCountryPage;
 }
 
 export type PublicDestinationGuide = {

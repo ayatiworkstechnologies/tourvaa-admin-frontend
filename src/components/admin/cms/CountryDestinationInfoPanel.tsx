@@ -64,6 +64,7 @@ const PUBLIC_SECTIONS: { key: CountryDestinationSectionKey; label: string; descr
 
 interface CountryDestinationInfoPanelProps {
   selectedCountryName?: string;
+  selectedCountrySlug?: string;
   countryOptions?: CmsCountryOption[];
   countriesLoading?: boolean;
   countriesError?: string;
@@ -73,6 +74,7 @@ interface CountryDestinationInfoPanelProps {
 
 export default function CountryDestinationInfoPanel({
   selectedCountryName: controlledCountryName,
+  selectedCountrySlug: controlledCountrySlug,
   countryOptions: controlledCountryOptions,
   countriesLoading: controlledCountriesLoading,
   countriesError: controlledCountriesError,
@@ -136,7 +138,7 @@ export default function CountryDestinationInfoPanel({
   }, [usesControlledCountries]);
 
   const buildCountryTemplate = useCallback((countryName: string) => {
-    const slug = slugifyTourSegment(countryName);
+    const slug = controlledCountrySlug || slugifyTourSegment(countryName);
     const selectedCountry = countryOptions.find(
       (country) => country.name.toLowerCase() === countryName.toLowerCase(),
     );
@@ -153,7 +155,7 @@ export default function CountryDestinationInfoPanel({
       country_slug: slug,
       country_code: selectedCountry?.code || template.country_code || "XX",
     };
-  }, [countryOptions]);
+  }, [countryOptions, controlledCountrySlug]);
 
   // Fetch or initialize the country destination info.
   const loadCountryData = useCallback(async (countryName: string) => {

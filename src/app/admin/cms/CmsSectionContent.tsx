@@ -17,7 +17,7 @@ import CountryDestinationInfoPanel from "@/components/admin/cms/CountryDestinati
 
 // The editor for one CMS section key. Shared by /admin/cms/[section] and the
 // Home Page builder (/admin/cms/home), which embeds it next to a live preview.
-export default function CmsSectionContent({ activeTab, withExtras = true, onChanged }: { activeTab: string; withExtras?: boolean; onChanged?: () => void }) {
+export default function CmsSectionContent({ activeTab, withExtras = true, onChanged, selectedCountryId, onCountryPageDirtyChange }: { activeTab: string; withExtras?: boolean; onChanged?: () => void; selectedCountryId?: number; onCountryPageDirtyChange?: (dirty: boolean) => void }) {
   const currentListTab = TABS.find((t) => t.key === activeTab);
   const currentBlockTab = CONTENT_BLOCK_TABS.find((t) => t.key === activeTab);
   const isFooterTab = activeTab === FOOTER_TAB.key;
@@ -27,7 +27,7 @@ export default function CmsSectionContent({ activeTab, withExtras = true, onChan
     <div className="space-y-5">
       {currentListTab ? (
         <div className="space-y-5">
-          <CmsTabPanel key={currentListTab.key} tab={currentListTab} onChanged={onChanged} />
+          <CmsTabPanel key={currentListTab.key === "country-pages" ? `${currentListTab.key}-${selectedCountryId ?? "none"}` : currentListTab.key} tab={currentListTab} onChanged={onChanged} selectedCountryId={currentListTab.key === "country-pages" ? selectedCountryId : undefined} onDirtyChange={currentListTab.key === "country-pages" ? onCountryPageDirtyChange : undefined} />
           {withExtras && currentListTab.key === "banners" && (
             <ContentBlockPanel key={HERO_EXTRAS_BLOCK.key} tab={HERO_EXTRAS_BLOCK} onChanged={onChanged} />
           )}

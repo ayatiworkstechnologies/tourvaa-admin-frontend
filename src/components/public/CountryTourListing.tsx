@@ -325,8 +325,8 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
   }, []);
 
   const countryPage = useMemo(
-    () => countryPages.find((p) => p.country_name.toLowerCase() === countryName.toLowerCase()) ?? null,
-    [countryPages, countryName]
+    () => countryPages.find((p) => p.country_slug === countrySlug) ?? countryPages.find((p) => p.country_name.toLowerCase() === countryName.toLowerCase()) ?? null,
+    [countryPages, countryName, countrySlug]
   );
 
   const [tours, setTours] = useState<TourItem[]>([]);
@@ -355,7 +355,7 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
         if (!active) return;
         let resolvedCountry = "";
         if (countrySlug) {
-          const match = countries.find((item) => slugifyTourSegment(item.country_name) === countrySlug);
+          const match = countries.find((item) => item.slug === countrySlug || slugifyTourSegment(item.country_name) === countrySlug);
           resolvedCountry = match?.country_name || countrySlug;
         } else if (queryCountry) {
           const match = countries.find((item) => item.country_name.toLowerCase() === queryCountry.toLowerCase());

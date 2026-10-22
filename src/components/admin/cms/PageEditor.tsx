@@ -133,6 +133,8 @@ export default function PageEditor({
   onActiveChange,
   previewVersion = 0,
   headerAction,
+  selectedCountryId,
+  onCountryPageDirtyChange,
 }: {
   sections: PageEditorSection[];
   previewTitle: string;
@@ -146,6 +148,9 @@ export default function PageEditor({
   previewVersion?: number;
   // Rendered at the top-right of the section list (e.g. an "Add section" button).
   headerAction?: ReactNode;
+  /** Country Pages has one shared selector for its editor and preview. */
+  selectedCountryId?: number;
+  onCountryPageDirtyChange?: (dirty: boolean) => void;
 }) {
   const [uncontrolledActive, setUncontrolledActive] = useState(sections[0]?.key ?? "");
   const active = controlledActive ?? uncontrolledActive;
@@ -287,7 +292,7 @@ export default function PageEditor({
 
             {current?.render
               ? current.render()
-              : (current?.tabs ?? []).map((tab) => <CmsSectionContent key={tab} activeTab={tab} onChanged={handleRefresh} />)}
+              : (current?.tabs ?? []).map((tab) => <CmsSectionContent key={tab} activeTab={tab} onChanged={handleRefresh} selectedCountryId={selectedCountryId} onCountryPageDirtyChange={onCountryPageDirtyChange} />)}
           </div>
         )}
 

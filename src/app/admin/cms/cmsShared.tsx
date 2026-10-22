@@ -2037,7 +2037,7 @@ function TourPickerSelect({
 }
 
 // ---- CmsTabPanel ---------------------------------------------------------
-export function CmsTabPanel({ tab, onChanged }: { tab: TabConfig; onChanged?: () => void }) {
+export function CmsTabPanel({ tab, onChanged, selectedCountryId: controlledCountryId, onDirtyChange }: { tab: TabConfig; onChanged?: () => void; selectedCountryId?: number; onDirtyChange?: (dirty: boolean) => void }) {
   const toast = useToast();
   const { confirm, dialog } = useConfirm();
   const [items, setItems] = useState<CmsItem[]>([]);
@@ -2081,6 +2081,10 @@ export function CmsTabPanel({ tab, onChanged }: { tab: TabConfig; onChanged?: ()
   }, [tab.endpoint, tab.label, toast]);
 
   useEffect(() => { void fetchItems(); }, [fetchItems]);
+  useEffect(() => {
+    onDirtyChange?.(showForm && !saving);
+    return () => onDirtyChange?.(false);
+  }, [showForm, saving, onDirtyChange]);
   useEffect(() => {
     if (tab.endpoint !== "/cms/popular-tours" && tab.endpoint !== "/cms/handpicked-tours" && tab.endpoint !== "/cms/tours-on-deals") return;
 
@@ -2153,7 +2157,7 @@ export function CmsTabPanel({ tab, onChanged }: { tab: TabConfig; onChanged?: ()
 
   const openCreate = () => {
     setEditingItem(null);
-    setFormValues(Object.fromEntries(tab.formFields.map(f => [f.key, f.type === "boolean" ? "true" : ""])));
+    setFormValues(Object.fromEntries(tab.formFields.map(f => [f.key, f.key === "country_id" && isCountryPageTab && controlledCountryId ? String(controlledCountryId) : f.type === "boolean" ? "true" : ""])));
     setSectionBlocks([]);
     setShowForm(true);
   };
@@ -2363,8 +2367,11 @@ export function CmsTabPanel({ tab, onChanged }: { tab: TabConfig; onChanged?: ()
     })),
   ];
 
-  const totalPages = Math.max(1, Math.ceil(items.length / pageSize));
-  const paginatedItems = items.slice((page - 1) * pageSize, page * pageSize);
+  const visibleItems = isCountryPageTab && controlledCountryId
+    ? items.filter((item) => Number(item.country_id) === controlledCountryId)
+    : items;
+  const totalPages = Math.max(1, Math.ceil(visibleItems.length / pageSize));
+  const paginatedItems = visibleItems.slice((page - 1) * pageSize, page * pageSize);
 
   const description = TAB_DESCRIPTIONS[tab.key] ?? "Manage this website content section.";
   const visibleFieldCount = tab.formFields.length;
@@ -2378,7 +2385,7 @@ export function CmsTabPanel({ tab, onChanged }: { tab: TabConfig; onChanged?: ()
             <div className="flex flex-wrap items-center gap-2">
               <h3 className="text-lg font-bold text-dash-text">{tab.label}</h3>
               <span className="rounded-full bg-[#EDF5FF] px-2.5 py-1 text-xs font-bold text-[#0369A1]">
-                {loading ? "Loading" : `${items.length} item${items.length === 1 ? "" : "s"}`}
+                {loading ? "Loading" : `${visibleItems.length} item${visibleItems.length === 1 ? "" : "s"}`}
               </span>
             </div>
             <p className="mt-1 text-sm text-dash-muted">{description}</p>
@@ -2563,7 +2570,7 @@ export function CmsTabPanel({ tab, onChanged }: { tab: TabConfig; onChanged?: ()
         loading={loading}
         page={page}
         pageSize={pageSize}
-        total={items.length}
+        total={visibleItems.length}
         totalPages={totalPages}
         onPageChange={setPage}
         emptyTitle={`No ${tab.label.toLowerCase()} yet`}

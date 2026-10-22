@@ -53,6 +53,24 @@ export default function PortalMessageThread({ portal }: { portal: ParticipantTyp
     void load();
   }, [load]);
 
+  // WebSockets are the immediate path.  Keep a quiet API fallback as well:
+  // a supplier must never have to reload the page when a proxy, an expired
+  // one-time socket ticket, or a temporary network change drops the socket.
+  // This refresh does not show the loading state or interrupt a draft.
+  useEffect(() => {
+    const refresh = async () => {
+      try {
+        const data = await getOwnConversation(portal);
+        setThread(data);
+      } catch {
+        // The existing socket reconnect and normal page load remain the
+        // recovery paths; a failed background refresh is intentionally quiet.
+      }
+    };
+    const interval = window.setInterval(() => void refresh(), 10_000);
+    return () => window.clearInterval(interval);
+  }, [portal]);
+
   useEffect(() => {
     const timer = window.setInterval(() => setNow(Date.now()), 30_000);
     return () => window.clearInterval(timer);

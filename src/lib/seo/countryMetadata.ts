@@ -5,7 +5,7 @@ import { slugifyTourSegment } from "@/lib/utils/tourUrl";
 
 const API_BASE = (process.env.API_PROXY_TARGET || "http://127.0.0.1:8000").replace(/\/+$/, "");
 
-type PublicCountry = { country_name: string; tour_count?: number };
+type PublicCountry = { country_name: string; slug?: string; tour_count?: number };
 type CountryPageSeo = { country_name: string; seo_title: string | null; seo_description: string | null };
 
 async function findCountryBySlug(slug: string): Promise<PublicCountry | null> {
@@ -16,7 +16,7 @@ async function findCountryBySlug(slug: string): Promise<PublicCountry | null> {
     if (!res.ok) return null;
     const json = await res.json();
     const items = (json?.items || []) as PublicCountry[];
-    return items.find((item) => slugifyTourSegment(item.country_name) === slug) ?? null;
+    return items.find((item) => item.slug === slug || slugifyTourSegment(item.country_name) === slug) ?? null;
   } catch {
     return null;
   }
@@ -24,11 +24,10 @@ async function findCountryBySlug(slug: string): Promise<PublicCountry | null> {
 
 async function findCountryPageSeoBySlug(slug: string): Promise<CountryPageSeo | null> {
   try {
-    const res = await fetch(`${API_BASE}/api/public/country-pages`, { cache: "no-store" });
+    const res = await fetch(`${API_BASE}/api/public/country-pages/${encodeURIComponent(slug)}`, { cache: "no-store" });
     if (!res.ok) return null;
     const json = await res.json();
-    const items = (json?.items || []) as CountryPageSeo[];
-    return items.find((item) => slugifyTourSegment(item.country_name) === slug) ?? null;
+    return (json?.data || null) as CountryPageSeo | null;
   } catch {
     return null;
   }

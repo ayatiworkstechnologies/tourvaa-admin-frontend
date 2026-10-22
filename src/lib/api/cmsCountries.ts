@@ -4,12 +4,14 @@ export type CmsCountryOption = {
   id: number;
   name: string;
   code: string;
+  slug: string;
 };
 
 type CountryRecord = {
   id?: number;
   country_name?: string;
   country_code?: string;
+  slug?: string;
 };
 
 export function formatCmsCountryOption(country: CmsCountryOption): string {
@@ -32,6 +34,7 @@ export async function fetchCmsCountryOptions(): Promise<CmsCountryOption[]> {
       id: Number(country.id),
       name: String(country.country_name || "").trim(),
       code: String(country.country_code || "").trim().toUpperCase(),
+      slug: String(country.slug || "").trim(),
     }))
     .filter((country) => country.id > 0 && country.name)
     .sort((left, right) => left.name.localeCompare(right.name));

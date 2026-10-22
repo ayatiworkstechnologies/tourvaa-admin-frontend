@@ -554,6 +554,23 @@ export default function SupplierBookingDetailPage() {
   const [newMessage, setNewMessage] = useState("");
   const [sendingMessage, setSendingMessage] = useState(false);
 
+  // The WebSocket below is the real-time path.  Polling is a deliberately
+  // small fallback for deployments where a reverse proxy drops WebSocket
+  // upgrades or the short-lived ticket cannot be renewed.  It means an admin
+  // reply appears without a supplier manually refreshing this booking page.
+  useEffect(() => {
+    const refreshMessages = async () => {
+      try {
+        const thread = await getSupplierBookingConversationForBooking(bookingId);
+        setMessageThread(thread);
+      } catch {
+        // Do not surface a transient background failure over the booking UI.
+      }
+    };
+    const interval = window.setInterval(() => void refreshMessages(), 10_000);
+    return () => window.clearInterval(interval);
+  }, [bookingId]);
+
   useMessagingSocket(
     useCallback((event) => {
       if (event.type === "admin_presence") {
