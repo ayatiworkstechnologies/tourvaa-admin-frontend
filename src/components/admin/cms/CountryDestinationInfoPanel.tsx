@@ -28,14 +28,12 @@ import {
   CURATED_COUNTRY_INFOS,
   getFallbackCountryDestinationInfo,
 } from "@/lib/data/countryDestinationDefaults";
+import {
+  fetchCmsCountryOptions,
+  formatCmsCountryOption,
+  type CmsCountryOption,
+} from "@/lib/api/cmsCountries";
 import { slugifyTourSegment } from "@/lib/utils/tourUrl";
-
-interface CountryOption {
-  id: number;
-  name: string;
-  code: string;
-}
-
 
 type SubTabKey =
   | "hero"
@@ -65,71 +63,77 @@ const PUBLIC_SECTIONS: { key: CountryDestinationSectionKey; label: string; descr
 
 interface CountryDestinationInfoPanelProps {
   selectedCountryName?: string;
+  countryOptions?: CmsCountryOption[];
+  countriesLoading?: boolean;
+  countriesError?: string;
   onCountryChange?: (countryName: string) => void;
   onSaved?: () => void;
 }
 
 export default function CountryDestinationInfoPanel({
   selectedCountryName: controlledCountryName,
+  countryOptions: controlledCountryOptions,
+  countriesLoading: controlledCountriesLoading,
+  countriesError: controlledCountriesError,
   onCountryChange,
   onSaved,
 }: CountryDestinationInfoPanelProps) {
   const toast = useToast();
-  const [countries, setCountries] = useState<CountryOption[]>([]);
-  const [uncontrolledCountryName, setUncontrolledCountryName] = useState<string>("India");
+  const [localCountryOptions, setLocalCountryOptions] = useState<CmsCountryOption[]>([]);
+  const [localCountryName, setLocalCountryName] = useState("");
+  const [localCountriesLoading, setLocalCountriesLoading] = useState(true);
+  const [localCountriesError, setLocalCountriesError] = useState("");
   const [activeSubTab, setActiveSubTab] = useState<SubTabKey>("hero");
   const [loading, setLoading] = useState<boolean>(true);
   const [saving, setSaving] = useState<boolean>(false);
   const [info, setInfo] = useState<CountryDestinationInfo | null>(null);
   const chapterNavRef = useRef<HTMLDivElement>(null);
-  const selectedCountryName = controlledCountryName || uncontrolledCountryName;
+  const usesControlledCountries = controlledCountryOptions !== undefined;
+  const countryOptions = controlledCountryOptions ?? localCountryOptions;
+  const countriesLoading = usesControlledCountries
+    ? Boolean(controlledCountriesLoading)
+    : localCountriesLoading;
+  const countriesError = usesControlledCountries
+    ? (controlledCountriesError || "")
+    : localCountriesError;
+  const selectedCountryName = controlledCountryName || localCountryName;
 
   const selectCountry = (countryName: string) => {
-    setUncontrolledCountryName(countryName);
+    if (!controlledCountryName) setLocalCountryName(countryName);
     onCountryChange?.(countryName);
   };
 
-  // 1. Fetch available countries from the system
+  // Direct CMS section routes render this panel without the Country Pages
+  // parent. They still use the same complete active + inactive catalogue.
   useEffect(() => {
-    api
-      .get("/public/countries")
-      .then((res) => {
-        type RawCountry = { id: number; name?: string; country_name?: string; code?: string; country_code?: string };
-        const items = (res.data?.items || res.data || []) as RawCountry[];
-        const mapped: CountryOption[] = items.map((c) => ({
-          id: c.id,
-          name: c.country_name || c.name || "Unknown",
-          code: c.country_code || c.code || "XX",
-        }));
-        setCountries(mapped);
+    if (usesControlledCountries) return;
 
-        // Preserve the parent page's selection when embedded in Country Pages.
-        if (!controlledCountryName && mapped.length > 0) {
-          const india = mapped.find((m) => m.name.toLowerCase() === "india");
-          if (india) {
-            setUncontrolledCountryName(india.name);
-          } else {
-            setUncontrolledCountryName(mapped[0].name);
-          }
-        }
+    let active = true;
+    setLocalCountriesLoading(true);
+    setLocalCountriesError("");
+    fetchCmsCountryOptions()
+      .then((items) => {
+        if (!active) return;
+        setLocalCountryOptions(items);
+        setLocalCountryName((selected) => selected || items.find((item) => item.name.toLowerCase() === "india")?.name || items[0]?.name || "");
       })
-      .catch((err) => {
-        console.error("Failed to load countries in CMS:", err);
-        // Fallback country list
-        setCountries([
-          { id: 1, name: "India", code: "IN" },
-          { id: 2, name: "New Zealand", code: "NZ" },
-          { id: 3, name: "Thailand", code: "TH" },
-          { id: 4, name: "United Kingdom", code: "GB" },
-        ]);
-        if (!controlledCountryName) setUncontrolledCountryName("India");
+      .catch(() => {
+        if (!active) return;
+        setLocalCountryOptions([]);
+        setLocalCountriesError("Could not load the complete country list. Refresh the page and try again.");
+      })
+      .finally(() => {
+        if (active) setLocalCountriesLoading(false);
       });
-  }, [controlledCountryName]);
 
-  // 2. Fetch or initialize the country destination info
+    return () => { active = false; };
+  }, [usesControlledCountries]);
+
+  // Fetch or initialize the country destination info.
   const loadCountryData = useCallback(async (countryName: string) => {
     if (!countryName) return;
     setLoading(true);
+    setInfo(null);
     const slug = slugifyTourSegment(countryName);
 
     try {
@@ -199,6 +203,31 @@ export default function CountryDestinationInfoPanel({
     toast.info(`Reset to curated default template for ${info.country_name}. Click Save to persist.`);
   };
 
+  if (countriesLoading) {
+    return (
+      <div className="rounded-xl border border-dash-border bg-white p-8 text-center">
+        <RefreshCw className="mx-auto h-6 w-6 animate-spin text-dash-brand" />
+        <p className="mt-2 text-sm font-semibold text-dash-muted">Loading countries...</p>
+      </div>
+    );
+  }
+
+  if (countriesError) {
+    return (
+      <div role="alert" className="rounded-xl border border-red-200 bg-red-50 p-5 text-sm font-semibold text-red-700">
+        {countriesError}
+      </div>
+    );
+  }
+
+  if (!selectedCountryName || countryOptions.length === 0) {
+    return (
+      <div className="rounded-xl border border-dash-border bg-white p-5 text-sm font-semibold text-dash-muted">
+        No countries are available to edit.
+      </div>
+    );
+  }
+
   if (!info && loading) {
     return (
       <div className="rounded-xl border border-dash-border bg-white p-8 text-center">
@@ -212,6 +241,7 @@ export default function CountryDestinationInfoPanel({
 
   const currentSlug = info.country_slug || slugifyTourSegment(info.country_name);
   const liveUrl = `/destinations/${currentSlug}`;
+  const selectedCountry = countryOptions.find((country) => country.name === selectedCountryName);
 
   return (
     <div className="space-y-5">
@@ -285,9 +315,9 @@ export default function CountryDestinationInfoPanel({
               onChange={(e) => selectCountry(e.target.value)}
               className="w-full rounded-xl border border-slate-200 bg-slate-50/60 hover:bg-white px-3.5 py-2 text-sm font-semibold text-slate-800 outline-none transition focus:border-slate-800 focus:bg-white focus:ring-2 focus:ring-slate-900/10 shadow-2xs cursor-pointer"
             >
-              {countries.map((c) => (
+              {countryOptions.map((c) => (
                 <option key={c.id} value={c.name}>
-                  {c.name} ({c.code})
+                  {formatCmsCountryOption(c)}
                 </option>
               ))}
             </select>
@@ -295,6 +325,11 @@ export default function CountryDestinationInfoPanel({
           <span className="text-xs text-slate-500 font-medium">
             Live route <code className="bg-slate-100 text-slate-800 px-2 py-0.5 rounded-md text-[11px] font-mono font-semibold">{liveUrl}</code>
           </span>
+          {selectedCountry && selectedCountry.status !== "active" && (
+            <span className="rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-bold text-amber-800 ring-1 ring-amber-200">
+              Inactive — hidden from public country selectors
+            </span>
+          )}
         </div>
         </div>
       </section>

@@ -50,6 +50,30 @@ export async function isPublicDestinationCountryForServer(slugOrName: string): P
 }
 
 /**
+ * Published tours can outlive an accidentally disabled country record. The
+ * public catalogue still exposes those tours, so their generated "Travel
+ * Guide" link must resolve to the country catalogue instead of a soft 404.
+ */
+export async function hasPublicToursForDestinationForServer(slugOrName: string): Promise<boolean> {
+  const normalizedSlug = countrySlug(slugOrName);
+  if (!normalizedSlug) return false;
+
+  try {
+    const url = new URL(`${API_BASE}/api/public/tours`);
+    url.searchParams.set("country", normalizedSlug);
+    url.searchParams.set("page", "1");
+    url.searchParams.set("limit", "1");
+    const response = await fetch(url, { cache: "no-store" });
+    if (!response.ok) return false;
+
+    const payload = await response.json() as { total?: number; items?: unknown[] };
+    return Number(payload.total || 0) > 0 || Boolean(payload.items?.length);
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Read a destination guide directly from the backend during server rendering.
  * Browser-relative `/api` calls only work after hydration; using the proxy
  * target here makes a newly saved country CMS update visible on the first

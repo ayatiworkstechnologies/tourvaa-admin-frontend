@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { fetchPublicTours, PublicTour } from "@/lib/api/publicClient";
 import {
   fetchCountryDestinationInfoForServer,
+  hasPublicToursForDestinationForServer,
   isLegacyDestinationGuideSlug,
   isPublicDestinationCountryForServer,
 } from "@/lib/data/countryDestinationCms";
@@ -52,11 +53,13 @@ export default async function DestinationCountryPage({
 
   if (!info) {
     // A published long-form guide is optional. Preserve old destination URLs
-    // for active countries and formerly published destination links by sending
-    // visitors to the country tour catalogue. Unknown slugs remain a real 404.
+    // for active countries, countries with published tours, and formerly
+    // published destination links by sending visitors to the country tour
+    // catalogue. Unknown slugs remain a real 404.
     if (
       isLegacyDestinationGuideSlug(slug) ||
-      await isPublicDestinationCountryForServer(slug)
+      await isPublicDestinationCountryForServer(slug) ||
+      await hasPublicToursForDestinationForServer(slug)
     ) {
       redirect(`/tours/${encodeURIComponent(slug.toLowerCase())}`);
     }
