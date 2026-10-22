@@ -469,7 +469,7 @@ export const TABS: TabConfig[] = [
     formFields: [
       { key: "reviewer_name", label: "Reviewer Name", type: "text", required: true },
       { key: "country", label: "Reviewer Location/Country (e.g. Kerala, India)", type: "text" },
-      { key: "rating", label: "Rating (1-5)", type: "number" },
+      { key: "rating", label: "Rating (1-5)", type: "number", required: true, min: 1, max: 5, step: 1 },
       { key: "review_text", label: "Review Text", type: "textarea" },
       { key: "reviewer_image", label: "Reviewer Image", type: "asset" },
       { key: "tour_name", label: "Tour Name", type: "text" },
@@ -2167,6 +2167,22 @@ export function CmsTabPanel({ tab, onChanged }: { tab: TabConfig; onChanged?: ()
     for (const f of required) {
       if (!formValues[f.key]?.trim()) {
         toast.error(`${f.label} is required.`);
+        return;
+      }
+    }
+    for (const f of tab.formFields) {
+      if (f.type !== "number" || formValues[f.key] === "") continue;
+      const value = Number(formValues[f.key]);
+      if (!Number.isFinite(value)) {
+        toast.error(`${f.label} must be a valid number.`);
+        return;
+      }
+      if (f.min !== undefined && value < f.min) {
+        toast.error(`${f.label} must be at least ${f.min}.`);
+        return;
+      }
+      if (f.max !== undefined && value > f.max) {
+        toast.error(`${f.label} cannot be greater than ${f.max}.`);
         return;
       }
     }

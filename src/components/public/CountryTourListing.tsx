@@ -6,10 +6,15 @@ import MarketingImage from "@/components/public/MarketingImage";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
+  LuArrowUpDown as ArrowUpDown,
+  LuBanknote as Banknote,
+  LuCalendarDays as CalendarDays,
+  LuCheck as Check,
   LuChevronDown as ChevronDown,
   LuClock as Clock,
   LuCompass as Compass,
   LuHouse as Home,
+  LuLayers as Layers,
   LuLayoutGrid as LayoutGrid,
   LuList as List,
   LuMap as MapIcon,
@@ -17,11 +22,22 @@ import {
   LuRotateCcw as RotateCcw,
   LuSearch as Search,
   LuSlidersHorizontal as Sliders,
+  LuSparkles as Sparkles,
   LuStar as Star,
   LuUser as User,
   LuUsers as Users,
   LuX as X,
 } from "react-icons/lu";
+
+function formatCountryTitle(name: string): string {
+  if (!name) return "";
+  return name
+    .replace(/[-_]+/g, " ")
+    .trim()
+    .split(/\s+/)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(" ");
+}
 import { CmsCountryPage, fetchCountryPages, fetchPublicCategories, fetchPublicCountries, fetchPublicSubcategories, fetchPublicTours, PublicCategory, PublicSubcategory } from "@/lib/api/publicClient";
 import { useCurrency } from "@/hooks/useCurrency";
 import { useContentBlock } from "@/hooks/useContentBlock";
@@ -516,7 +532,13 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
   }, [countryName, countrySlug, queryCountry, querySearch, queryCategory, selectedSubcategory, selectedDuration, selectedBudget, selectedDestination, selectedRating, budgetOptions, selectedDepartureMonth, availableOnly, sortOrder, page, format, isIndia, retryKey, searchParams]);
 
   // Destination and hero headings
-  const destinationTitle = countryName || (isIndia ? "India" : hasSpecificCountry ? "Destination" : "World Tours");
+  const destinationTitle = useMemo(() => {
+    if (countryName) return formatCountryTitle(countryName);
+    if (isIndia) return "India";
+    if (countrySlug) return formatCountryTitle(countrySlug);
+    if (queryCountry) return formatCountryTitle(queryCountry);
+    return hasSpecificCountry ? "Destination" : "World Tours";
+  }, [countryName, isIndia, countrySlug, queryCountry, hasSpecificCountry]);
 
   // Dynamic available destinations from the current page's real
   // country_name/city_name fields.
@@ -726,340 +748,697 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
         </section>
 
         {/* ── 2. Clickable Breadcrumbs Navigation ── */}
-        <nav className="mt-6 flex items-center gap-2 text-xs font-bold text-slate-500">
+        <nav aria-label="Breadcrumb" className="mt-6 flex flex-wrap items-center gap-1.5 text-xs font-semibold text-slate-500">
           <Link
             href="/"
-            className="flex items-center gap-1 text-slate-600 hover:text-pub-secondary transition"
+            className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-slate-600 hover:bg-slate-100 hover:text-pub-secondary transition"
           >
             <Home size={13} className="text-pub-accent" />
-            Home
+            <span>Home</span>
           </Link>
-          <span className="text-slate-300">›</span>
+          <span className="text-slate-300">/</span>
           <Link
             href="/tours"
-            className={`flex items-center gap-1 transition ${
-              hasSpecificCountry ? "text-slate-600 hover:text-pub-secondary" : "text-pub-accent font-bold"
+            className={`inline-flex items-center gap-1.5 rounded-lg px-2 py-1 transition ${
+              hasSpecificCountry ? "text-slate-600 hover:bg-slate-100 hover:text-pub-secondary" : "bg-pub-accent/10 text-pub-accent font-bold"
             }`}
           >
             <MapIcon size={13} className="text-pub-accent" />
-            {hasSpecificCountry ? "Tour" : "All Tours"}
+            <span>{hasSpecificCountry ? "Tour" : "All Tours"}</span>
           </Link>
           {hasSpecificCountry && (
             <>
-              <span className="text-slate-300">›</span>
-              <Link
-                href={countrySlug ? `/tours/${countrySlug}` : `/tours?country=${encodeURIComponent(destinationTitle)}`}
-                className="flex items-center gap-1 text-blue-600 hover:underline transition"
+              <span className="text-slate-300">/</span>
+              <span
+                className="inline-flex items-center gap-1.5 rounded-lg bg-blue-50/80 px-2.5 py-1 font-bold text-blue-700"
               >
                 <MapPin size={13} className="text-blue-600" />
-                {destinationTitle}
-              </Link>
+                <span>{destinationTitle}</span>
+              </span>
             </>
           )}
         </nav>
 
         {/* ── 3. Destination Heading & Result Count ── */}
-        <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+        <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight text-pub-primary">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-pub-primary">
               {hasSpecificCountry ? destinationTitle : toursListingContent.results_heading}
             </h2>
-            <p className="mt-1 text-xs sm:text-sm font-semibold text-slate-500">
-              <span className="font-black text-slate-900">
+            <div className="mt-1.5 flex flex-wrap items-center gap-2 text-xs sm:text-sm font-semibold text-slate-500">
+              <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-black text-slate-900 shadow-2xs">
                 {selectedDestination || selectedRating ? filteredTours.length : totalCount} Tour{(selectedDestination || selectedRating ? filteredTours.length : totalCount) === 1 ? "" : "s"} Found
-              </span>{" "}
-              {hasSpecificCountry ? `in ${destinationTitle}` : toursListingContent.results_context}
-              {totalPages > 1 && <span className="ml-1 text-slate-400">(page {page} of {totalPages})</span>}
+              </span>
+              <span>
+                {hasSpecificCountry ? `in ${destinationTitle}` : toursListingContent.results_context}
+              </span>
+              {totalPages > 1 && <span className="text-slate-400 font-medium">(page {page} of {totalPages})</span>}
               {activeFiltersCount > 0 && (
-                <span className="ml-2 text-xs text-blue-600 font-bold">
-                  ({activeFiltersCount} filter{activeFiltersCount === 1 ? "" : "s"} active)
+                <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 border border-blue-200/80 px-2.5 py-0.5 text-[11px] font-bold text-blue-700">
+                  <span className="h-1.5 w-1.5 rounded-full bg-blue-600 animate-pulse" />
+                  {activeFiltersCount} filter{activeFiltersCount === 1 ? "" : "s"} active
                 </span>
               )}
-            </p>
+            </div>
           </div>
 
           {/* Grid / List View Switcher & Clear Filters */}
-          <div className="flex items-center gap-2 self-end sm:self-auto">
+          <div className="flex items-center gap-2.5 self-start sm:self-auto">
             {activeFiltersCount > 0 && (
               <button
                 type="button"
                 onClick={clearAllFilters}
-                className="flex items-center gap-1 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-red-600 hover:bg-red-50 hover:border-red-200 transition"
+                className="flex items-center gap-1.5 rounded-xl border border-red-200/90 bg-red-50/80 px-3 py-2 text-xs font-bold text-red-600 hover:bg-red-100 hover:border-red-300 transition shadow-2xs"
               >
                 <RotateCcw size={12} />
-                Reset filters
+                <span>Reset filters</span>
               </button>
             )}
 
-            <button
-              type="button"
-              onClick={() => setViewMode("grid")}
-              aria-label="Grid view"
-              className={`flex h-9 w-9 items-center justify-center rounded-xl border transition ${
-                viewMode === "grid"
-                  ? "border-blue-600 bg-blue-50 text-blue-600 shadow-2xs font-bold"
-                  : "border-slate-200 bg-white text-slate-400 hover:text-slate-700"
-              }`}
-            >
-              <LayoutGrid size={16} />
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode("list")}
-              aria-label="List view"
-              className={`flex h-9 w-9 items-center justify-center rounded-xl border transition ${
-                viewMode === "list"
-                  ? "border-blue-600 bg-blue-50 text-blue-600 shadow-2xs font-bold"
-                  : "border-slate-200 bg-white text-slate-400 hover:text-slate-700"
-              }`}
-            >
-              <List size={16} />
-            </button>
+            {/* Segmented Grid / List Control */}
+            <div className="inline-flex items-center rounded-2xl bg-slate-100 p-1 border border-slate-200/80 shadow-2xs">
+              <button
+                type="button"
+                onClick={() => setViewMode("grid")}
+                aria-label="Grid view"
+                className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold transition-all ${
+                  viewMode === "grid"
+                    ? "bg-white text-blue-600 shadow-xs"
+                    : "text-slate-500 hover:text-slate-800"
+                }`}
+              >
+                <LayoutGrid size={15} />
+                <span className="hidden sm:inline">Grid</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode("list")}
+                aria-label="List view"
+                className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold transition-all ${
+                  viewMode === "list"
+                    ? "bg-white text-blue-600 shadow-xs"
+                    : "text-slate-500 hover:text-slate-800"
+                }`}
+              >
+                <List size={15} />
+                <span className="hidden sm:inline">List</span>
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* 4. Search, filter, and sort controls. The responsive grid keeps every
-            control reachable instead of hiding controls in a horizontal scroller. */}
+        {/* ── 4. Search, filter, and sort controls (Upgraded Modern Filter Suite) ── */}
         <section
           aria-label="Tour filters"
-          className="mt-5 rounded-2xl border border-slate-200/90 bg-white p-4 shadow-xs sm:p-5"
+          className="mt-6 rounded-3xl border border-slate-200/90 bg-white/95 p-4 shadow-[0_8px_30px_rgb(0,0,0,0.04)] backdrop-blur-xs sm:p-6"
         >
-          <div className="grid grid-cols-1 gap-2.5 md:grid-cols-[auto_minmax(0,1fr)_auto] md:items-center">
-            <div className="inline-flex min-h-11 w-fit items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3.5 text-sm font-bold text-pub-primary">
-              <Sliders size={15} aria-hidden="true" />
+          {/* Top Row: Filters Indicator Capsule + Unified Search Input + Available Departures */}
+          <div className="flex flex-col gap-3 md:flex-row md:items-center">
+            {/* Filters Counter Capsule */}
+            <div className="inline-flex h-11 shrink-0 items-center gap-2.5 rounded-xl border border-slate-200/90 bg-slate-50 px-3.5 text-xs sm:text-sm font-bold text-pub-primary shadow-2xs">
+              <Sliders size={16} className={activeFiltersCount > 0 ? "text-blue-600" : "text-slate-500"} />
               <span>Filters</span>
-              <span className="flex h-5 min-w-5 items-center justify-center rounded-md bg-white px-1.5 text-[11px] text-slate-600 shadow-2xs tabular-nums">
+              <span
+                className={`flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-black tabular-nums transition ${
+                  activeFiltersCount > 0
+                    ? "bg-blue-600 text-white shadow-xs"
+                    : "bg-slate-200 text-slate-700"
+                }`}
+              >
                 {activeFiltersCount}
               </span>
             </div>
 
             {/* Quick Search Input */}
-            <div className="relative min-w-0">
-            <input
-              type="text"
-              placeholder="Search by tour name, country..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  handleSearchSubmit(searchTerm);
-                }
-              }}
-              aria-label="Search tours"
-              className="min-h-11 w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-9 pr-8 text-sm font-medium text-slate-800 placeholder-slate-400 outline-none shadow-2xs transition focus:border-pub-accent focus:ring-2 focus:ring-pub-accent/15"
-            />
-            <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-            {searchTerm && (
-              <button
-                type="button"
-                onClick={() => {
-                  setSearchTerm("");
-                  handleSearchSubmit("");
+            <div className="relative min-w-0 flex-1">
+              <input
+                type="text"
+                placeholder={`Search tours, itineraries, or highlights in ${destinationTitle}...`}
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    handleSearchSubmit(searchTerm);
+                  }
                 }}
-                aria-label="Clear search"
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-              >
-                <X size={12} />
-              </button>
-            )}
+                aria-label="Search tours"
+                className="h-11 w-full rounded-xl border border-slate-200/90 bg-slate-50/70 py-2.5 pl-10 pr-9 text-xs sm:text-sm font-medium text-slate-800 placeholder-slate-400 outline-none shadow-2xs transition hover:bg-slate-50 focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10"
+              />
+              <Search size={16} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+              {searchTerm && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchTerm("");
+                    handleSearchSubmit("");
+                  }}
+                  aria-label="Clear search"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition"
+                >
+                  <X size={13} />
+                </button>
+              )}
             </div>
 
+            {/* Available Departures Toggle */}
             <button
               type="button"
               onClick={handleAvailableOnlyToggle}
               aria-pressed={availableOnly}
-              className={`inline-flex min-h-11 shrink-0 items-center justify-center rounded-xl px-4 py-2.5 text-sm font-bold transition active:translate-y-px ${
+              className={`inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-xs sm:text-sm font-bold transition-all active:scale-[0.98] ${
                 availableOnly
-                  ? "border border-pub-primary bg-pub-primary text-white shadow-2xs hover:bg-pub-primary-dark"
-                  : "border border-slate-200 bg-white text-slate-700 shadow-2xs hover:border-slate-300 hover:text-pub-primary"
+                  ? "border border-blue-600 bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-xs hover:from-blue-700 hover:to-indigo-700"
+                  : "border border-slate-200/90 bg-white text-slate-700 shadow-2xs hover:border-slate-300 hover:bg-slate-50 hover:text-pub-primary"
               }`}
             >
-              Available departures
+              <CalendarDays size={16} className={availableOnly ? "text-blue-100" : "text-slate-400"} />
+              <span>Available departures</span>
+              {availableOnly && (
+                <span className="flex h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+              )}
             </button>
           </div>
 
-          <div className="mt-3 grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
-          {/* Budget Dropdown - min_price/max_price on GET /api/public/tours */}
-          <div className="relative min-w-0">
-            <select
-              value={selectedBudget}
-              onChange={(e) => handleBudgetChange(e.target.value)}
-              aria-label="Budget"
-              className={`w-full appearance-none rounded-xl py-2.5 pl-3 pr-9 text-sm font-semibold outline-none shadow-2xs transition ${
+          {/* Filter Dropdowns Grid */}
+          <div className="mt-3.5 grid grid-cols-1 gap-2.5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+            {/* 1. Budget */}
+            <div
+              className={`group relative min-w-0 flex items-center justify-between rounded-xl border px-3 py-2.5 text-xs sm:text-sm transition-all shadow-2xs ${
                 selectedBudget
-                  ? "border border-pub-accent bg-pub-accent/5 text-pub-primary font-bold"
-                  : "border border-slate-200 bg-white text-slate-700 hover:border-pub-accent/45"
+                  ? "border-blue-400 bg-blue-50/70 text-blue-900 font-bold ring-1 ring-blue-400/25 shadow-xs"
+                  : "border-slate-200/90 bg-slate-50/70 text-slate-700 font-semibold hover:border-slate-300 hover:bg-slate-100/70"
               }`}
             >
-              <option value="">Budget</option>
-              {displayBudgetOptions.map((opt) => (
-                <option key={opt.value} value={opt.value}>{opt.label}</option>
-              ))}
-            </select>
-            <ChevronDown size={12} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" />
-          </div>
+              <div className="flex items-center gap-2 min-w-0 pr-6">
+                <Banknote size={15} className={`shrink-0 ${selectedBudget ? "text-blue-600" : "text-slate-400 group-hover:text-slate-600"}`} />
+                <span className="truncate">
+                  {selectedBudget ? (displayBudgetOptions.find((b) => b.value === selectedBudget)?.label || selectedBudget) : "Budget"}
+                </span>
+              </div>
+              <div className="flex items-center gap-1 shrink-0">
+                {selectedBudget && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleBudgetChange("");
+                    }}
+                    aria-label="Clear budget"
+                    className="relative z-10 rounded-full p-0.5 text-blue-600 hover:bg-blue-100 transition"
+                  >
+                    <X size={12} />
+                  </button>
+                )}
+                <ChevronDown size={14} className={`pointer-events-none transition-transform group-hover:translate-y-0.5 ${selectedBudget ? "text-blue-600" : "text-slate-400"}`} />
+              </div>
+              <select
+                value={selectedBudget}
+                onChange={(e) => handleBudgetChange(e.target.value)}
+                aria-label="Budget"
+                className="absolute inset-0 h-full w-full opacity-0 cursor-pointer text-slate-900"
+              >
+                <option value="">All Budgets</option>
+                {displayBudgetOptions.map((opt) => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+            </div>
 
-          {/* Duration Dropdown */}
-          <div className="relative min-w-0">
-            <select
-              value={selectedDuration}
-              onChange={(e) => handleDurationChange(e.target.value)}
-              aria-label="Duration"
-              className={`w-full appearance-none rounded-xl py-2.5 pl-3 pr-9 text-sm font-semibold outline-none shadow-2xs transition ${
+            {/* 2. Duration */}
+            <div
+              className={`group relative min-w-0 flex items-center justify-between rounded-xl border px-3 py-2.5 text-xs sm:text-sm transition-all shadow-2xs ${
                 selectedDuration
-                  ? "border border-pub-accent bg-pub-accent/5 text-pub-primary font-bold"
-                  : "border border-slate-200 bg-white text-slate-700 hover:border-pub-accent/45"
+                  ? "border-blue-400 bg-blue-50/70 text-blue-900 font-bold ring-1 ring-blue-400/25 shadow-xs"
+                  : "border-slate-200/90 bg-slate-50/70 text-slate-700 font-semibold hover:border-slate-300 hover:bg-slate-100/70"
               }`}
             >
-              <option value="">Duration</option>
-              <option value="1">1 Day</option>
-              <option value="2-6">2–6 Days</option>
-              <option value="7-10">7–10 Days</option>
-              <option value="11-14">11–14 Days</option>
-              <option value="15+">15+ Days</option>
-              <option value="1-3">1–3 Days</option>
-              <option value="4-7">4–7 Days</option>
-              <option value="8+">8+ Days</option>
-            </select>
-            <ChevronDown size={12} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" />
-          </div>
-
-          {/* Category Dropdown - real TourCategory data, combined
-              server-side with the current country filter (see selectCategory) */}
-          {categories.length > 0 && (
-            <div className="relative min-w-0">
+              <div className="flex items-center gap-2 min-w-0 pr-6">
+                <Clock size={15} className={`shrink-0 ${selectedDuration ? "text-blue-600" : "text-slate-400 group-hover:text-slate-600"}`} />
+                <span className="truncate">
+                  {selectedDuration ? `${selectedDuration} Days` : "Duration"}
+                </span>
+              </div>
+              <div className="flex items-center gap-1 shrink-0">
+                {selectedDuration && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleDurationChange("");
+                    }}
+                    aria-label="Clear duration"
+                    className="relative z-10 rounded-full p-0.5 text-blue-600 hover:bg-blue-100 transition"
+                  >
+                    <X size={12} />
+                  </button>
+                )}
+                <ChevronDown size={14} className={`pointer-events-none transition-transform group-hover:translate-y-0.5 ${selectedDuration ? "text-blue-600" : "text-slate-400"}`} />
+              </div>
               <select
-                value={queryCategory}
-                onChange={(e) => selectCategory(e.target.value)}
-                aria-label="Category"
-                className={`w-full appearance-none rounded-xl py-2.5 pl-3 pr-9 text-sm font-semibold outline-none shadow-2xs transition ${
+                value={selectedDuration}
+                onChange={(e) => handleDurationChange(e.target.value)}
+                aria-label="Duration"
+                className="absolute inset-0 h-full w-full opacity-0 cursor-pointer text-slate-900"
+              >
+                <option value="">Any Duration</option>
+                <option value="1">1 Day</option>
+                <option value="2-6">2–6 Days</option>
+                <option value="7-10">7–10 Days</option>
+                <option value="11-14">11–14 Days</option>
+                <option value="15+">15+ Days</option>
+                <option value="1-3">1–3 Days</option>
+                <option value="4-7">4–7 Days</option>
+                <option value="8+">8+ Days</option>
+              </select>
+            </div>
+
+            {/* 3. Category (shown when categories exist) */}
+            {categories.length > 0 && (
+              <div
+                className={`group relative min-w-0 flex items-center justify-between rounded-xl border px-3 py-2.5 text-xs sm:text-sm transition-all shadow-2xs ${
                   queryCategory
-                    ? "border border-pub-accent bg-pub-accent/5 text-pub-primary font-bold"
-                    : "border border-slate-200 bg-white text-slate-700 hover:border-pub-accent/45"
+                    ? "border-blue-400 bg-blue-50/70 text-blue-900 font-bold ring-1 ring-blue-400/25 shadow-xs"
+                    : "border-slate-200/90 bg-slate-50/70 text-slate-700 font-semibold hover:border-slate-300 hover:bg-slate-100/70"
                 }`}
               >
-                <option value="">Category</option>
-                {categories.map((cat) => (
-                  <option key={cat.id} value={cat.slug}>
-                    {cat.category_name}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown size={12} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" />
-            </div>
-          )}
+                <div className="flex items-center gap-2 min-w-0 pr-6">
+                  <Compass size={15} className={`shrink-0 ${queryCategory ? "text-blue-600" : "text-slate-400 group-hover:text-slate-600"}`} />
+                  <span className="truncate">
+                    {queryCategory ? (categories.find((c) => c.slug === queryCategory)?.category_name || "Category") : "Category"}
+                  </span>
+                </div>
+                <div className="flex items-center gap-1 shrink-0">
+                  {queryCategory && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        selectCategory("");
+                      }}
+                      aria-label="Clear category"
+                      className="relative z-10 rounded-full p-0.5 text-blue-600 hover:bg-blue-100 transition"
+                    >
+                      <X size={12} />
+                    </button>
+                  )}
+                  <ChevronDown size={14} className={`pointer-events-none transition-transform group-hover:translate-y-0.5 ${queryCategory ? "text-blue-600" : "text-slate-400"}`} />
+                </div>
+                <select
+                  value={queryCategory}
+                  onChange={(e) => selectCategory(e.target.value)}
+                  aria-label="Category"
+                  className="absolute inset-0 h-full w-full opacity-0 cursor-pointer text-slate-900"
+                >
+                  <option value="">All Categories</option>
+                  {categories.map((cat) => (
+                    <option key={cat.id} value={cat.slug}>
+                      {cat.category_name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
 
-          {/* Subcategory Dropdown - real TourSubcategory data scoped
-              to the selected Category (see fetchPublicSubcategories) */}
-          {subcategories.length > 0 && (
-            <div className="relative min-w-0">
-              <select
-                value={selectedSubcategory}
-                onChange={(e) => handleSubcategoryChange(e.target.value)}
-                aria-label="Subcategory"
-                className={`w-full appearance-none rounded-xl py-2.5 pl-3 pr-9 text-sm font-semibold outline-none shadow-2xs transition ${
+            {/* 4. Subcategory (shown when subcategories exist) */}
+            {subcategories.length > 0 && (
+              <div
+                className={`group relative min-w-0 flex items-center justify-between rounded-xl border px-3 py-2.5 text-xs sm:text-sm transition-all shadow-2xs ${
                   selectedSubcategory
-                    ? "border border-pub-accent bg-pub-accent/5 text-pub-primary font-bold"
-                    : "border border-slate-200 bg-white text-slate-700 hover:border-pub-accent/45"
+                    ? "border-blue-400 bg-blue-50/70 text-blue-900 font-bold ring-1 ring-blue-400/25 shadow-xs"
+                    : "border-slate-200/90 bg-slate-50/70 text-slate-700 font-semibold hover:border-slate-300 hover:bg-slate-100/70"
                 }`}
               >
-                <option value="">Subcategory</option>
-                {subcategories.map((sub) => (
-                  <option key={sub.id} value={sub.slug}>
-                    {sub.subcategory_name}
+                <div className="flex items-center gap-2 min-w-0 pr-6">
+                  <Layers size={15} className={`shrink-0 ${selectedSubcategory ? "text-blue-600" : "text-slate-400 group-hover:text-slate-600"}`} />
+                  <span className="truncate">
+                    {selectedSubcategory ? (subcategories.find((s) => s.slug === selectedSubcategory)?.subcategory_name || "Subcategory") : "Subcategory"}
+                  </span>
+                </div>
+                <div className="flex items-center gap-1 shrink-0">
+                  {selectedSubcategory && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleSubcategoryChange("");
+                      }}
+                      aria-label="Clear subcategory"
+                      className="relative z-10 rounded-full p-0.5 text-blue-600 hover:bg-blue-100 transition"
+                    >
+                      <X size={12} />
+                    </button>
+                  )}
+                  <ChevronDown size={14} className={`pointer-events-none transition-transform group-hover:translate-y-0.5 ${selectedSubcategory ? "text-blue-600" : "text-slate-400"}`} />
+                </div>
+                <select
+                  value={selectedSubcategory}
+                  onChange={(e) => handleSubcategoryChange(e.target.value)}
+                  aria-label="Subcategory"
+                  className="absolute inset-0 h-full w-full opacity-0 cursor-pointer text-slate-900"
+                >
+                  <option value="">All Subcategories</option>
+                  {subcategories.map((sub) => (
+                    <option key={sub.id} value={sub.slug}>
+                      {sub.subcategory_name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {/* 5. Destination */}
+            <div
+              className={`group relative min-w-0 flex items-center justify-between rounded-xl border px-3 py-2.5 text-xs sm:text-sm transition-all shadow-2xs ${
+                selectedDestination
+                  ? "border-blue-400 bg-blue-50/70 text-blue-900 font-bold ring-1 ring-blue-400/25 shadow-xs"
+                  : "border-slate-200/90 bg-slate-50/70 text-slate-700 font-semibold hover:border-slate-300 hover:bg-slate-100/70"
+              }`}
+            >
+              <div className="flex items-center gap-2 min-w-0 pr-6">
+                <MapPin size={15} className={`shrink-0 ${selectedDestination ? "text-blue-600" : "text-slate-400 group-hover:text-slate-600"}`} />
+                <span className="truncate">
+                  {selectedDestination || "Destination"}
+                </span>
+              </div>
+              <div className="flex items-center gap-1 shrink-0">
+                {selectedDestination && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleDestinationChange("");
+                    }}
+                    aria-label="Clear destination"
+                    className="relative z-10 rounded-full p-0.5 text-blue-600 hover:bg-blue-100 transition"
+                  >
+                    <X size={12} />
+                  </button>
+                )}
+                <ChevronDown size={14} className={`pointer-events-none transition-transform group-hover:translate-y-0.5 ${selectedDestination ? "text-blue-600" : "text-slate-400"}`} />
+              </div>
+              <select
+                value={selectedDestination}
+                onChange={(e) => handleDestinationChange(e.target.value)}
+                aria-label="Destination"
+                className="absolute inset-0 h-full w-full opacity-0 cursor-pointer text-slate-900"
+              >
+                <option value="">All Destinations</option>
+                {availableDestinations.map((dest) => (
+                  <option key={dest} value={dest}>
+                    {dest}
                   </option>
                 ))}
               </select>
-              <ChevronDown size={12} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            </div>
+
+            {/* 6. Rating */}
+            <div
+              className={`group relative min-w-0 flex items-center justify-between rounded-xl border px-3 py-2.5 text-xs sm:text-sm transition-all shadow-2xs ${
+                selectedRating
+                  ? "border-blue-400 bg-blue-50/70 text-blue-900 font-bold ring-1 ring-blue-400/25 shadow-xs"
+                  : "border-slate-200/90 bg-slate-50/70 text-slate-700 font-semibold hover:border-slate-300 hover:bg-slate-100/70"
+              }`}
+            >
+              <div className="flex items-center gap-2 min-w-0 pr-6">
+                <Star size={15} className={`shrink-0 ${selectedRating ? "fill-amber-400 text-amber-400" : "text-slate-400 group-hover:text-slate-600"}`} />
+                <span className="truncate">
+                  {selectedRating ? `${selectedRating}+ Stars` : "Rating"}
+                </span>
+              </div>
+              <div className="flex items-center gap-1 shrink-0">
+                {selectedRating && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleRatingChange("");
+                    }}
+                    aria-label="Clear rating"
+                    className="relative z-10 rounded-full p-0.5 text-blue-600 hover:bg-blue-100 transition"
+                  >
+                    <X size={12} />
+                  </button>
+                )}
+                <ChevronDown size={14} className={`pointer-events-none transition-transform group-hover:translate-y-0.5 ${selectedRating ? "text-blue-600" : "text-slate-400"}`} />
+              </div>
+              <select
+                value={selectedRating}
+                onChange={(e) => handleRatingChange(e.target.value)}
+                aria-label="Rating"
+                className="absolute inset-0 h-full w-full opacity-0 cursor-pointer text-slate-900"
+              >
+                <option value="">Any Rating</option>
+                <option value="4.5">4.5+ Stars</option>
+                <option value="4.0">4.0+ Stars</option>
+                <option value="3.5">3.5+ Stars</option>
+              </select>
+            </div>
+
+            {/* 7. Departure Month */}
+            <div
+              className={`group relative min-w-0 flex items-center justify-between rounded-xl border px-3 py-2.5 text-xs sm:text-sm transition-all shadow-2xs ${
+                selectedDepartureMonth
+                  ? "border-blue-400 bg-blue-50/70 text-blue-900 font-bold ring-1 ring-blue-400/25 shadow-xs"
+                  : "border-slate-200/90 bg-slate-50/70 text-slate-700 font-semibold hover:border-slate-300 hover:bg-slate-100/70"
+              }`}
+            >
+              <div className="flex items-center gap-2 min-w-0 pr-6">
+                <CalendarDays size={15} className={`shrink-0 ${selectedDepartureMonth ? "text-blue-600" : "text-slate-400 group-hover:text-slate-600"}`} />
+                <span className="truncate">
+                  {selectedDepartureMonth ? (departureMonthOptions.find((opt) => opt.value === selectedDepartureMonth)?.label || selectedDepartureMonth) : "Departure Month"}
+                </span>
+              </div>
+              <div className="flex items-center gap-1 shrink-0">
+                {selectedDepartureMonth && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleDepartureMonthChange("");
+                    }}
+                    aria-label="Clear departure month"
+                    className="relative z-10 rounded-full p-0.5 text-blue-600 hover:bg-blue-100 transition"
+                  >
+                    <X size={12} />
+                  </button>
+                )}
+                <ChevronDown size={14} className={`pointer-events-none transition-transform group-hover:translate-y-0.5 ${selectedDepartureMonth ? "text-blue-600" : "text-slate-400"}`} />
+              </div>
+              <select
+                value={selectedDepartureMonth}
+                onChange={(e) => handleDepartureMonthChange(e.target.value)}
+                aria-label="Departure month"
+                className="absolute inset-0 h-full w-full opacity-0 cursor-pointer text-slate-900"
+              >
+                <option value="">Any Month</option>
+                {departureMonthOptions.map((opt) => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* 8. Sort */}
+            <div
+              className={`group relative min-w-0 flex items-center justify-between rounded-xl border px-3 py-2.5 text-xs sm:text-sm transition-all shadow-2xs ${
+                sortOrder !== "newest"
+                  ? "border-blue-400 bg-blue-50/70 text-blue-900 font-bold ring-1 ring-blue-400/25 shadow-xs"
+                  : "border-slate-200/90 bg-slate-50/70 text-slate-700 font-semibold hover:border-slate-300 hover:bg-slate-100/70"
+              }`}
+            >
+              <div className="flex items-center gap-2 min-w-0 pr-6">
+                <ArrowUpDown size={15} className={`shrink-0 ${sortOrder !== "newest" ? "text-blue-600" : "text-slate-400 group-hover:text-slate-600"}`} />
+                <span className="truncate">
+                  {sortOrder === "newest"
+                    ? "Sort: Newest"
+                    : sortOrder === "price_asc"
+                    ? "Price: Low to High"
+                    : sortOrder === "price_desc"
+                    ? "Price: High to Low"
+                    : "Duration: Shortest"}
+                </span>
+              </div>
+              <div className="flex items-center gap-1 shrink-0">
+                {sortOrder !== "newest" && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleSortChange("newest");
+                    }}
+                    aria-label="Reset sort"
+                    className="relative z-10 rounded-full p-0.5 text-blue-600 hover:bg-blue-100 transition"
+                  >
+                    <X size={12} />
+                  </button>
+                )}
+                <ChevronDown size={14} className={`pointer-events-none transition-transform group-hover:translate-y-0.5 ${sortOrder !== "newest" ? "text-blue-600" : "text-slate-400"}`} />
+              </div>
+              <select
+                value={sortOrder}
+                onChange={(e) => handleSortChange(e.target.value as typeof sortOrder)}
+                aria-label="Sort tours"
+                className="absolute inset-0 h-full w-full opacity-0 cursor-pointer text-slate-900"
+              >
+                <option value="newest">Sort: Newest</option>
+                <option value="price_asc">Price: Low to High</option>
+                <option value="price_desc">Price: High to Low</option>
+                <option value="duration_asc">Duration: Shortest First</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Active Filter Chips Tray */}
+          {activeFiltersCount > 0 && (
+            <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3.5">
+              <span className="text-[11px] font-black uppercase tracking-wider text-slate-400 mr-1 flex items-center gap-1">
+                <Sliders size={11} /> Active:
+              </span>
+
+              {querySearch && (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 border border-blue-200/90 px-3 py-1 text-xs font-bold text-blue-800 shadow-2xs">
+                  <span>Search: &ldquo;{querySearch}&rdquo;</span>
+                  <button
+                    type="button"
+                    onClick={() => { setSearchTerm(""); handleSearchSubmit(""); }}
+                    aria-label="Clear search filter"
+                    className="rounded-full p-0.5 hover:bg-blue-200/60 transition"
+                  >
+                    <X size={11} />
+                  </button>
+                </span>
+              )}
+
+              {selectedBudget && (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 border border-emerald-200/90 px-3 py-1 text-xs font-bold text-emerald-800 shadow-2xs">
+                  <span>Budget: {displayBudgetOptions.find((b) => b.value === selectedBudget)?.label || selectedBudget}</span>
+                  <button
+                    type="button"
+                    onClick={() => handleBudgetChange("")}
+                    aria-label="Clear budget filter"
+                    className="rounded-full p-0.5 hover:bg-emerald-200/60 transition"
+                  >
+                    <X size={11} />
+                  </button>
+                </span>
+              )}
+
+              {selectedDuration && (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 border border-amber-200/90 px-3 py-1 text-xs font-bold text-amber-800 shadow-2xs">
+                  <span>Duration: {selectedDuration} Days</span>
+                  <button
+                    type="button"
+                    onClick={() => handleDurationChange("")}
+                    aria-label="Clear duration filter"
+                    className="rounded-full p-0.5 hover:bg-amber-200/60 transition"
+                  >
+                    <X size={11} />
+                  </button>
+                </span>
+              )}
+
+              {queryCategory && (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-50 border border-indigo-200/90 px-3 py-1 text-xs font-bold text-indigo-800 shadow-2xs">
+                  <span>Category: {categories.find((c) => c.slug === queryCategory)?.category_name || queryCategory}</span>
+                  <button
+                    type="button"
+                    onClick={() => selectCategory("")}
+                    aria-label="Clear category filter"
+                    className="rounded-full p-0.5 hover:bg-indigo-200/60 transition"
+                  >
+                    <X size={11} />
+                  </button>
+                </span>
+              )}
+
+              {selectedSubcategory && (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-purple-50 border border-purple-200/90 px-3 py-1 text-xs font-bold text-purple-800 shadow-2xs">
+                  <span>Type: {subcategories.find((s) => s.slug === selectedSubcategory)?.subcategory_name || selectedSubcategory}</span>
+                  <button
+                    type="button"
+                    onClick={() => handleSubcategoryChange("")}
+                    aria-label="Clear subcategory filter"
+                    className="rounded-full p-0.5 hover:bg-purple-200/60 transition"
+                  >
+                    <X size={11} />
+                  </button>
+                </span>
+              )}
+
+              {selectedDestination && (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-rose-50 border border-rose-200/90 px-3 py-1 text-xs font-bold text-rose-800 shadow-2xs">
+                  <span>Destination: {selectedDestination}</span>
+                  <button
+                    type="button"
+                    onClick={() => handleDestinationChange("")}
+                    aria-label="Clear destination filter"
+                    className="rounded-full p-0.5 hover:bg-rose-200/60 transition"
+                  >
+                    <X size={11} />
+                  </button>
+                </span>
+              )}
+
+              {selectedRating && (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 border border-amber-200/90 px-3 py-1 text-xs font-bold text-amber-800 shadow-2xs">
+                  <span>Rating: {selectedRating}+ Stars</span>
+                  <button
+                    type="button"
+                    onClick={() => handleRatingChange("")}
+                    aria-label="Clear rating filter"
+                    className="rounded-full p-0.5 hover:bg-amber-200/60 transition"
+                  >
+                    <X size={11} />
+                  </button>
+                </span>
+              )}
+
+              {selectedDepartureMonth && (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-sky-50 border border-sky-200/90 px-3 py-1 text-xs font-bold text-sky-800 shadow-2xs">
+                  <span>Month: {departureMonthOptions.find((opt) => opt.value === selectedDepartureMonth)?.label || selectedDepartureMonth}</span>
+                  <button
+                    type="button"
+                    onClick={() => handleDepartureMonthChange("")}
+                    aria-label="Clear month filter"
+                    className="rounded-full p-0.5 hover:bg-sky-200/60 transition"
+                  >
+                    <X size={11} />
+                  </button>
+                </span>
+              )}
+
+              {availableOnly && (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 border border-emerald-200/90 px-3 py-1 text-xs font-bold text-emerald-800 shadow-2xs">
+                  <span>Available Departures Only</span>
+                  <button
+                    type="button"
+                    onClick={handleAvailableOnlyToggle}
+                    aria-label="Clear available only filter"
+                    className="rounded-full p-0.5 hover:bg-emerald-200/60 transition"
+                  >
+                    <X size={11} />
+                  </button>
+                </span>
+              )}
+
+              <button
+                type="button"
+                onClick={clearAllFilters}
+                className="ml-auto inline-flex items-center gap-1.5 text-xs font-bold text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100/80 px-3 py-1 rounded-full border border-red-200/80 transition"
+              >
+                <RotateCcw size={11} />
+                <span>Reset All ({activeFiltersCount})</span>
+              </button>
             </div>
           )}
-
-          {/* Destination Dropdown */}
-          <div className="relative min-w-0">
-            <select
-              value={selectedDestination}
-              onChange={(e) => handleDestinationChange(e.target.value)}
-              aria-label="Destination"
-              className={`w-full appearance-none rounded-xl py-2.5 pl-3 pr-9 text-sm font-semibold outline-none shadow-2xs transition ${
-                selectedDestination
-                  ? "border border-pub-accent bg-pub-accent/5 text-pub-primary font-bold"
-                  : "border border-slate-200 bg-white text-slate-700 hover:border-pub-accent/45"
-              }`}
-            >
-              <option value="">Destination</option>
-              {availableDestinations.map((dest) => (
-                <option key={dest} value={dest}>
-                  {dest}
-                </option>
-              ))}
-            </select>
-            <ChevronDown size={12} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" />
-          </div>
-
-          {/* Rating Dropdown */}
-          <div className="relative min-w-0">
-            <select
-              value={selectedRating}
-              onChange={(e) => handleRatingChange(e.target.value)}
-              aria-label="Rating"
-              className={`w-full appearance-none rounded-xl py-2.5 pl-3 pr-9 text-sm font-semibold outline-none shadow-2xs transition ${
-                selectedRating
-                  ? "border border-pub-accent bg-pub-accent/5 text-pub-primary font-bold"
-                  : "border border-slate-200 bg-white text-slate-700 hover:border-pub-accent/45"
-              }`}
-            >
-              <option value="">Rating</option>
-              <option value="4.5">4.5+ Stars</option>
-              <option value="4.0">4.0+ Stars</option>
-              <option value="3.5">3.5+ Stars</option>
-            </select>
-            <ChevronDown size={12} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" />
-          </div>
-
-          {/* Departure Month Dropdown - real "YYYY-MM" values sent as
-              departure_month to the backend (routers.public.public_tours),
-              which filters to tours with an available calendar date in
-              that month. */}
-          <div className="relative min-w-0">
-            <select
-              value={selectedDepartureMonth}
-              onChange={(e) => handleDepartureMonthChange(e.target.value)}
-              aria-label="Departure month"
-              className={`w-full appearance-none rounded-xl py-2.5 pl-3 pr-9 text-sm font-semibold outline-none shadow-2xs transition ${
-                selectedDepartureMonth
-                  ? "border border-pub-accent bg-pub-accent/5 text-pub-primary font-bold"
-                  : "border border-slate-200 bg-white text-slate-700 hover:border-pub-accent/45"
-              }`}
-            >
-              <option value="">Departure Month</option>
-              {departureMonthOptions.map((opt) => (
-                <option key={opt.value} value={opt.value}>{opt.label}</option>
-              ))}
-            </select>
-            <ChevronDown size={12} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" />
-          </div>
-
-          {/* Sort Dropdown - sort param (newest/price_asc/price_desc/duration_asc) */}
-          <div className="relative min-w-0">
-            <select
-              value={sortOrder}
-              onChange={(e) => handleSortChange(e.target.value as typeof sortOrder)}
-              aria-label="Sort tours"
-              className={`w-full appearance-none rounded-xl py-2.5 pl-3 pr-9 text-sm font-semibold outline-none shadow-2xs transition ${
-                sortOrder !== "newest"
-                  ? "border border-pub-accent bg-pub-accent/5 text-pub-primary font-bold"
-                  : "border border-slate-200 bg-white text-slate-700 hover:border-pub-accent/45"
-              }`}
-            >
-              <option value="newest">Sort: Newest</option>
-              <option value="price_asc">Price: Low to High</option>
-              <option value="price_desc">Price: High to Low</option>
-              <option value="duration_asc">Duration: Shortest First</option>
-            </select>
-            <ChevronDown size={12} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" />
-          </div>
-          </div>
         </section>
 
         {/* ── 5. ⭐ Featured Category Showcase Banner Card ── */}

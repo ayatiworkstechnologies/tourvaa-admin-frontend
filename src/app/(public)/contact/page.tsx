@@ -922,7 +922,7 @@ export default function ContactPage({ audience }: { audience?: "supplier" | "age
 
       {/* ── 5. "How can we help?" 4-Card Partner Hub ── */}
       <section className="mx-auto max-w-[1380px] px-4 sm:px-6 pt-20 sm:pt-28">
-        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
           <div>
             <span className="text-xs sm:text-sm font-bold uppercase tracking-wider text-pub-secondary">
               {partnersBlock.eyebrow || DEFAULT_PARTNERS_HEADING.eyebrow}
@@ -931,7 +931,7 @@ export default function ContactPage({ audience }: { audience?: "supplier" | "age
               {partnersBlock.heading || DEFAULT_PARTNERS_HEADING.heading}
             </h2>
           </div>
-          <p className="text-xs sm:text-sm text-slate-500 max-w-md">
+          <p className="max-w-md text-xs leading-relaxed text-slate-500 sm:text-sm">
             {partnersBlock.subtitle || DEFAULT_PARTNERS_HEADING.subtitle}
           </p>
         </div>

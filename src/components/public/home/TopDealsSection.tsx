@@ -49,6 +49,45 @@ function getDurationTag(tour: Tour): string {
   return tour.days;
 }
 
+/**
+ * CMS Top Deals may define a campaign percentage before a separate public
+ * TourDiscount exists. Keep that campaign's badge and price row truthful: if
+ * the public payload has not already supplied an original price, derive the
+ * pre-campaign price from the configured percentage. A free-form label is
+ * only used as a backwards-compatible fallback for the existing "Save N%"
+ * labels; arbitrary marketing copy never changes a price.
+ */
+function cmsDealPercentage(ref: { discount_percentage: number | null; deal_label: string | null }): number | null {
+  const configured = Number(ref.discount_percentage ?? 0);
+  if (configured > 0 && configured < 100) return configured;
+
+  const match = ref.deal_label?.match(/\bsave\s+(\d+(?:\.\d+)?)%/i);
+  const labelled = match ? Number(match[1]) : 0;
+  return labelled > 0 && labelled < 100 ? labelled : null;
+}
+
+function applyCmsDealPrice(
+  tour: Tour,
+  ref: { discount_percentage: number | null; deal_label: string | null },
+): Tour {
+  const percentage = cmsDealPercentage(ref);
+  const hasPublicDiscount =
+    tour.originalPrice != null &&
+    tour.rawPrice != null &&
+    tour.originalPrice > tour.rawPrice;
+
+  if (!percentage || hasPublicDiscount || tour.rawPrice == null || tour.rawPrice <= 0) {
+    return ref.deal_label ? { ...tour, discountBadge: ref.deal_label } : tour;
+  }
+
+  const originalPrice = Math.round((tour.rawPrice / (1 - percentage / 100)) * 100) / 100;
+  return {
+    ...tour,
+    originalPrice,
+    discountBadge: ref.deal_label || `Save ${percentage}%`,
+  };
+}
+
 export function TopDealCard({ tour }: { tour: Tour }) {
   const { format } = useCurrency();
   const itemId = tour.id ?? stableHash(tour.slug || tour.title);
@@ -269,9 +308,7 @@ export default function TopDealsSection({
             )
             .map(({ ref, result }) => {
               const mapped = mapPublicTour(result.value);
-              return ref.deal_label
-                ? { ...mapped, discountBadge: ref.deal_label }
-                : mapped;
+              return applyCmsDealPrice(mapped, ref);
             });
 
           if (loadedTours.length > 0) {

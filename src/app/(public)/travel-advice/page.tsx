@@ -166,8 +166,10 @@ export default function TravelAdvicePage() {
   const articlesBlock = useContentBlock<ArticlesBlock>("travel_advice_articles", {});
   const essentialsBlock = useContentBlock<EssentialsBlock>("travel_advice_essentials", {});
 
+  // Keep the public layout aligned with the editor's eight-card limit even
+  // when a legacy or direct API update contains more records.
   const categories = categoriesBlock.items?.length
-    ? categoriesBlock.items.map((it) => ({ image: it.image || "", title: it.title || "", text: it.text || "", href: it.href || "" }))
+    ? categoriesBlock.items.slice(0, 8).map((it) => ({ image: it.image || "", title: it.title || "", text: it.text || "", href: it.href || "" }))
     : DEFAULT_CATEGORIES;
   const articles = articlesBlock.items?.length
     ? articlesBlock.items.map((it) => ({ image: it.image || "", category: it.category || "", title: it.title || "", text: it.text || "", href: it.href || "", readTime: it.readTime || "" }))
@@ -244,14 +246,14 @@ export default function TravelAdvicePage() {
               </p>
             </div>
 
-            <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="mt-8 flex flex-wrap justify-center gap-6">
               {categories.map((category, index) => (
                 <Link
                   key={category.title}
                   href={category.href}
                   data-reveal
                   style={delay(index * 60)}
-                  className="group relative h-[250px] overflow-hidden rounded-2xl bg-slate-950 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl border border-slate-200/40"
+                  className="group relative h-[250px] w-full max-w-[430px] overflow-hidden rounded-2xl bg-slate-950 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl border border-slate-200/40 sm:w-[calc((100%-1.5rem)/2)] lg:w-[calc((100%-3rem)/3)]"
                 >
                   <img
                     src={category.image}

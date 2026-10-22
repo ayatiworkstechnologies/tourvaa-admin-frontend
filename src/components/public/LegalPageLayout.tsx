@@ -60,6 +60,8 @@ export default function LegalPageLayout({
   const [copied, setCopied] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
   const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
+  const tocNavRef = useRef<HTMLElement | null>(null);
+  const tocItemRefs = useRef<Record<string, HTMLButtonElement | null>>({});
   const dashboardHref = isLoggedIn && user
     ? user.dashboard_route || getDashboardPath(user.role?.slug || "")
     : null;
@@ -77,20 +79,60 @@ export default function LegalPageLayout({
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Intersection Observer for Active Section
+  // Keep the highlighted clause in sync with the reader's position. A
+  // scroll-position calculation is more reliable than an intersection-only
+  // callback for short clauses and for the final clause near the page bottom.
   useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const visible = entries
-          .filter((entry) => entry.isIntersecting)
-          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
-        const topId = visible[0]?.target.getAttribute("data-section-id");
-        if (topId) setActiveId(topId);
-      },
-      { rootMargin: "-120px 0px -65% 0px", threshold: 0 }
-    );
-    Object.values(sectionRefs.current).forEach((el) => el && observer.observe(el));
-    return () => observer.disconnect();
+    let animationFrame = 0;
+    const updateActiveSection = () => {
+      animationFrame = 0;
+      const readingLine = 160;
+      let currentId = sections[0]?.id ?? "";
+
+      for (const section of sections) {
+        const element = sectionRefs.current[section.id];
+        if (element && element.getBoundingClientRect().top <= readingLine) {
+          currentId = section.id;
+        }
+      }
+      setActiveId((current) => (current === currentId ? current : currentId));
+    };
+    const onScroll = () => {
+      if (!animationFrame) animationFrame = window.requestAnimationFrame(updateActiveSection);
+    };
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    updateActiveSection();
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+      if (animationFrame) window.cancelAnimationFrame(animationFrame);
+    };
+  }, [sections]);
+
+  // The contents list has its own scrollbar. Keep the active entry visible
+  // there as the page scrolls, instead of leaving the reader looking at a
+  // stale list of earlier clauses.
+  useEffect(() => {
+    const nav = tocNavRef.current;
+    const item = tocItemRefs.current[activeId];
+    if (!nav || !item) return;
+    const targetTop = item.offsetTop - (nav.clientHeight - item.offsetHeight) / 2;
+    nav.scrollTo({ top: Math.max(0, targetTop), behavior: "smooth" });
+  }, [activeId]);
+
+  // A copied/shared #clause-id link must activate the same item as a normal
+  // table-of-contents click once the client has mounted.
+  useEffect(() => {
+    const activateHash = () => {
+      const id = window.location.hash.slice(1);
+      if (!id || !sectionRefs.current[id]) return;
+      setActiveId(id);
+    };
+    activateHash();
+    window.addEventListener("hashchange", activateHash);
+    return () => window.removeEventListener("hashchange", activateHash);
   }, [sections]);
 
   const handleTocClick = (id: string) => {
@@ -98,6 +140,7 @@ export default function LegalPageLayout({
     if (el) {
       el.scrollIntoView({ behavior: "smooth", block: "start" });
       setActiveId(id);
+      window.history.replaceState(null, "", `#${id}`);
     }
   };
 
@@ -248,13 +291,16 @@ export default function LegalPageLayout({
             </div>
 
             {/* Navigation List */}
-            <nav className="mt-3.5 max-h-[calc(100vh-280px)] overflow-y-auto pr-1 space-y-1 custom-scrollbar">
+            <nav ref={tocNavRef} className="mt-3.5 max-h-[calc(100vh-280px)] overflow-y-auto pr-1 space-y-1 custom-scrollbar">
               {filteredSections.map((s) => {
                 const isActive = s.id === activeId;
                 return (
                   <button
                     key={s.id}
                     type="button"
+                    ref={(element) => {
+                      tocItemRefs.current[s.id] = element;
+                    }}
                     onClick={() => handleTocClick(s.id)}
                     className={`flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left text-xs font-semibold transition-all duration-150 ${
                       isActive
