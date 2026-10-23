@@ -66,78 +66,79 @@ export default function TourOverviewTab({ tourId, embedded = false, onSaved }: {
 
   return (
     <form id="wizard-form-overview" onSubmit={submit} className="space-y-6">
-      <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs sm:p-6 space-y-6">
-        <div className="flex items-start justify-between gap-3 border-b border-slate-100 pb-4">
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
-                <Compass size={17} />
-              </span>
-              <h2 className="text-base font-black text-slate-900 sm:text-lg">Trip Planning Details</h2>
+      <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_12px_32px_-28px_rgba(15,23,42,.45)]">
+        <header className="flex flex-col gap-3 border-b border-slate-200 bg-gradient-to-br from-white via-white to-emerald-50/45 px-5 py-5 sm:flex-row sm:items-start sm:justify-between sm:px-6">
+          <div className="flex items-start gap-3">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-emerald-100 bg-emerald-50 text-emerald-700 shadow-sm">
+              <Compass size={19} />
+            </span>
+            <div>
+              <h2 className="text-lg font-extrabold tracking-tight text-slate-950">Trip Planning Details</h2>
+              <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-600">
+                Help travellers quickly understand who this trip suits, when to go, and what the journey feels like.
+              </p>
             </div>
-            <p className="mt-1 text-xs text-slate-500">
-              Clear trip context, optimal seasons, target audiences, and comfort summaries to help guests make informed bookings.
-            </p>
           </div>
-        </div>
+          <span className="w-fit rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] font-bold text-slate-500 shadow-sm">Optional details</span>
+        </header>
 
-        {/* Section 1: Trip Suitability */}
-        <div className="grid gap-4 md:grid-cols-2">
-          <label className="block">
-            <span className="mb-1.5 flex items-center gap-1.5 text-xs font-bold uppercase text-slate-700">
-              <Calendar size={13} className="text-blue-500" />
-              Best season <span className="font-medium normal-case text-slate-400">(optional)</span>
-            </span>
-            <input
-              value={(form.best_season as string) ?? ""}
-              onChange={(e) => update("best_season", e.target.value)}
-              placeholder="e.g. October to March (dry, pleasant weather)"
-              className={inputClass}
-            />
-            <span className="mt-1 block text-[11px] text-slate-400">
-              When weather, wildlife sightings, or festivals are at their peak.
-            </span>
-          </label>
+        <div className="space-y-7 px-5 py-6 sm:px-6">
+          <section aria-labelledby="guest-fit-heading">
+            <div className="mb-4 flex items-baseline justify-between gap-4">
+              <div>
+                <h3 id="guest-fit-heading" className="text-sm font-extrabold text-slate-900">Guest fit</h3>
+                <p className="mt-0.5 text-xs text-slate-500">Set expectations before guests reach your itinerary and pricing.</p>
+              </div>
+            </div>
+            <div className="grid gap-4 md:grid-cols-2">
+              <label className="block">
+                <span className="mb-1.5 flex items-center gap-1.5 text-xs font-bold text-slate-800">
+                  <Calendar size={14} className="text-emerald-600" /> Best season
+                </span>
+                <input
+                  value={(form.best_season as string) ?? ""}
+                  onChange={(e) => update("best_season", e.target.value)}
+                  placeholder="October to March"
+                  className={inputClass}
+                />
+                <span className="mt-1.5 block text-xs leading-5 text-slate-500">Mention the weather, events, or sightings that make this period ideal.</span>
+              </label>
 
-          <label className="block">
-            <span className="mb-1.5 flex items-center gap-1.5 text-xs font-bold uppercase text-slate-700">
-              <Sparkles size={13} className="text-amber-500" />
-              Ideal for <span className="font-medium normal-case text-slate-400">(optional)</span>
-            </span>
-            <input
-              value={(form.ideal_for as string) ?? ""}
-              onChange={(e) => update("ideal_for", e.target.value)}
-              placeholder="e.g. Couples, families with teens, first-time visitors, photography lovers"
-              className={inputClass}
-            />
-            <span className="mt-1 block text-[11px] text-slate-400">
-              Who will enjoy this itinerary the most.
-            </span>
-          </label>
+              <label className="block">
+                <span className="mb-1.5 flex items-center gap-1.5 text-xs font-bold text-slate-800">
+                  <Sparkles size={14} className="text-amber-500" /> Ideal for
+                </span>
+                <input
+                  value={(form.ideal_for as string) ?? ""}
+                  onChange={(e) => update("ideal_for", e.target.value)}
+                  placeholder="Couples, families, first-time visitors"
+                  className={inputClass}
+                />
+                <span className="mt-1.5 block text-xs leading-5 text-slate-500">Name the guests most likely to enjoy this itinerary.</span>
+              </label>
 
-          <label className="md:col-span-2 block">
-            <span className="mb-1.5 flex items-center gap-1.5 text-xs font-bold uppercase text-slate-700">
-              Why choose this tour <span className="font-medium normal-case text-slate-400">(optional)</span>
-            </span>
-            <textarea
-              value={(form.why_choose_this_tour as string) ?? ""}
-              onChange={(e) => update("why_choose_this_tour", e.target.value)}
-              placeholder="e.g. Private guided departures, zero hidden fees, hand-picked boutique hotels, and authentic village immersion..."
-              rows={3}
-              className={`min-h-20 resize-y ${inputClass}`}
-            />
-            <span className="mt-1 block text-[11px] text-slate-400">
-              The primary differentiator and value proposition for booking this tour.
-            </span>
-          </label>
-        </div>
+              <label className="block md:col-span-2">
+                <span className="mb-1.5 flex items-center justify-between gap-3 text-xs font-bold text-slate-800">
+                  <span>Why choose this tour</span>
+                  <span className="font-medium text-slate-400">Your strongest booking reason</span>
+                </span>
+                <textarea
+                  value={(form.why_choose_this_tour as string) ?? ""}
+                  onChange={(e) => update("why_choose_this_tour", e.target.value)}
+                  placeholder="Private guided departures, thoughtfully chosen stays, and authentic local experiences."
+                  rows={3}
+                  className={`min-h-24 resize-y ${inputClass}`}
+                />
+              </label>
+            </div>
+          </section>
 
-        {/* Section 2: Logistics Summaries */}
-        <div className="pt-2 border-t border-slate-100">
-          <p className="mb-3 text-xs font-bold uppercase tracking-wider text-slate-500">
-            Logistics &amp; Comfort Summaries
-          </p>
-          <div className="grid gap-4 md:grid-cols-3">
+          <section aria-labelledby="comfort-heading" className="rounded-xl border border-slate-200 bg-slate-50/75 p-4 sm:p-5">
+            <div className="mb-4">
+              <h3 id="comfort-heading" className="text-sm font-extrabold text-slate-900">Travel comfort</h3>
+              <p className="mt-0.5 text-xs text-slate-500">A concise summary of how guests move, stay, and dine.</p>
+            </div>
+            <div className="grid gap-4 md:grid-cols-3">
             <label className="block">
               <span className="mb-1.5 flex items-center gap-1.5 text-xs font-bold uppercase text-slate-700">
                 <Bus size={13} className="text-indigo-500" />
@@ -179,9 +180,10 @@ export default function TourOverviewTab({ tourId, embedded = false, onSaved }: {
                 className={`min-h-20 resize-y ${inputClass}`}
               />
             </label>
-          </div>
+            </div>
+          </section>
         </div>
-      </div>
+      </section>
 
       <div className={embedded ? "hidden" : "flex justify-end"}>
         <button
