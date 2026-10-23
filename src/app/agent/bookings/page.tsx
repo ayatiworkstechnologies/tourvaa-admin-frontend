@@ -106,9 +106,16 @@ function Pill({ status, children }: { status?: string; children: React.ReactNode
 }
 
 export default function AgentBookingsPage() {
-  const { formatExact: format } = useCurrency();
-  const money = (value: string | number | undefined, currency = "USD") =>
-    value || value === 0 ? format(value, currency) : "-";
+  const { code: displayCurrency, format: displayMoney, formatExact: recordedMoney } = useCurrency();
+  // The table follows the currency chosen in the portal header so agents can
+  // compare bookings consistently. Keep the actual settled value on hover;
+  // that amount remains the accounting source of truth.
+  const money = (value: string | number | undefined, currency = "USD") => {
+    if (value === undefined || value === null) return "-";
+    const displayed = displayMoney(value, currency);
+    const recorded = recordedMoney(value, currency);
+    return displayed === recorded ? displayed : <span title={`Recorded settlement amount: ${recorded}`}>{displayed}</span>;
+  };
   const balanceDue = (booking: Booking) => {
     const paymentStatus = (booking.payment_status || "").toLowerCase();
     const pending = Number(booking.amount_pending || 0);
@@ -254,7 +261,7 @@ export default function AgentBookingsPage() {
         {total > 0 && (
           <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1 rounded-xl bg-[#EDF5FF] px-4 py-2 text-sm font-bold text-dash-brand-hover">
             <span>{total} booking{total !== 1 ? "s" : ""}</span>
-            <span className="text-xs font-medium text-dash-muted">Amounts use each booking&apos;s settled currency.</span>
+            <span className="text-xs font-medium text-dash-muted">Amounts shown in {displayCurrency}; hover to see the recorded settlement amount.</span>
           </div>
         )}
       </div>
