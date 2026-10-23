@@ -64,25 +64,34 @@ export default function CountryPagesEditor() {
   useEffect(() => {
     if (!selectedCountryId || !country) return;
     const requestId = ++statusRequestRef.current;
-    void Promise.all([
+    // These sources publish independently. In particular, a country might not
+    // yet have a tour-page override or a destination guide, while the global
+    // Destinations-page cards are still fully editable. Do not let one failed
+    // request make every publication badge look unavailable.
+    void Promise.allSettled([
       api.get("/cms/country-pages", { params: { page: 1, limit: 1000 } }),
       api.get(`/cms/content-blocks/country_info_${country}`),
-      api.get("/cms/content-blocks/destination-styles"),
-      api.get("/cms/content-blocks/destination-seasons"),
-    ]).then(([pages, guide, styles, seasons]) => {
+      api.get("/cms/content-blocks/destination_styles"),
+      api.get("/cms/content-blocks/destination_seasons"),
+      api.get("/cms/content-blocks/destinations_page"),
+    ]).then(([pagesResult, guideResult, stylesResult, seasonsResult, destinationsPageResult]) => {
       if (requestId !== statusRequestRef.current) return;
-      const rows = pages.data?.items || pages.data?.data?.items || pages.data?.data || [];
+      const pages = pagesResult.status === "fulfilled" ? pagesResult.value : null;
+      const guide = guideResult.status === "fulfilled" ? guideResult.value : null;
+      const styles = stylesResult.status === "fulfilled" ? stylesResult.value : null;
+      const seasons = seasonsResult.status === "fulfilled" ? seasonsResult.value : null;
+      const destinationsPage = destinationsPageResult.status === "fulfilled" ? destinationsPageResult.value : null;
+      const rows = pages?.data?.items || pages?.data?.data?.items || pages?.data?.data || [];
       const tourPage = Array.isArray(rows) ? rows.find((row) => Number(row.country_id) === selectedCountryId) : null;
-      const guideData = guide.data?.data?.data || guide.data?.data || {};
-      const stylesData = styles.data?.data?.data || styles.data?.data || {};
-      const seasonsData = seasons.data?.data?.data || seasons.data?.data || {};
+      const guideData = guide?.data?.data?.data || guide?.data?.data || {};
+      const stylesData = styles?.data?.data?.data || styles?.data?.data || {};
+      const seasonsData = seasons?.data?.data?.data || seasons?.data?.data || {};
+      const destinationsPageData = destinationsPage?.data?.data?.data || destinationsPage?.data?.data || {};
       setPublishState({
-        tour: !tourPage ? "Not created" : tourPage.is_active ? "Published" : "Hidden (saved)",
-        guide: guideData && Object.keys(guideData).length ? "Authored / public" : "Not authored",
-        index: Object.keys(stylesData).length || Object.keys(seasonsData).length ? "Saved global extras" : "No global extras",
+        tour: !pages ? "Unavailable" : !tourPage ? "Not created" : tourPage.is_active ? "Published" : "Hidden (saved)",
+        guide: !guide ? "Unavailable" : guideData && Object.keys(guideData).length ? "Authored / public" : "Not authored",
+        index: !styles && !seasons && !destinationsPage ? "Unavailable" : Object.keys(stylesData).length || Object.keys(seasonsData).length || Object.keys(destinationsPageData).length ? "Saved global content" : "No global content",
       });
-    }).catch(() => {
-      if (requestId === statusRequestRef.current) setPublishState({ tour: "Unavailable", guide: "Unavailable", index: "Unavailable" });
     });
   }, [country, selectedCountryId, previewVersion]);
 
@@ -115,7 +124,7 @@ export default function CountryPagesEditor() {
         />
       ),
     },
-    { key: "index", label: "Destinations Page Extras", tabs: ["destination-styles", "destination-seasons"], preview: "index" },
+    { key: "index", label: "Destinations Page", tabs: ["destinations-page", "destination-styles", "destination-seasons"], preview: "index" },
   ];
 
   return (

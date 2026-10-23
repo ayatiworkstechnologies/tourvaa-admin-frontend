@@ -130,8 +130,6 @@ export default function TourWizard({ tourId, role }: { tourId?: string; role: "a
     const allowedSteps = isSupplier ? WIZARD_STEPS.filter((step) => step.id !== "seo") : WIZARD_STEPS;
     return allowedSteps.map((step, index) => ({
       ...step,
-      // Categories remain available to admins for catalogue management, but
-      // are intentionally not part of the supplier authoring flow.
       label: isSupplier && step.id === "location" ? "Overview & Location" : step.label,
       number: String(index + 1).padStart(2, "0"),
     }));

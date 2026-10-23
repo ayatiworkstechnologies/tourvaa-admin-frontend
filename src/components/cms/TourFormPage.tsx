@@ -2,7 +2,7 @@
 
 import { ErrorSummary } from "@/components/tours/FormKit";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Controller, useForm, useWatch } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import {
   LuAlignLeft as AlignLeft,
   LuArrowLeft as ArrowLeft,
@@ -1108,6 +1108,21 @@ export default function TourFormPage({
     return subcategories.filter((subcategory) => subcategory.category_id === categoryId);
   }, [subcategories, form.category_id]);
 
+  const selectCategory = (newCat: string) => {
+    setValue("category_id", newCat, {
+      shouldDirty: true,
+      shouldTouch: true,
+      shouldValidate: true,
+    });
+    if (errors.category_id) clearError("category_id");
+    const categoryId = Number(newCat);
+    const validIds = selectedSubcategoryIds.filter((subId) => {
+      const matched = subcategories.find((subcategory) => subcategory.id === subId);
+      return matched ? matched.category_id === categoryId : true;
+    });
+    update("subcategory_ids", validIds.join(","));
+  };
+
   const validateForm = (sectionsToValidate: Section[]): boolean => {
     const newErrors: Record<string, string> = {};
 
@@ -1164,7 +1179,7 @@ export default function TourFormPage({
       if (!form.country_id) {
         newErrors.country_id = "Please select a destination country.";
       }
-      if (!isSupplier && !form.category_id) {
+      if (!form.category_id) {
         newErrors.category_id = "Please select a tour category.";
       }
     }
@@ -2146,62 +2161,6 @@ export default function TourFormPage({
               )}
             </label>
 
-            {!isSupplier && (
-            <label data-field="category_id" className="block">
-              <span className="mb-1 block text-xs font-bold uppercase text-slate-600">
-                Tour category
-                <span className="ml-1 text-red-500 font-bold">*</span>
-              </span>
-              <Controller
-                name="category_id"
-                control={control}
-                render={({ field }) => (
-                  <select
-                    name={field.name}
-                    ref={field.ref}
-                    value={field.value ?? ""}
-                    onBlur={field.onBlur}
-                    onChange={(e) => {
-                      const newCat = e.target.value;
-                      // Mark the category dirty synchronously. A wizard data
-                      // refresh may arrive during the same render cycle, so
-                      // relying on the Controller's deferred dirty update can
-                      // make the first native-select choice appear to vanish.
-                      setValue("category_id", newCat, {
-                        shouldDirty: true,
-                        shouldTouch: true,
-                        shouldValidate: true,
-                      });
-                      if (errors.category_id) clearError("category_id");
-                      if (newCat) {
-                        const catIdNum = Number(newCat);
-                        const validIds = selectedSubcategoryIds.filter((subId) => {
-                          const matched = subcategories.find((s) => s.id === subId);
-                          return matched ? matched.category_id === catIdNum : true;
-                        });
-                        update("subcategory_ids", validIds.join(","));
-                      } else {
-                        update("subcategory_ids", "");
-                      }
-                    }}
-                    className={getInputClass("category_id")}
-                  >
-                    <option value="">- Select category -</option>
-                    {categories.map((c) => (
-                      <option key={c.id} value={String(c.id)}>{c.label}</option>
-                    ))}
-                  </select>
-                )}
-              />
-              {errors.category_id && (
-                <p className="mt-1.5 flex items-center gap-1.5 text-xs font-semibold text-red-600 animate-in fade-in duration-150">
-                  <AlertCircle size={13} className="shrink-0 text-red-500" />
-                  <span>{errors.category_id}</span>
-                </p>
-              )}
-            </label>
-            )}
-
             <label data-field="country_id" className="block">
               <span className="mb-1 block text-xs font-bold uppercase text-slate-600">
                 Country
@@ -2275,7 +2234,47 @@ export default function TourFormPage({
             </label>
           </FormSection>
 
-          {!isSupplier && (
+          <FormSection
+            role={role}
+            icon={Tags}
+            title="Tour Category"
+            description="Choose the primary category travellers use to discover this tour."
+          >
+            <div data-field="category_id" className="block md:col-span-2">
+              <span className="mb-1 block text-xs font-bold uppercase text-slate-600">
+                Tour category
+                <span className="ml-1 text-red-500 font-bold">*</span>
+              </span>
+              <div className="flex flex-wrap gap-2" role="group" aria-label="Tour categories">
+                {categories.map((category) => {
+                  const selected = String(category.id) === String(form.category_id ?? "");
+                  return (
+                    <button
+                      key={category.id}
+                      type="button"
+                      aria-pressed={selected}
+                      onClick={() => selectCategory(String(category.id))}
+                      className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-sm font-bold transition-all ${
+                        selected
+                          ? "border-blue-600 bg-blue-600 text-white shadow-sm ring-2 ring-blue-600/20"
+                          : "border-slate-200 bg-white text-slate-700 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-800"
+                      }`}
+                    >
+                      {selected && <Check size={14} className="stroke-[2.5]" />}
+                      {category.label}
+                    </button>
+                  );
+                })}
+              </div>
+              {errors.category_id && (
+                <p className="mt-1.5 flex items-center gap-1.5 text-xs font-semibold text-red-600 animate-in fade-in duration-150">
+                  <AlertCircle size={13} className="shrink-0 text-red-500" />
+                  <span>{errors.category_id}</span>
+                </p>
+              )}
+            </div>
+          </FormSection>
+
           <FormSection
             role={role}
             icon={Tags}
@@ -2322,7 +2321,6 @@ export default function TourFormPage({
               )}
             </div>
           </FormSection>
-          )}
           </>
           )}
 

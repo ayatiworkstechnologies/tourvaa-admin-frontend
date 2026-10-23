@@ -32,6 +32,7 @@ import {
 } from "@/lib/api/publicClient";
 import { mediaUrl } from "@/lib/utils/mediaUrl";
 import { destinationUrl, slugifyTourSegment } from "@/lib/utils/tourUrl";
+import { useContentBlock } from "@/hooks/useContentBlock";
 
 // Master Destination Country with region and snippet
 export interface CountryCardItem {
@@ -459,6 +460,21 @@ const SEASONS = [
 
 type StyleBlockItem = { title?: string; subtitle?: string; countries?: string; badge?: string; image?: string; href?: string };
 type SeasonBlockItem = { season?: string; tagline?: string; topPicks?: string[]; icon?: string };
+type DestinationPageBlock = {
+  hero_eyebrow?: string; hero_title?: string; hero_highlight?: string; hero_description?: string; hero_image?: string; search_placeholder?: string;
+  countries_heading?: string; countries_description?: string;
+  styles_eyebrow?: string; styles_title?: string; styles_description?: string;
+  seasons_eyebrow?: string; seasons_title?: string; seasons_description?: string;
+  standard_eyebrow?: string; standard_title?: string; standard_description?: string; standard_cards?: Array<{ title?: string; description?: string }>;
+  cta_eyebrow?: string; cta_title?: string; cta_description?: string; cta_image?: string;
+  cta_primary_label?: string; cta_primary_href?: string; cta_secondary_label?: string; cta_secondary_href?: string;
+};
+
+const DEFAULT_STANDARD_CARDS = [
+  { title: "100% Financial Protection", description: "Bank-grade encryption, escrow payment protection, and transparent cancellation policies ensure complete peace of mind." },
+  { title: "Vetted Local Guides", description: "Travel with licensed local leaders who bring authentic culture, history, and secret vantage points to life." },
+  { title: "24/7 Global On-Trip Care", description: "Our emergency travel specialists and virtual assistant Scout are on standby 24/7 before, during, and after your adventure." },
+];
 
 // Cards can be edited in CMS > Country Pages > Destinations Page Extras; the
 // built-in TRAVEL_STYLES / SEASONS are used while that block is empty. The icon
@@ -467,6 +483,7 @@ const STYLE_ICONS = TRAVEL_STYLES.map((s) => s.icon);
 const SEASON_COLORS = SEASONS.map((s) => s.color);
 
 export default function DestinationsPage() {
+  const pageContent = useContentBlock<DestinationPageBlock>("destinations_page", {});
   const [styleItems, setStyleItems] = useState<StyleBlockItem[]>([]);
   const [seasonItems, setSeasonItems] = useState<SeasonBlockItem[]>([]);
   useEffect(() => {
@@ -630,6 +647,12 @@ export default function DestinationsPage() {
     () => countriesList.reduce((total, country) => total + (country.tourCount || 0), 0),
     [countriesList],
   );
+  const standardCards = pageContent.standard_cards?.length
+    ? pageContent.standard_cards
+    : [
+        { title: `${totalTours} Handpicked ${totalTours === 1 ? "Tour" : "Tours"}`, description: `Compare live multi-day group and private itineraries across ${countriesList.length}${countriesList.length === 1 ? " destination" : " destinations"} from licensed operators.` },
+        ...DEFAULT_STANDARD_CARDS,
+      ];
 
   const visibleRegions = useMemo(
     () => REGIONS.filter((region) => region === "All Destinations" || (regionCounts[region] || 0) > 0),
@@ -643,7 +666,7 @@ export default function DestinationsPage() {
         {/* Background Image with Ambient Glow */}
         <div className="absolute inset-0">
           <img
-            src="https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=2000&q=85"
+            src={pageContent.hero_image || "https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=2000&q=85"}
             alt="World Travel Destinations"
             className="h-full w-full object-cover object-center opacity-30 scale-105 transform animate-in fade-in duration-1000"
           />
@@ -658,24 +681,22 @@ export default function DestinationsPage() {
             <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-1.5 text-[11px] font-bold uppercase tracking-wider text-sky-200 backdrop-blur-md shadow-xs">
               <Sparkles size={13} className="text-orange-400" />
               <span>
-                Explore {countriesList.length} {countriesList.length === 1 ? "Country" : "Countries"}
+                {pageContent.hero_eyebrow || `Explore ${countriesList.length} ${countriesList.length === 1 ? "Country" : "Countries"}`}
                 {totalTours > 0 ? ` & ${totalTours} Curated ${totalTours === 1 ? "Adventure" : "Adventures"}` : ""}
               </span>
             </div>
 
             {/* Main Headline */}
             <h1 className="mt-5 text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight leading-[1.12] text-white">
-              Where will your story take you next?{" "}
+              {pageContent.hero_title || "Where will your story take you next?"}{" "}
               <span className="bg-gradient-to-r from-orange-400 via-amber-300 to-yellow-400 bg-clip-text text-transparent">
-                Explore the world.
+                {pageContent.hero_highlight || "Explore the world."}
               </span>
             </h1>
 
             {/* Subtitle */}
             <p className="mt-4 text-sm sm:text-base font-normal leading-relaxed text-slate-300 max-w-2xl">
-              Explore the destinations travellers love most, from sun-soaked
-              coastlines and Sahara dunes to iconic cultural gems, ancient
-              temples, and unforgettable alpine tours.
+              {pageContent.hero_description || "Explore the destinations travellers love most, from sun-soaked coastlines and Sahara dunes to iconic cultural gems, ancient temples, and unforgettable alpine tours."}
             </p>
           </div>
 
@@ -690,7 +711,7 @@ export default function DestinationsPage() {
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search country (e.g. Morocco, Egypt, Iceland, India, New Zealand)..."
+                placeholder={pageContent.search_placeholder || "Search country (e.g. Morocco, Egypt, Iceland, India, New Zealand)..."}
                 className="w-full bg-transparent px-3 py-3 text-sm font-semibold text-white group-focus-within:text-slate-900 placeholder:text-white/60 group-focus-within:placeholder:text-slate-400 focus:outline-none"
               />
               {search && (
@@ -841,12 +862,11 @@ export default function DestinationsPage() {
             {search
               ? `Countries matching "${search}"`
               : selectedRegion === "All Destinations"
-                ? "Favourite Countries for Travellers"
+                ? (pageContent.countries_heading || "Favourite Countries for Travellers")
                 : `Top Countries in ${selectedRegion}`}
           </h2>
           <p className="mt-2.5 text-xs sm:text-sm text-slate-500 leading-relaxed max-w-3xl mx-auto">
-            Explore the destinations travellers love most, from sun-soaked
-            coastlines to iconic cultural gems and unforgettable experiences.
+            {pageContent.countries_description || "Explore the destinations travellers love most, from sun-soaked coastlines to iconic cultural gems and unforgettable experiences."}
           </p>
         </div>
 
@@ -895,19 +915,6 @@ export default function DestinationsPage() {
                       <span>{country.badge || country.name}</span>
                     </span>
 
-                    {/* Top-Right Optional Guide Link */}
-                    {guideSlug && (
-                      <Link
-                        href={`/destinations/${guideSlug}`}
-                        onClick={(e) => e.stopPropagation()}
-                        title={`View ${country.name} Destination Guide`}
-                        className="absolute right-3 top-3 z-10 inline-flex items-center gap-1 rounded-full bg-black/40 hover:bg-black/70 backdrop-blur-md px-2.5 py-1 text-[10px] font-bold text-white/90 hover:text-white transition shadow-xs"
-                      >
-                        <BookOpen size={10} />
-                        <span>Guide</span>
-                      </Link>
-                    )}
-
                     {/* Bottom Content Overlay */}
                     <div className="absolute inset-x-0 bottom-0 z-10 p-4 sm:p-5 text-left">
                       <h3 className="text-xl sm:text-2xl font-semibold text-white tracking-tight drop-shadow-sm transition-colors duration-200 group-hover:text-pub-secondary">
@@ -933,6 +940,16 @@ export default function DestinationsPage() {
                       </div>
                     </div>
                   </Link>
+                  {guideSlug && (
+                    <Link
+                      href={`/destinations/${guideSlug}`}
+                      title={`View ${country.name} Destination Guide`}
+                      className="absolute right-7 top-7 z-20 inline-flex items-center gap-1 rounded-full bg-black/40 hover:bg-black/70 backdrop-blur-md px-2.5 py-1 text-[10px] font-bold text-white/90 hover:text-white transition shadow-xs focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-slate-900"
+                    >
+                      <BookOpen size={10} />
+                      <span>Guide</span>
+                    </Link>
+                  )}
                 </div>
               );
             })}
@@ -969,14 +986,13 @@ export default function DestinationsPage() {
         <div className="mb-8">
           <div className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-orange-600">
             <Compass size={14} />
-            <span>Curated Experiences</span>
+            <span>{pageContent.styles_eyebrow || "Curated Experiences"}</span>
           </div>
           <h2 className="mt-1.5 text-2xl sm:text-3xl font-black tracking-tight text-slate-950">
-            Explore Destinations by Travel Style
+            {pageContent.styles_title || "Explore Destinations by Travel Style"}
           </h2>
           <p className="mt-1 text-xs sm:text-sm text-slate-500 font-medium">
-            Whether you crave rugged alpine summits, pristine tropical beaches,
-            or ancient temple wonders.
+            {pageContent.styles_description || "Whether you crave rugged alpine summits, pristine tropical beaches, or ancient temple wonders."}
           </p>
         </div>
 
@@ -1040,14 +1056,13 @@ export default function DestinationsPage() {
         <div className="mb-8">
           <div className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-sky-700">
             <Calendar size={14} />
-            <span>Seasonal Travel Calendar</span>
+            <span>{pageContent.seasons_eyebrow || "Seasonal Travel Calendar"}</span>
           </div>
           <h2 className="mt-1.5 text-2xl sm:text-3xl font-black tracking-tight text-slate-950">
-            When is the Best Time to Travel?
+            {pageContent.seasons_title || "When is the Best Time to Travel?"}
           </h2>
           <p className="mt-1 text-xs sm:text-sm text-slate-500 font-medium">
-            Plan your holidays around optimal weather windows, wildlife
-            migrations, and cultural festivals.
+            {pageContent.seasons_description || "Plan your holidays around optimal weather windows, wildlife migrations, and cultural festivals."}
           </p>
         </div>
 
@@ -1088,78 +1103,28 @@ export default function DestinationsPage() {
         <div className="rounded-[26px] border border-slate-200/90 bg-white p-8 sm:p-12 shadow-xs">
           <div className="max-w-2xl">
             <span className="text-xs font-semibold uppercase tracking-wider text-orange-600">
-              The Tourvaa Standard
+              {pageContent.standard_eyebrow || "The Tourvaa Standard"}
             </span>
             <h2 className="mt-1.5 text-2xl sm:text-3xl font-black tracking-tight text-slate-950">
-              Why Explore Destinations with Tourvaa?
+              {pageContent.standard_title || "Why Explore Destinations with Tourvaa?"}
             </h2>
             <p className="mt-2 text-xs sm:text-sm text-slate-500 font-medium">
-              We take the uncertainty out of global travel so you can immerse
-              yourself fully in every country.
+              {pageContent.standard_description || "We take the uncertainty out of global travel so you can immerse yourself fully in every country."}
             </p>
           </div>
 
           <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="flex flex-col justify-between rounded-2xl bg-slate-50/80 p-5 border border-slate-100">
-              <div>
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-50 text-orange-600">
-                  <Globe size={20} />
+            {standardCards.slice(0, 4).map((card, index) => {
+              const Icon = [Globe, ShieldCheck, Compass, Sparkles][index] ?? Sparkles;
+              const tones = ["bg-orange-50 text-orange-600", "bg-sky-50 text-sky-600", "bg-emerald-50 text-emerald-600", "bg-purple-50 text-purple-600"];
+              return <div key={`${card.title}-${index}`} className="flex flex-col justify-between rounded-2xl bg-slate-50/80 p-5 border border-slate-100">
+                <div>
+                  <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${tones[index] ?? tones[3]}`}><Icon size={20} /></div>
+                  <h3 className="mt-4 text-sm font-bold text-slate-950">{card.title}</h3>
+                  <p className="mt-1 text-xs text-slate-600 leading-relaxed font-medium">{card.description}</p>
                 </div>
-                <h3 className="mt-4 text-sm font-bold text-slate-950">
-                  {totalTours} Handpicked {totalTours === 1 ? "Tour" : "Tours"}
-                </h3>
-                <p className="mt-1 text-xs text-slate-600 leading-relaxed font-medium">
-                  Compare live multi-day group and private itineraries across {countriesList.length}
-                  {countriesList.length === 1 ? " destination" : " destinations"} from licensed operators.
-                </p>
-              </div>
-            </div>
-
-            <div className="flex flex-col justify-between rounded-2xl bg-slate-50/80 p-5 border border-slate-100">
-              <div>
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-50 text-sky-600">
-                  <ShieldCheck size={20} />
-                </div>
-                <h3 className="mt-4 text-sm font-bold text-slate-950">
-                  100% Financial Protection
-                </h3>
-                <p className="mt-1 text-xs text-slate-600 leading-relaxed font-medium">
-                  Bank-grade encryption, escrow payment protection, and
-                  transparent cancellation policies ensure complete peace of
-                  mind.
-                </p>
-              </div>
-            </div>
-
-            <div className="flex flex-col justify-between rounded-2xl bg-slate-50/80 p-5 border border-slate-100">
-              <div>
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
-                  <Compass size={20} />
-                </div>
-                <h3 className="mt-4 text-sm font-bold text-slate-950">
-                  Vetted Local Guides
-                </h3>
-                <p className="mt-1 text-xs text-slate-600 leading-relaxed font-medium">
-                  Travel with licensed local leaders who bring authentic
-                  culture, history, and secret vantage points to life.
-                </p>
-              </div>
-            </div>
-
-            <div className="flex flex-col justify-between rounded-2xl bg-slate-50/80 p-5 border border-slate-100">
-              <div>
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-50 text-purple-600">
-                  <Sparkles size={20} />
-                </div>
-                <h3 className="mt-4 text-sm font-bold text-slate-950">
-                  24/7 Global On-Trip Care
-                </h3>
-                <p className="mt-1 text-xs text-slate-600 leading-relaxed font-medium">
-                  Our emergency travel specialists and virtual assistant Scout
-                  are on standby 24/7 before, during, and after your adventure.
-                </p>
-              </div>
-            </div>
+              </div>;
+            })}
           </div>
         </div>
       </section>
@@ -1169,7 +1134,7 @@ export default function DestinationsPage() {
         <div className="relative overflow-hidden rounded-[26px] bg-[#0A1128] p-8 sm:p-12 text-white shadow-xl">
           {/* Subtle scenic backdrop */}
           <img
-            src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1600&q=80"
+            src={pageContent.cta_image || "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1600&q=80"}
             alt="Scenic landscape"
             className="absolute inset-y-0 right-0 hidden md:block w-1/2 h-full object-cover opacity-25"
           />
@@ -1177,30 +1142,28 @@ export default function DestinationsPage() {
 
           <div className="relative max-w-xl">
             <span className="text-xs font-semibold uppercase tracking-wider text-orange-400">
-              Bespoke Trip Planning
+              {pageContent.cta_eyebrow || "Bespoke Trip Planning"}
             </span>
             <h2 className="mt-2 text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-white leading-tight">
-              Can&apos;t decide which destination fits your dream vacation?
+              {pageContent.cta_title || "Can't decide which destination fits your dream vacation?"}
             </h2>
             <p className="mt-3 text-xs sm:text-sm text-slate-300 font-normal leading-relaxed">
-              Our travel specialists know these countries inside out. We can
-              help you tailor an itinerary, choose the right departure season,
-              and match you with the best licensed local operator.
+              {pageContent.cta_description || "Our travel specialists know these countries inside out. We can help you tailor an itinerary, choose the right departure season, and match you with the best licensed local operator."}
             </p>
 
             <div className="mt-8 flex flex-wrap items-center gap-3">
               <Link
-                href="/contact"
+                href={pageContent.cta_primary_href || "/contact"}
                 className="inline-flex items-center gap-2 rounded-full bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold px-6 py-3 shadow-lg shadow-orange-500/25 transition"
               >
-                <span>Plan My Custom Trip</span>
+                <span>{pageContent.cta_primary_label || "Plan My Custom Trip"}</span>
                 <ArrowRight size={14} />
               </Link>
               <Link
-                href="/tours"
+                href={pageContent.cta_secondary_href || "/tours"}
                 className="inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/10 hover:bg-white/20 text-white text-xs font-bold px-6 py-3 backdrop-blur-xs transition"
               >
-                <span>Browse All 2,500+ Tours</span>
+                <span>{pageContent.cta_secondary_label || "Browse All Tours"}</span>
               </Link>
             </div>
           </div>

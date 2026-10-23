@@ -242,6 +242,7 @@ export type ContentBlockTabConfig = {
 export const TAB_DESCRIPTIONS: Record<string, string> = {
   seo: "Meta title and description for each public page (Home, Tours, About, Contact, legal pages and more).",
   "destination-styles": "The travel style cards on the Destinations page (e.g. Alpine & Mountain Expeditions).",
+  "destinations-page": "Hero, directory, travel-style, seasonal, trust and consultation content for the public Destinations page.",
   "destination-seasons": "The best-time-to-travel season cards on the Destinations page.",
   "tours-listing": "The global /tours page hero and results heading. Country-specific /tours/{country} content stays in Country Pages.",
   "trust-bar": "The dark bar at the very top of every page (e.g. Shop 2,500+ handpicked operators). Add, edit or remove highlights.",
@@ -581,6 +582,42 @@ export const FAVOURITE_COUNTRIES_HEADING_BLOCK: ContentBlockTabConfig = {
 };
 
 export const CONTENT_BLOCK_TABS: ContentBlockTabConfig[] = [
+  {
+    key: "destinations-page",
+    label: "Destinations Page Content",
+    blockKey: "destinations_page",
+    fields: [
+      { key: "hero_eyebrow", label: "Hero eyebrow", type: "text" },
+      { key: "hero_title", label: "Hero title", type: "text" },
+      { key: "hero_highlight", label: "Hero highlighted text", type: "text" },
+      { key: "hero_description", label: "Hero description", type: "textarea" },
+      { key: "hero_image", label: "Hero background image", type: "asset" },
+      { key: "search_placeholder", label: "Country search placeholder", type: "text" },
+      { key: "countries_heading", label: "Country directory heading", type: "text" },
+      { key: "countries_description", label: "Country directory description", type: "textarea" },
+      { key: "styles_eyebrow", label: "Travel styles eyebrow", type: "text" },
+      { key: "styles_title", label: "Travel styles title", type: "text" },
+      { key: "styles_description", label: "Travel styles description", type: "textarea" },
+      { key: "seasons_eyebrow", label: "Seasons eyebrow", type: "text" },
+      { key: "seasons_title", label: "Seasons title", type: "text" },
+      { key: "seasons_description", label: "Seasons description", type: "textarea" },
+      { key: "standard_eyebrow", label: "Why Tourvaa eyebrow", type: "text" },
+      { key: "standard_title", label: "Why Tourvaa title", type: "text" },
+      { key: "standard_description", label: "Why Tourvaa description", type: "textarea" },
+      {
+        key: "standard_cards", label: "Why Tourvaa cards", type: "records", maxItems: 4,
+        subfields: [{ key: "title", label: "Title", type: "text" }, { key: "description", label: "Description", type: "textarea" }],
+      },
+      { key: "cta_eyebrow", label: "CTA eyebrow", type: "text" },
+      { key: "cta_title", label: "CTA title", type: "text" },
+      { key: "cta_description", label: "CTA description", type: "textarea" },
+      { key: "cta_image", label: "CTA image", type: "asset" },
+      { key: "cta_primary_label", label: "Primary CTA label", type: "text" },
+      { key: "cta_primary_href", label: "Primary CTA link", type: "url" },
+      { key: "cta_secondary_label", label: "Secondary CTA label", type: "text" },
+      { key: "cta_secondary_href", label: "Secondary CTA link", type: "url" },
+    ],
+  },
   {
     key: "tours-listing",
     label: "Tours Listing Page",
