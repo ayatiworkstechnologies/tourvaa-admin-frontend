@@ -104,6 +104,13 @@ check(
     !detailExperience.includes("Download PDF") &&
     !detailExperience.includes("download the trip notes"),
 );
+check(
+  "itinerary image clicks open only that day's carousel images",
+  detailExperience.includes("const [lightboxPhotos, setLightboxPhotos]") &&
+    detailExperience.includes("photos: { url: string; title?: string; caption?: string }[] = mosaicItems") &&
+    detailExperience.includes("day.photos.map((url)") &&
+    detailExperience.includes("photos={lightboxPhotos}"),
+);
 check("tour detail booking CTA has no cart actions", !detailExperience.includes("addToCart") && !detailExperience.includes("ShoppingCart"));
 check(
   "tour detail keeps a sticky booking summary with live name price and actions",

@@ -897,9 +897,18 @@ export default function TourDetailExperience({
 
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
+  const [lightboxPhotos, setLightboxPhotos] = useState<{ url: string; title?: string; caption?: string }[]>([]);
 
-  const openLightbox = (idx = 0) => {
-    setLightboxIndex(idx);
+  const openLightbox = (
+    idx = 0,
+    photos: { url: string; title?: string; caption?: string }[] = mosaicItems,
+  ) => {
+    // A day itinerary's carousel is intentionally separate from the tour's
+    // complete gallery. Clicking a day image must only browse that day's
+    // supplied images, not every tour/gallery photo.
+    if (photos.length === 0) return;
+    setLightboxPhotos(photos);
+    setLightboxIndex(Math.max(0, Math.min(idx, photos.length - 1)));
     setLightboxOpen(true);
   };
 
@@ -1693,9 +1702,9 @@ export default function TourDetailExperience({
       {modal}
 
       {/* Fullscreen Lightbox Modal */}
-      {lightboxOpen && mosaicItems.length > 0 && (
+      {lightboxOpen && lightboxPhotos.length > 0 && (
         <LightboxModal
-          photos={mosaicItems}
+          photos={lightboxPhotos}
           initialIndex={lightboxIndex}
           onClose={() => setLightboxOpen(false)}
         />
@@ -2766,7 +2775,14 @@ export default function TourDetailExperience({
                                 {day.photos.slice(0, 3).map((pUrl, pIdx) => (
                                   <div
                                     key={pIdx}
-                                    onClick={() => openLightbox(pIdx)}
+                                    onClick={() => openLightbox(
+                                      pIdx,
+                                      day.photos.map((url) => ({
+                                        url,
+                                        title: day.title,
+                                        caption: day.summary || undefined,
+                                      })),
+                                    )}
                                     className="relative h-24 sm:h-32 overflow-hidden rounded-xl bg-slate-100 cursor-pointer group shadow-2xs"
                                   >
                                     <MarketingImage
