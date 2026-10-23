@@ -200,13 +200,12 @@ check(
     sharedTourForm.includes("if (isSupplier)"),
 );
 check(
-  "supplier tour form preserves a category selection during parent refreshes",
-  sharedTourForm.includes("hasLocalEditsRef") &&
-    sharedTourForm.includes("hydratedInitialDataKeyRef") &&
-    sharedTourForm.includes("hasLocalEditsRef.current = true") &&
-    sharedTourForm.includes("hydratedInitialDataKeyRef.current === snapshotKey") &&
-    sharedTourForm.includes("formState.isDirty") &&
-    sharedTourForm.includes("shouldTouch: true"),
+  "supplier tour form hides optional taxonomy controls without requiring a category",
+  sharedTourForm.includes("{!isSupplier && (") &&
+    sharedTourForm.includes("!isSupplier && !form.category_id") &&
+    sharedTourForm.includes("keepDirtyValues: true") &&
+    !sharedTourForm.includes("hydratedInitialDataKeyRef") &&
+    !sharedTourForm.includes("hasLocalEditsRef"),
 );
 check(
   "supplier edit reuses its loaded tour record in the shared form",

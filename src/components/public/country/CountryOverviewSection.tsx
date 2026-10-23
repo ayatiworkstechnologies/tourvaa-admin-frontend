@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { LuBookOpen as BookOpen, LuSparkles as Sparkles } from "react-icons/lu";
+import { LuSparkles as Sparkles } from "react-icons/lu";
 import { CountryDestinationInfo } from "@/lib/types/countryDestination";
 
 export interface CountryOverviewSectionProps {

@@ -101,8 +101,10 @@ export function LiveTourPreview({
       color = "text-indigo-700 bg-indigo-50 border-indigo-200";
     }
 
-    return { score, tips: tips.slice(0, 3), badge, color };
-  }, [tour, days, counts, bannerImage]);
+    const completedStepsCount = Object.values(statuses).filter((s) => s === "complete").length;
+
+    return { score, tips: tips.slice(0, 3), badge, color, completedStepsCount };
+  }, [tour, days, counts, bannerImage, statuses]);
 
   if (!isOpen) return null;
 
@@ -192,6 +194,9 @@ export function LiveTourPreview({
                     </span>
                     <span className={`rounded-full border px-2 py-0.5 text-[10px] font-black ${readiness.color}`}>
                       {readiness.badge}
+                    </span>
+                    <span className="text-[11px] font-bold text-slate-500">
+                      ({readiness.completedStepsCount}/11 steps complete)
                     </span>
                   </div>
                   <p className="text-xs text-slate-600 mt-0.5">

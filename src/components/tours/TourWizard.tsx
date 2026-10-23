@@ -128,7 +128,13 @@ export default function TourWizard({ tourId, role }: { tourId?: string; role: "a
   // without that step, and its remaining steps are renumbered for clarity.
   const wizardSteps = useMemo(() => {
     const allowedSteps = isSupplier ? WIZARD_STEPS.filter((step) => step.id !== "seo") : WIZARD_STEPS;
-    return allowedSteps.map((step, index) => ({ ...step, number: String(index + 1).padStart(2, "0") }));
+    return allowedSteps.map((step, index) => ({
+      ...step,
+      // Categories remain available to admins for catalogue management, but
+      // are intentionally not part of the supplier authoring flow.
+      label: isSupplier && step.id === "location" ? "Overview & Location" : step.label,
+      number: String(index + 1).padStart(2, "0"),
+    }));
   }, [isSupplier]);
 
   // The current step lives in the URL (?step=pricing) so a refresh or a shared

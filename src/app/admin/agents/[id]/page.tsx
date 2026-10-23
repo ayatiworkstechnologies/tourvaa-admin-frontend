@@ -23,14 +23,12 @@ import {
   LuFileCheck2 as FileText,
   LuGlobe as Globe,
   LuHistory as History,
-  LuLayoutDashboard as LayoutDashboard,
   LuLock as Lock,
   LuMail as Mail,
   LuMapPin as MapPin,
   LuPercent as Percent,
   LuPhone as Phone,
   LuReceipt as Receipt,
-  LuShieldAlert as ShieldAlert,
   LuShieldCheck as ShieldCheck,
   LuShieldHalf as ShieldHalf,
   LuUser as UserIcon,
@@ -186,14 +184,14 @@ export default function AgentDetailPage() {
     null,
   );
   const [currencies, setCurrencies] = useState<CurrencyListItem[]>(() => getCurrencyList());
-  const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  
 
   const copyValue = (value: string, label: string) => {
     if (!value) return;
     void navigator.clipboard.writeText(value);
-    setCopiedKey(label);
+    
     toast.success(`Copied ${label} to clipboard`);
-    setTimeout(() => setCopiedKey(null), 2000);
+    
   };
 
   const getCountryName = useCallback(
@@ -245,8 +243,6 @@ export default function AgentDetailPage() {
     hasPermission("bookings.view") || hasPermission("view-bookings");
   const canViewCustomers =
     hasPermission("customers.view") || hasPermission("view-customers");
-  const canViewTour =
-    hasPermission("tours.view") || hasPermission("view-tours");
 
   const requestIdRef = useRef(0);
 

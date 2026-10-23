@@ -27,7 +27,6 @@ import {
   LuPercent as Percent,
   LuPhone as Phone,
   LuReceipt as Receipt,
-  LuShieldAlert as ShieldAlert,
   LuShieldCheck as ShieldCheck,
   LuShieldHalf as ShieldHalf,
   LuTruck as Truck,
@@ -201,7 +200,7 @@ export default function SupplierDetailPage() {
     id: number;
   } | null>(null);
   const [locationModalOpen, setLocationModalOpen] = useState(false);
-  const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  
 
   const approvalStatus = String(record?.approval_status || "").toLowerCase();
   const accountStatus = String(record?.status || "").toLowerCase();
@@ -241,9 +240,9 @@ export default function SupplierDetailPage() {
   const copyValue = (value: string, label: string) => {
     if (!value) return;
     void navigator.clipboard.writeText(value);
-    setCopiedKey(label);
+    
     toast.success(`Copied ${label} to clipboard`);
-    setTimeout(() => setCopiedKey(null), 2000);
+    
   };
 
   const getCountryName = useCallback(

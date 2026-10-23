@@ -10,8 +10,6 @@ import {
   LuSparkles as Sparkles,
   LuInfo as Info,
   LuThermometer as Thermometer,
-  LuChevronLeft,
-  LuChevronRight,
 } from "react-icons/lu";
 import { CountryDestinationInfo } from "@/lib/types/countryDestination";
 

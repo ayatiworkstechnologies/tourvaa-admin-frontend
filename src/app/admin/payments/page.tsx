@@ -10,7 +10,6 @@ import { Payment, capturePayment, getPayments, processRefund, voidPayment } from
 import { useAuthContext } from "@/providers/AuthProvider";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useCurrency } from "@/hooks/useCurrency";
-import api from "@/lib/api/client";
 
 const PAGE_SIZE = 15;
 

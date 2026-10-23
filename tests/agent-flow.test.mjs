@@ -87,6 +87,7 @@ check("shared booking customer create uses the POST customer route", publicBooki
 const bookings = read("src/app/agent/bookings/page.tsx");
 check("booking filter uses booking_status", bookings.includes("params.booking_status = statusFilter"));
 check("new pending supplier statuses are represented", bookings.includes("pending_supplier_acceptance"));
+check("booking list keeps authorization, payment-plan, and voided balances distinct", ["Payment Plan", "Covered by authorization", "paymentStatus === \"voided\"", "Amounts use each booking&apos;s settled currency."].every((text) => bookings.includes(text)) && !bookings.includes('if (["full", "full_payment"].includes((booking.payment_type || "").toLowerCase())) return "Fully Paid"'));
 check("booking summary cards use server-wide status counts", bookings.includes("status_counts") && bookings.includes("statusCounts.confirmed"));
 check("booking list failures can be retried", bookings.includes("setRetryKey") && bookings.includes("Retry"));
 

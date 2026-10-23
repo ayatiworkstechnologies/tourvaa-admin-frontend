@@ -76,9 +76,9 @@ function agentPaymentStatusLabel(status?: string) {
 }
 
 function agentBookingMethodLabel(booking: Booking) {
-  if (["pay_later", "credit", "bank_transfer"].includes((booking.agent_payment_method || "").toLowerCase())) return "Reserved";
+  if (["pay_later", "credit", "bank_transfer"].includes((booking.agent_payment_method || "").toLowerCase())) return "Reserve now";
   if ((booking.payment_type || "").toLowerCase() === "deposit") return "Deposit";
-  if (["full", "full_payment"].includes((booking.payment_type || "").toLowerCase())) return "Fully Paid";
+  if (["full", "full_payment"].includes((booking.payment_type || "").toLowerCase())) return "Pay in full";
   return "-";
 }
 
@@ -109,6 +109,28 @@ export default function AgentBookingsPage() {
   const { formatExact: format } = useCurrency();
   const money = (value: string | number | undefined, currency = "USD") =>
     value || value === 0 ? format(value, currency) : "-";
+  const balanceDue = (booking: Booking) => {
+    const paymentStatus = (booking.payment_status || "").toLowerCase();
+    const pending = Number(booking.amount_pending || 0);
+    const authorized = Number(booking.authorized_amount || 0);
+
+    if (paymentStatus === "voided") return <span className="text-slate-500">Voided</span>;
+    if (paymentStatus === "refunded") return <span className="text-slate-500">Refunded</span>;
+    if (paymentStatus === "partially_refunded") return <span className="text-slate-500">Partially refunded</span>;
+    if (paymentStatus === "refund_pending") return <span className="text-amber-700">Refund pending</span>;
+
+    if (paymentStatus === "authorized") {
+      const stillDue = Math.max(0, pending - authorized);
+      if (stillDue === 0 && authorized > 0) {
+        return <span className="text-sky-700">Covered by authorization</span>;
+      }
+      return stillDue > 0 ? money(stillDue, booking.currency) : <span className="text-slate-500">-</span>;
+    }
+
+    if (pending > 0) return money(pending, booking.currency);
+    if (paymentStatus === "paid") return <span className="text-emerald-700">Paid in full</span>;
+    return <span className="text-slate-500">-</span>;
+  };
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState("");
@@ -180,19 +202,12 @@ export default function AgentBookingsPage() {
     { key: "date", header: "Date", render: (b) => dateText(b.tour_date), className: "hidden text-dash-muted lg:table-cell" },
     { key: "status", header: "Booking Status", render: (b) => <Pill status={b.booking_status}>{agentBookingStatusLabel(b.booking_status)}</Pill> },
     { key: "payment", header: "Payment Status", render: (b) => <Pill status={b.payment_status}>{agentPaymentStatusLabel(b.payment_status)}</Pill>, className: "hidden xl:table-cell" },
-    { key: "payment_method", header: "Booking Method", render: (b) => agentBookingMethodLabel(b), className: "hidden whitespace-nowrap text-dash-muted xl:table-cell" },
+    { key: "payment_method", header: "Payment Plan", render: (b) => agentBookingMethodLabel(b), className: "hidden whitespace-nowrap text-dash-muted xl:table-cell" },
     { key: "paid", header: "Paid", render: (b) => money(b.amount_paid, b.currency), className: "hidden text-right text-dash-muted xl:table-cell" },
     {
       key: "balance_due",
       header: "Balance Due",
-      render: (b) => {
-        const pending = Number(b.amount_pending || 0);
-        const authorized = Number(b.authorized_amount || 0);
-        if ((b.payment_status || "").toLowerCase() === "authorized" && pending > 0 && authorized >= pending) {
-          return <span className="text-sky-700">Authorized {money(authorized, b.currency)}</span>;
-        }
-        return pending > 0 ? money(pending, b.currency) : <span className="text-emerald-700">Paid in full</span>;
-      },
+      render: balanceDue,
       className: "hidden text-right font-semibold text-amber-700 xl:table-cell",
     },
     { key: "due_date", header: "Due Date", render: (b) => dateText(b.payment_due_date), className: "hidden text-dash-muted lg:table-cell" },
@@ -237,8 +252,9 @@ export default function AgentBookingsPage() {
           </select>
         </div>
         {total > 0 && (
-          <div className="flex items-center gap-2 rounded-xl bg-[#EDF5FF] px-4 py-2 text-sm font-bold text-dash-brand-hover">
+          <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1 rounded-xl bg-[#EDF5FF] px-4 py-2 text-sm font-bold text-dash-brand-hover">
             <span>{total} booking{total !== 1 ? "s" : ""}</span>
+            <span className="text-xs font-medium text-dash-muted">Amounts use each booking&apos;s settled currency.</span>
           </div>
         )}
       </div>

@@ -37,10 +37,14 @@ export default function TourHighlightsTab({ tourId }: { tourId: string }) {
     setLoading(true);
     try {
       const highlights = await getHighlights(tourId);
-      setItems(highlights);
-    }
-    catch {
-      toast.error("Failed to load highlights.");
+      setItems(highlights ?? []);
+    } catch (err: unknown) {
+      const status = (err as { response?: { status?: number } })?.response?.status;
+      if (status !== 404) {
+        toast.error("Failed to load highlights.");
+      } else {
+        setItems([]);
+      }
     }
     finally {
       setLoading(false);
@@ -164,7 +168,7 @@ export default function TourHighlightsTab({ tourId }: { tourId: string }) {
             </label>
             <label className="md:col-span-2">
               <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Short description</span>
-              <textarea value={editing.short_description} rows={3}
+              <textarea value={editing.short_description ?? ""} rows={3}
                 onChange={(e) => setEditing((p) => p ? { ...p, short_description: e.target.value } : p)}
                 className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand" />
             </label>

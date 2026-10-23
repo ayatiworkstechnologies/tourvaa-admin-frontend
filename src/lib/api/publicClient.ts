@@ -337,8 +337,11 @@ export async function fetchPublicDestinationGuides() {
   return (res.data.items || []) as PublicDestinationGuide[];
 }
 
-export async function fetchPublicCities(country?: string) {
-  const res = await publicApi.get("/cities", { params: country ? { country } : {} });
+export async function fetchPublicCities(country?: string, limit?: number) {
+  const params: Record<string, string | number> = {};
+  if (country) params.country = country;
+  if (limit) params.limit = limit;
+  const res = await publicApi.get("/cities", { params });
   return res.data.items as PublicCity[];
 }
 

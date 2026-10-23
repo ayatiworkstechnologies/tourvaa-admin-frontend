@@ -30,9 +30,11 @@ function statusClass(status?: string) {
 }
 
 export default function AgentPayoutsPage() {
-  // Ledger values are settled commission records, not browse prices. Keep
-  // their recorded currency instead of converting or default-labeling them.
-  const { code: activeCurrency, formatExact: money } = useCurrency();
+  const {
+    code: activeCurrency,
+    format: displayMoney,
+    formatExact: recordedMoney,
+  } = useCurrency();
   const [earnings, setEarnings] = useState<LedgerEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -58,13 +60,24 @@ export default function AgentPayoutsPage() {
 
   useEffect(() => { void load(); }, [load]);
 
+  // The header selector controls how portal users browse amounts. Ledger
+  // records remain stored in their original settlement currency, while this
+  // view converts them for comparison in the selected display currency. The
+  // original value stays available to audit in the native browser tooltip.
+  const money = (amount: string | number | undefined, sourceCurrency?: string) => {
+    const source = sourceCurrency || activeCurrency;
+    const displayed = displayMoney(amount || 0, source);
+    const recorded = recordedMoney(amount || 0, source);
+    return displayed === recorded ? displayed : <span title={`Recorded settlement amount: ${recorded}`}>{displayed}</span>;
+  };
+
   const columns: DataTableColumn<LedgerEntry>[] = [
     { key: "tour", header: "Tour", className: "font-bold text-dash-text", render: (entry) => entry.tour_name || "Tour booking" },
     { key: "booking", header: "Booking", render: (entry) => entry.booking_id ? <Link href={`/agent/bookings/${entry.booking_id}`} className="font-bold text-dash-brand hover:underline">{entry.booking_code || `Booking #${entry.booking_id}`}</Link> : "-" },
     { key: "rate", header: "Commission", className: "text-right", render: (entry) => `${entry.commission_percentage ?? 0}%` },
-    { key: "earned", header: "Earned", className: "text-right font-bold text-dash-text", render: (entry) => money(entry.commission_amount || 0, entry.currency || activeCurrency) },
-    { key: "paid", header: "Paid", className: "hidden text-right sm:table-cell", render: (entry) => money(entry.amount_paid || 0, entry.currency || activeCurrency) },
-    { key: "outstanding", header: "Outstanding", className: "hidden text-right md:table-cell", render: (entry) => money(entry.amount_pending || 0, entry.currency || activeCurrency) },
+    { key: "earned", header: "Earned", className: "text-right font-bold text-dash-text", render: (entry) => money(entry.commission_amount, entry.currency) },
+    { key: "paid", header: "Paid", className: "hidden text-right sm:table-cell", render: (entry) => money(entry.amount_paid, entry.currency) },
+    { key: "outstanding", header: "Outstanding", className: "hidden text-right md:table-cell", render: (entry) => money(entry.amount_pending, entry.currency) },
     { key: "status", header: "Status", render: (entry) => <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-bold ${statusClass(entry.status)}`}>{entry.status || "pending"}</span> },
   ];
 

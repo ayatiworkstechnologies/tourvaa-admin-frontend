@@ -1106,6 +1106,7 @@ export default function SettingsPage() {
                         {(form.invoice_header_layout || "both") === "logo" ? (
                           <div>
                             {form.invoice_logo_url || form.logo ? (
+                              // eslint-disable-next-line @next/next/no-img-element
                               <img
                                 src={form.invoice_logo_url || form.logo}
                                 alt="Invoice Logo"
@@ -1133,6 +1134,7 @@ export default function SettingsPage() {
                         ) : (
                           <div className="flex items-center gap-2">
                             {form.invoice_logo_url || form.logo ? (
+                              // eslint-disable-next-line @next/next/no-img-element
                               <img
                                 src={form.invoice_logo_url || form.logo}
                                 alt="Invoice Logo"

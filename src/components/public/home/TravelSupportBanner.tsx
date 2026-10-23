@@ -55,8 +55,11 @@ export default function TravelSupportBanner({
     propSubtitle ||
     data.subtitle ||
     "From booking questions to on-trip assistance, our travel support team is here to make your Tourvaa journey smooth, simple and stress-free.";
-  const ctaText = propCtaText || data.cta_text || "Explore Deals";
-  const ctaUrl = propCtaUrl || data.cta_url || "/deals";
+  // A support banner must direct travellers to support. The old deals fallback
+  // made an unset CMS CTA look like a promotions action and sent visitors away
+  // from the help path.
+  const ctaText = propCtaText || data.cta_text || "Contact us";
+  const ctaUrl = propCtaUrl || data.cta_url || "/contact";
   const image =
     propImage || (data.image ? mediaUrl(data.image) : "/images/offer.png");
 

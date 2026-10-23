@@ -2,7 +2,7 @@
 
 import { ErrorSummary } from "@/components/tours/FormKit";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useForm, useWatch } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import {
   LuAlignLeft as AlignLeft,
   LuArrowLeft as ArrowLeft,
@@ -41,7 +41,7 @@ type ActiveDiscount = {
   tourvaa_discount_percentage?: number | null;
 };
 
-type Section = "basic-core" | "settings" | "location" | "media" | "seo";
+type Section = "basic-core" | "basic-descriptions" | "settings" | "location" | "media" | "seo";
 
 type Props = {
   tourId?: string;
@@ -64,12 +64,25 @@ type SubcategoryOption = { id: number; label: string; category_id: number | null
 type TourFormValues = Record<string, string>;
 
 function normalizeTourForm(data: Record<string, unknown>) {
-  return Object.fromEntries(
-    Object.entries(data).map(([key, value]) => [
-      key,
-      Array.isArray(value) ? value.join(",") : String(value ?? ""),
-    ])
-  );
+  const norm: Record<string, string> = {};
+  for (const [key, value] of Object.entries(data)) {
+    if (Array.isArray(value)) {
+      if (value.length > 0 && typeof value[0] === "object" && value[0] !== null && "id" in value[0]) {
+        norm[key] = (value as Array<{ id: number | string }>).map((v) => v.id).join(",");
+      } else {
+        norm[key] = value.join(",");
+      }
+    } else {
+      norm[key] = String(value ?? "");
+    }
+  }
+  if (Array.isArray(data.subcategories) && !norm.subcategory_ids) {
+    norm.subcategory_ids = (data.subcategories as Array<{ id?: number } | number>)
+      .map((s) => (typeof s === "object" && s !== null ? s.id : s))
+      .filter(Boolean)
+      .join(",");
+  }
+  return norm;
 }
 
 const textFields: [string, string][] = [
@@ -800,6 +813,9 @@ export default function TourFormPage({
   const { convert, outputCode } = useCurrency();
   const { confirm, dialog } = useConfirm();
   const showBasic = sections.includes("basic-core");
+  // Descriptions belong to the Overview step. Keep this separate opt-in only
+  // for a future legacy layout that deliberately needs those fields elsewhere.
+  const showBasicDescriptions = sections.includes("basic-descriptions");
   const showSettings = sections.includes("settings");
   const showLocation = sections.includes("location");
   const showMedia = sections.includes("media");
@@ -855,17 +871,6 @@ export default function TourFormPage({
   const saveButtonClass = isSupplier
     ? "bg-gradient-to-r from-emerald-600 to-teal-700 text-white shadow-md shadow-emerald-500/20 hover:from-emerald-700 hover:to-teal-800 hover:shadow-lg hover:-translate-y-0.5 active:scale-95 transition-all"
     : "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/20 hover:from-blue-700 hover:to-indigo-700 hover:shadow-lg hover:-translate-y-0.5 active:scale-95 transition-all";
-  // A wizard parent can receive a refreshed tour object while this form remains
-  // mounted.  Keep that refresh from replacing a supplier's first selection.
-  const hasLocalEditsRef = useRef(false);
-  // `useForm` already consumes initialData as its default values. Mark that
-  // first snapshot as hydrated so the post-mount effect below cannot reset a
-  // select after its first change event has fired.
-  const hydratedInitialDataKeyRef = useRef<string | null>(
-    initialData
-      ? `${String(initialData.id ?? tourId ?? "")}:${String(initialData.updated_at ?? "")}`
-      : null
-  );
   const [supplierCurrency, setSupplierCurrency] = useState("");
 
   // New tours start with the platform's default deposit terms already
@@ -934,11 +939,13 @@ export default function TourFormPage({
   const [activeDiscount, setActiveDiscount] = useState<ActiveDiscount | null>(null);
   const [onePaxSlab, setOnePaxSlab] = useState<PricingSlab | null>(null);
 
-  const [selectedStateId, setSelectedStateId] = useState("");
+  const [selectedStateId, setSelectedStateId] = useState<string>(() =>
+    String((initialData as { state_id?: unknown } | undefined)?.state_id ?? "")
+  );
   const { countries } = useGeoCountries();
   const { states } = useGeoStates(form.country_id ? Number(form.country_id) : null);
   const { cities } = useGeoCities(
-    selectedStateId ? Number(selectedStateId) : null,
+    (selectedStateId || form.state_id) ? Number(selectedStateId || form.state_id) : null,
     form.country_id ? Number(form.country_id) : null
   );
   const [categories, setCategories] = useState<DropdownOption[]>([]);
@@ -1024,20 +1031,6 @@ export default function TourFormPage({
   }, [fetchTour]);
 
   useEffect(() => {
-    // Only accept a genuinely newer parent snapshot before the user has
-    // interacted with this form. In particular, do not replace the first
-    // category selection with a late parent refresh.
-    if (!initialData || hasLocalEditsRef.current || formState.isDirty) return;
-
-    const snapshotKey = `${String(initialData.id ?? tourId ?? "")}:${String(initialData.updated_at ?? "")}`;
-    if (hydratedInitialDataKeyRef.current === snapshotKey) return;
-
-    reset(normalizeTourForm(initialData));
-    setActiveDiscount((initialData as { active_discount?: ActiveDiscount }).active_discount ?? null);
-    hydratedInitialDataKeyRef.current = snapshotKey;
-  }, [formState.isDirty, initialData, reset, tourId]);
-
-  useEffect(() => {
     if (!tourId) return;
     let active = true;
     getPricing(tourId).then((slabs) => {
@@ -1072,12 +1065,24 @@ export default function TourFormPage({
   }, [tourId, isSupplier]);
 
   useEffect(() => {
-    if (form.state_id && !selectedStateId) setSelectedStateId(form.state_id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form.state_id]);
+    if (initialData) {
+      // Wizard refreshes replace `initialData` after other panels save. Keep
+      // values the supplier is currently editing so a late refresh cannot
+      // undo the first category selected from the native dropdown.
+      reset(normalizeTourForm(initialData), { keepDirtyValues: true });
+      if (initialData.state_id) {
+        setSelectedStateId(String(initialData.state_id));
+      }
+    }
+  }, [initialData, reset]);
+
+  useEffect(() => {
+    if (form.state_id !== undefined && form.state_id !== selectedStateId) {
+      setSelectedStateId(form.state_id);
+    }
+  }, [form.state_id, selectedStateId]);
 
   const update = (key: string, value: string) => {
-    hasLocalEditsRef.current = true;
     setValue(key, value, { shouldDirty: true, shouldTouch: true });
   };
 
@@ -1159,7 +1164,7 @@ export default function TourFormPage({
       if (!form.country_id) {
         newErrors.country_id = "Please select a destination country.";
       }
-      if (!form.category_id) {
+      if (!isSupplier && !form.category_id) {
         newErrors.category_id = "Please select a tour category.";
       }
     }
@@ -1257,7 +1262,7 @@ export default function TourFormPage({
     // creating a brand-new tour (no tourId yet) do we still gate by the
     // section actually shown, since there is no prior tour to preserve.
     const isEditingExistingTour = Boolean(tourId);
-    if (showBasic || showSettings || isEditingExistingTour) {
+    if (showBasic || showSettings || showLocation || isEditingExistingTour) {
       for (const [key] of [...textFields, ...descriptionFields, ...simpleNumberFields, ...coreDetailFields, ...basicDetailFields]) {
         payload[key] = form[key]?.trim() ?? "";
       }
@@ -1288,7 +1293,8 @@ export default function TourFormPage({
       payload.category_id = form.category_id ? Number(form.category_id) : null;
       payload.subcategory_ids = selectedSubcategoryIds;
       payload.country_id = form.country_id ? Number(form.country_id) : null;
-      payload.state_id = selectedStateId ? Number(selectedStateId) : null;
+      const resolvedStateId = selectedStateId || form.state_id;
+      payload.state_id = resolvedStateId ? Number(resolvedStateId) : null;
       payload.city_id = form.city_id ? Number(form.city_id) : null;
     }
 
@@ -1704,7 +1710,7 @@ export default function TourFormPage({
           </FormSection>
           )}
 
-          {showBasic && (
+          {showBasicDescriptions && (
           <FormSection role={role} icon={AlignLeft} title="Descriptions" description="Shown on the public tour page.">
             {descriptionFields.map(([key, label]) => {
                             if (key === "long_description") {
@@ -1945,17 +1951,185 @@ export default function TourFormPage({
           <>
           <FormSection
             role={role}
+            icon={AlignLeft}
+            title="Overview & Descriptions"
+            description="Compelling narrative overview and concise summary shown to travellers on public listings."
+          >
+            {descriptionFields.map(([key, label]) => {
+              if (key === "long_description") {
+                const words = (form.long_description || "").trim().split(/\s+/).filter(Boolean).length;
+
+                const handleAppendSection = (title: string, desc: string) => {
+                  const add = `\n\n${title}: ${desc}`;
+                  update("long_description", (form.long_description ? form.long_description.trimEnd() : "") + add);
+                };
+
+                const handleTemplate = async () => {
+                  const sample = `Tour Overview & Atmosphere: Embark on an unforgettable voyage curated for travellers seeking scenic wonder, effortless comfort, and genuine cultural immersion.\n\nKey Highlights: Marvel at world-renowned landscapes, wander charming historic districts, and capture panoramic views from iconic viewpoints along the journey.\n\nTravel Comfort & Inclusions: Travel in modern, climate-controlled comfort with expert local guidance, boutique accommodation stays, and authentic culinary stops curated at every turn.`;
+                  if (!form.long_description || (await confirm({ title: "Insert template", message: "Insert standard tour overview narrative template? This will replace the current text.", confirmLabel: "Insert" }))) {
+                    update("long_description", sample);
+                  }
+                };
+
+                const handleFormatSpacing = () => {
+                  if (!form.long_description) return;
+                  const formatted = form.long_description
+                    .replace(/(?:^|\n|(?<=[.!?"]\s+))([A-Z0-9][-A-Za-z0-9\s&'/\u2013\u2014]+:)/g, "\n\n$1")
+                    .trim();
+                  update("long_description", formatted);
+                };
+
+                return (
+                  <div key={key} data-field={key} className="md:col-span-2 space-y-3 rounded-2xl border border-slate-200/90 bg-gradient-to-b from-slate-50/70 to-slate-50/30 p-4 transition-all focus-within:border-blue-500 focus-within:bg-white focus-within:ring-4 focus-within:ring-blue-500/10 shadow-xs">
+                    {/* Header Bar */}
+                    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200/80 pb-2.5">
+                      <div className="flex items-center gap-2">
+                        <span className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-800">
+                          <Sparkles size={14} className="text-blue-600" />
+                          {label} (Narrative Overview)
+                        </span>
+                        <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[11px] font-semibold text-blue-700 border border-blue-100">
+                          Public listing overview
+                        </span>
+                      </div>
+                      <div className="text-[11px] font-medium text-slate-500">
+                        <span>{words} words</span>
+                        <span className="mx-1.5">•</span>
+                        <span>{(form.long_description || "").length} characters</span>
+                      </div>
+                    </div>
+
+                    {/* Textarea */}
+                    <textarea
+                      name="long_description"
+                      value={form.long_description ?? ""}
+                      onChange={(e) => {
+                        update("long_description", e.target.value);
+                        if (errors.long_description) clearError("long_description");
+                      }}
+                      rows={8}
+                      placeholder="Comprehensive tour narrative and overview. Introduce the journey, destination atmosphere, key highlights, travel comfort, and unforgettable memories awaiting guests..."
+                      className="w-full min-h-48 resize-y rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm leading-relaxed outline-none transition focus:border-blue-500 text-slate-900 placeholder:text-slate-400 font-normal shadow-2xs"
+                    />
+
+                    {/* In-Editor Toolbar Docked Inside Detailer */}
+                    <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200/80 bg-white/90 px-3 py-2 shadow-2xs">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <button
+                          type="button"
+                          onClick={() => handleAppendSection("Tour Highlights & Key Experiences", "Describe the top scenic points, guided adventures, and must-see attractions...")}
+                          className="inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm transition hover:from-blue-700 hover:to-indigo-700 hover:shadow active:scale-95"
+                          title="Append a highlighted section"
+                        >
+                          <Plus size={13} /> Add Highlight Section
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => handleAppendSection("Scenic Route & Landscape", "Describe the route beauty, coastlines, and photographic vistas...")}
+                          className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
+                        >
+                          + Scenic Route
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => handleAppendSection("Included Travel Comfort", "Highlight comfortable vehicle transfers, curated accommodation, and attentive service...")}
+                          className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
+                        >
+                          + Included Comfort
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={handleTemplate}
+                          className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs font-semibold text-slate-600 transition hover:bg-slate-100"
+                        >
+                          <Sparkles size={11} className="text-amber-500" /> Template
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={handleFormatSpacing}
+                          disabled={!form.long_description}
+                          className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs font-semibold text-slate-600 transition hover:bg-slate-100 disabled:opacity-40"
+                        >
+                          Clean Spacing
+                        </button>
+                      </div>
+                    </div>
+
+                    {errors.long_description && (
+                      <p className="mt-1.5 flex items-center gap-1.5 text-xs font-semibold text-red-600">
+                        <AlertCircle size={13} className="shrink-0 text-red-500" />
+                        <span>{errors.long_description}</span>
+                      </p>
+                    )}
+
+                    {/* Pro Tip */}
+                    <div className="flex items-center gap-1.5 pt-0.5 text-[11px] text-slate-500">
+                      <Info size={13} className="text-blue-500 shrink-0" />
+                      <span>
+                        Use structured section titles (e.g. <strong className="text-slate-700">Tour Highlights:</strong> or <strong className="text-slate-700">Included Comfort:</strong>) to make long tour overviews easy to scan and read for prospective guests.
+                      </span>
+                    </div>
+                  </div>
+                );
+              }
+
+              return (
+                <label key={key} data-field={key} className="md:col-span-2 block">
+                  <span className="mb-1 flex items-end justify-between gap-2 text-xs font-bold uppercase text-slate-700">
+                    <span className="flex items-center gap-1.5">
+                      <span>{label}</span>
+                      <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-semibold text-blue-700 border border-blue-100">
+                        Search cards &amp; overview preview
+                      </span>
+                    </span>
+                    {FIELD_MAX[key] && (
+                      <span className={`text-[11px] font-semibold normal-case ${(form[key] ?? "").length > FIELD_MAX[key] ? "text-red-600" : "text-slate-400"}`}>
+                        {(form[key] ?? "").length}/{FIELD_MAX[key]}
+                      </span>
+                    )}
+                  </span>
+                  <textarea
+                    name={key}
+                    value={form[key] ?? ""}
+                    onChange={(e) => {
+                      update(key, e.target.value);
+                      if (errors[key]) clearError(key);
+                    }}
+                    rows={3}
+                    placeholder="A crisp, captivating 1-3 sentence summary that sparks curiosity when browsing tour cards..."
+                    className={`min-h-24 resize-y ${getInputClass(key)}`}
+                  />
+                  {errors[key] ? (
+                    <p className="mt-1.5 flex items-center gap-1.5 text-xs font-semibold text-red-600 animate-in fade-in duration-150">
+                      <AlertCircle size={13} className="shrink-0 text-red-500" />
+                      <span>{errors[key]}</span>
+                    </p>
+                  ) : (
+                    FIELD_HINTS[key] && <span className="mt-1 block text-[11px] text-slate-500">{FIELD_HINTS[key]}</span>
+                  )}
+                </label>
+              );
+            })}
+          </FormSection>
+
+          <FormSection
+            role={role}
             icon={MapPinned}
-            title="Location & supplier"
+            title="Location & Destination"
             description={isSupplier ? "Choose the tour location. The tour remains assigned to your supplier account." : "Where the tour happens and who runs it."}
           >
-            <label>
-              <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Supplier</span>
+            <label data-field="supplier_id" className="block">
+              <span className="mb-1 block text-xs font-bold uppercase text-slate-600">Supplier</span>
               <select
+                name="supplier_id"
                 value={form.supplier_id ?? ""}
                 onChange={(e) => update("supplier_id", e.target.value)}
                 disabled={isSupplier}
-                className={`${inputClass} disabled:bg-gray-50 disabled:text-gray-500`}
+                className={`${inputClass} disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed`}
               >
                 <option value="">{isSupplier ? "Your supplier account" : "- None -"}</option>
                 {isSupplier && form.supplier_id && (
@@ -1965,27 +2139,60 @@ export default function TourFormPage({
                   <option key={s.id} value={String(s.id)}>{s.label}</option>
                 ))}
               </select>
+              {isSupplier && (
+                <span className="mt-1 block text-[11px] text-slate-500">
+                  Tours are automatically linked to your authenticated supplier organization.
+                </span>
+              )}
             </label>
 
+            {!isSupplier && (
             <label data-field="category_id" className="block">
               <span className="mb-1 block text-xs font-bold uppercase text-slate-600">
                 Tour category
                 <span className="ml-1 text-red-500 font-bold">*</span>
               </span>
-              <select
+              <Controller
                 name="category_id"
-                value={form.category_id ?? ""}
-                onChange={(e) => {
-                  update("category_id", e.target.value);
-                  if (errors.category_id) clearError("category_id");
-                }}
-                className={getInputClass("category_id")}
-              >
-                <option value="">- Select category -</option>
-                {categories.map((c) => (
-                  <option key={c.id} value={String(c.id)}>{c.label}</option>
-                ))}
-              </select>
+                control={control}
+                render={({ field }) => (
+                  <select
+                    name={field.name}
+                    ref={field.ref}
+                    value={field.value ?? ""}
+                    onBlur={field.onBlur}
+                    onChange={(e) => {
+                      const newCat = e.target.value;
+                      // Mark the category dirty synchronously. A wizard data
+                      // refresh may arrive during the same render cycle, so
+                      // relying on the Controller's deferred dirty update can
+                      // make the first native-select choice appear to vanish.
+                      setValue("category_id", newCat, {
+                        shouldDirty: true,
+                        shouldTouch: true,
+                        shouldValidate: true,
+                      });
+                      if (errors.category_id) clearError("category_id");
+                      if (newCat) {
+                        const catIdNum = Number(newCat);
+                        const validIds = selectedSubcategoryIds.filter((subId) => {
+                          const matched = subcategories.find((s) => s.id === subId);
+                          return matched ? matched.category_id === catIdNum : true;
+                        });
+                        update("subcategory_ids", validIds.join(","));
+                      } else {
+                        update("subcategory_ids", "");
+                      }
+                    }}
+                    className={getInputClass("category_id")}
+                  >
+                    <option value="">- Select category -</option>
+                    {categories.map((c) => (
+                      <option key={c.id} value={String(c.id)}>{c.label}</option>
+                    ))}
+                  </select>
+                )}
+              />
               {errors.category_id && (
                 <p className="mt-1.5 flex items-center gap-1.5 text-xs font-semibold text-red-600 animate-in fade-in duration-150">
                   <AlertCircle size={13} className="shrink-0 text-red-500" />
@@ -1993,6 +2200,7 @@ export default function TourFormPage({
                 </p>
               )}
             </label>
+            )}
 
             <label data-field="country_id" className="block">
               <span className="mb-1 block text-xs font-bold uppercase text-slate-600">
@@ -2003,8 +2211,10 @@ export default function TourFormPage({
                 name="country_id"
                 value={form.country_id ?? ""}
                 onChange={(e) => {
-                  update("country_id", e.target.value);
+                  const nextCountry = e.target.value;
+                  update("country_id", nextCountry);
                   setSelectedStateId("");
+                  update("state_id", "");
                   update("city_id", "");
                   if (errors.country_id) clearError("country_id");
                 }}
@@ -2023,33 +2233,41 @@ export default function TourFormPage({
               )}
             </label>
 
-            <label>
-              <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">State</span>
+            <label data-field="state_id" className="block">
+              <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">
+                State / Province <span className="font-medium normal-case text-slate-400">(optional)</span>
+              </span>
               <select
-                value={selectedStateId}
+                name="state_id"
+                value={selectedStateId || form.state_id || ""}
                 onChange={(e) => {
-                  setSelectedStateId(e.target.value);
+                  const nextState = e.target.value;
+                  setSelectedStateId(nextState);
+                  update("state_id", nextState);
                   update("city_id", "");
                 }}
                 disabled={!form.country_id}
                 className={`${inputClass} disabled:bg-gray-50 disabled:text-gray-400`}
               >
-                <option value="">- {form.country_id ? "Select state" : "Select country first"} -</option>
+                <option value="">- {form.country_id ? (states.length > 0 ? "Select state" : "No states listed / All regions") : "Select country first"} -</option>
                 {states.map((s) => (
                   <option key={s.id} value={String(s.id)}>{s.name}</option>
                 ))}
               </select>
             </label>
 
-            <label>
-              <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">City</span>
+            <label data-field="city_id" className="block">
+              <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">
+                City <span className="font-medium normal-case text-slate-400">(optional)</span>
+              </span>
               <select
+                name="city_id"
                 value={form.city_id ?? ""}
                 onChange={(e) => update("city_id", e.target.value)}
                 disabled={!form.country_id}
                 className={`${inputClass} disabled:bg-gray-50 disabled:text-gray-400`}
               >
-                <option value="">- {form.country_id ? "Select city" : "Select country first"} -</option>
+                <option value="">- {form.country_id ? (cities.length > 0 ? "Select city" : "No cities listed / All cities") : "Select country first"} -</option>
                 {cities.map((c) => (
                   <option key={c.id} value={String(c.id)}>{c.name}</option>
                 ))}
@@ -2057,40 +2275,54 @@ export default function TourFormPage({
             </label>
           </FormSection>
 
+          {!isSupplier && (
           <FormSection
             role={role}
             icon={Tags}
             title="Subcategories"
             description={
               form.category_id
-                ? "Showing subcategories for the selected category."
-                : "Select a category above to narrow this list, or pick from all subcategories."
+                ? "Select any relevant subcategories to help travellers filter and discover this tour."
+                : "Select a tour category above to view and choose matching subcategories."
             }
           >
-            <div className="md:col-span-2 flex flex-wrap gap-2">
+            <div className="md:col-span-2 space-y-2">
               {visibleSubcategories.length === 0 ? (
-                <p className="text-sm text-dash-subtle">No subcategories available.</p>
+                <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50/60 p-4 text-center">
+                  <p className="text-xs font-medium text-slate-500">
+                    {form.category_id ? "No subcategories available for this category." : "Select a category above to load subcategories."}
+                  </p>
+                </div>
               ) : (
-                visibleSubcategories.map((subcategory) => {
-                  const active = selectedSubcategoryIds.includes(subcategory.id);
-                  return (
-                    <button
-                      key={subcategory.id}
-                      type="button"
-                      onClick={() => toggleSubcategory(subcategory.id)}
-                      className={`rounded-full border px-3.5 py-1.5 text-xs font-bold transition-colors ${
-                        active
-                          ? "border-dash-brand bg-[#EDF5FF] text-dash-brand-hover"
-                          : "border-dash-border text-dash-muted hover:bg-dash-bg"
-                      }`}
-                    >
-                      {subcategory.label}
-                    </button>
-                  );
-                })
+                <div className="flex flex-wrap gap-2">
+                  {visibleSubcategories.map((subcategory) => {
+                    const active = selectedSubcategoryIds.includes(subcategory.id);
+                    return (
+                      <button
+                        key={subcategory.id}
+                        type="button"
+                        onClick={() => toggleSubcategory(subcategory.id)}
+                        className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-bold transition-all ${
+                          active
+                            ? "border-blue-500 bg-blue-50 text-blue-700 shadow-xs ring-1 ring-blue-500/20"
+                            : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50"
+                        }`}
+                      >
+                        {active && <Check size={12} className="text-blue-600 stroke-[2.5]" />}
+                        {subcategory.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+              {selectedSubcategoryIds.length > 0 && (
+                <p className="text-[11px] text-slate-500">
+                  {selectedSubcategoryIds.length} subcategor{selectedSubcategoryIds.length === 1 ? "y" : "ies"} selected.
+                </p>
               )}
             </div>
           </FormSection>
+          )}
           </>
           )}
 
