@@ -82,6 +82,8 @@ check("dashboard provides loading and filtered empty states", dashboard.includes
 
 const bookingDetail = read("src/app/supplier/bookings/[id]/page.tsx");
 const bookingService = readBackend("app/services/bookings.py");
+check("supplier assignment creates both an in-app notification and durable email delivery", bookingService.includes("def _notify_supplier_booking_assigned") && bookingService.includes('notification_type="supplier_booking_assigned"') && bookingService.includes('_notify_supplier_booking_assigned(db, booking, event="booking_created")') && bookingService.includes('_notify_supplier_booking_assigned(db, booking, event="supplier_assigned")'));
+check("supplier dashboard action count cannot be zero when a visible booking needs a decision", dashboard.includes("awaiting_action_count") && dashboard.includes("visibleAwaitingAction") && dashboard.includes("Math.max("));
 check("supplier can accept pending supplier requests without agent settlement details", bookingDetail.includes('v === "pending_supplier_acceptance"') && bookingDetail.includes("Accept Booking") && bookingDetail.includes("Decline") && !bookingDetail.includes("paymentReady"));
 check(
   "supplier booking detail masks agent reservation payment state before rendering actions",
@@ -196,6 +198,13 @@ check(
   sharedTourForm.includes('api.get("/tours/categories"') &&
     sharedTourForm.includes('api.get("/public/subcategories")') &&
     sharedTourForm.includes("if (isSupplier)"),
+);
+check(
+  "supplier tour form preserves a category selection during parent refreshes",
+  sharedTourForm.includes("hasLocalEditsRef") &&
+    sharedTourForm.includes("hydratedInitialDataKeyRef") &&
+    sharedTourForm.includes("hasLocalEditsRef.current = true") &&
+    sharedTourForm.includes("hydratedInitialDataKeyRef.current === snapshotKey"),
 );
 check(
   "supplier edit reuses its loaded tour record in the shared form",
@@ -330,9 +339,32 @@ check(
 check("supplier tour media accepts a clearly labelled itinerary and trip-notes PDF", tourForm.includes("Itinerary PDF (Trip Notes)"));
 const assetUpload = read("src/components/operations/AdminAssetUpload.tsx");
 check("public tour media is explicitly routed to the public-only Cloudinary tour folder", tourForm.includes('assetScope="tour"') && assetUpload.includes('form.append("scope", assetScope)'));
+const itineraryEditor = read("src/components/tours/TourItineraryTab.tsx");
+check(
+  "itinerary days provide carousel-image uploads that persist cleanly",
+  itineraryEditor.includes("Itinerary carousel images") &&
+    itineraryEditor.includes("Add carousel image") &&
+    itineraryEditor.includes('kind="image"') &&
+    itineraryEditor.includes("images: (editing.images ?? []).filter(Boolean)"),
+);
 check("supplier can open and copy the Cloudinary itinerary PDF link from the media editor", assetUpload.includes("Open PDF") && assetUpload.includes("Copy Cloudinary link") && assetUpload.includes("navigator.clipboard.writeText") && assetUpload.includes("href={value}"));
 const publicTourDetail = read("src/components/public/TourDetailExperience.tsx");
-check("supplier-entered language and tour pace remain visible on the public tour", publicTourDetail.includes("{(tour.tour_language || tour.overview?.tour_type) && (") && publicTourDetail.includes("{tour.overview?.tour_pace && ("));
+check(
+  "supplier-entered language and tour pace remain visible once in Tour Style",
+  publicTourDetail.includes("const tourPace = tour.overview?.tour_pace?.trim() || \"\"") &&
+    publicTourDetail.includes("(guideStyle || tour.tour_language) && (") &&
+    publicTourDetail.includes('title="Tour pace" value={tourPace}') &&
+    !publicTourDetail.includes("fallbackPool"),
+);
+const tourStyleGuide = read("src/components/tours/TourStyleGuideSection.tsx");
+const tourOverviewEditor = read("src/components/tours/TourOverviewTab.tsx");
+check(
+  "tour pace and physical rating are edited only in tour style and guide style",
+  tourStyleGuide.includes("Tour pace") &&
+    tourStyleGuide.includes("Physical rating") &&
+    !tourOverviewEditor.includes('update("physical_rating"') &&
+    !tourOverviewEditor.includes('{field("tour_pace"'),
+);
 check(
   "basic tour details displays legacy prices in the supplier operating currency",
   tourForm.includes("isSupplier ? convert(n, onePaxSlab.currency) : n") &&

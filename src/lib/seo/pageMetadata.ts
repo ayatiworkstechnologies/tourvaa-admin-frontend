@@ -30,7 +30,7 @@ export const PAGE_METADATA: Record<string, PageDefinition> = {
   "/cookie-policy": { title: "Cookie Policy", description: "Learn how Tourvaa uses cookies and similar technologies to operate, secure, and improve the website." },
   "/destinations": { title: "Travel Destinations", description: "Browse inspiring destinations and find curated Tourvaa experiences for city breaks, holidays, and memorable adventures." },
   "/destinations/[slug]": { title: "Destination Tours", description: "Discover available tours, travel highlights, and useful information for your selected destination." },
-  "/help": { title: "Help", description: "Find Tourvaa booking, account, payment, and travel support." },
+  "/help": { title: "Help", description: "Find Tourvaa booking, account, payment, and travel support.", index: false },
   "/help-centre": { title: "Help Centre", description: "Find answers and guidance for Tourvaa bookings, payments, accounts, suppliers, agents, and travel support." },
   "/login": { title: "Sign In", description: "Sign in to your Tourvaa customer, supplier, agent, affiliate, or administration account.", index: false },
   "/supplier-portal": { title: "Become a Supplier", description: "Partner with Tourvaa to list your tours, manage bookings, and get paid - see what's included and what's required to join." },

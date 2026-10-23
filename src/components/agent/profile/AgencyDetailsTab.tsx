@@ -35,6 +35,7 @@ type AgencyForm = {
   website_url: string;
   business_registration_number: string;
   years_in_operation: string;
+  monthly_customers_count: string;
   iata_registration_number: string;
   gst_tax_number: string;
   target_market: string;
@@ -65,7 +66,7 @@ const AGENT_TYPES = [
   "travel_agency", "online_travel_agency", "affiliate", "dmc", "other",
 ];
 
-export default function AgencyDetailsTab() {
+export default function AgencyDetailsTab({ onSaved }: { onSaved?: () => void }) {
   const toast = useToast();
   const { refreshSession, logout } = useAuthContext();
 
@@ -78,6 +79,7 @@ export default function AgencyDetailsTab() {
     agent_type: "",
     trading_name: "", business_email: "", website_url: "", business_registration_number: "",
     years_in_operation: "",
+    monthly_customers_count: "",
     iata_registration_number: "",
     gst_tax_number: "",
     target_market: "",
@@ -142,6 +144,7 @@ export default function AgencyDetailsTab() {
           agent_type: String(a.agent_type || ""),
           trading_name: String(bi.trading_name || ""), business_email: String(bi.business_email || ""), website_url: String(bi.website_url || ""), business_registration_number: String(bi.business_registration_number || ""),
           years_in_operation: String(a.years_in_operation || ""),
+          monthly_customers_count: String(bi.monthly_customers_count || ""),
           iata_registration_number: String(bi.iata_registration_number || ""),
           gst_tax_number: String(bi.gst_tax_number || ""),
           target_market: String(bi.target_market || ""),
@@ -186,7 +189,9 @@ export default function AgencyDetailsTab() {
           country_id: parseInt(form.country_id) || null,
           city_id: parseInt(form.city_id) || null,
           business_info: {
-            trading_name: form.trading_name, business_email: form.business_email, website_url: form.website_url, business_registration_number: form.business_registration_number,
+            years_in_business: parseInt(form.years_in_operation) || 0,
+            monthly_customers_count: parseInt(form.monthly_customers_count) || 0,
+            trading_name: form.trading_name, business_email: form.business_email.trim() || null, website_url: form.website_url, business_registration_number: form.business_registration_number,
             iata_registration_number: form.iata_registration_number,
             gst_tax_number: form.gst_tax_number,
             target_market: form.target_market,
@@ -203,6 +208,7 @@ export default function AgencyDetailsTab() {
       ]);
       await refreshSession();
       toast.success("Agency details updated successfully.");
+      onSaved?.();
     } catch (err) {
       toast.error(apiErr(err, "Could not save agency details."));
     } finally {
@@ -379,6 +385,13 @@ export default function AgencyDetailsTab() {
               <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Destinations Sold</span>
               <input value={form.destinations_sold} onChange={e => set("destinations_sold", e.target.value)}
                 placeholder="e.g. UAE, India, Europe"
+                className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-dash-brand focus:ring-2 focus:ring-blue-100" />
+            </label>
+
+            <label className="block">
+              <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Monthly Customers</span>
+              <input type="number" min="0" value={form.monthly_customers_count} onChange={e => set("monthly_customers_count", e.target.value)}
+                placeholder="e.g. 120"
                 className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-dash-brand focus:ring-2 focus:ring-blue-100" />
             </label>
 

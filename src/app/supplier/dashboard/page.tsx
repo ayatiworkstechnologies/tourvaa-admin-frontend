@@ -238,6 +238,7 @@ function ApprovedSupplierDashboard() {
   const [summary, setSummary] = useState<Summary>({});
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [statusCounts, setStatusCounts] = useState<Record<string, number>>({});
+  const [awaitingActionCount, setAwaitingActionCount] = useState(0);
   const [ledgers, setLedgers] = useState<LedgerEntry[]>([]);
   const [payouts, setPayouts] = useState<Payout[]>([]);
   const [tourCounts, setTourCounts] = useState({ total: 0, published: 0 });
@@ -279,8 +280,11 @@ function ApprovedSupplierDashboard() {
     }
     if (summaryResult.status === "fulfilled") setSummary(summaryResult.value.data?.data ?? {});
     if (bookingResult.status === "fulfilled") {
-      setBookings(bookingResult.value.data?.items ?? bookingResult.value.data?.data ?? []);
+      const bookingData = bookingResult.value.data ?? {};
+      const loadedBookings = bookingData.items ?? bookingData.data ?? [];
+      setBookings(loadedBookings);
       setStatusCounts(bookingResult.value.data?.status_counts ?? {});
+      setAwaitingActionCount(Number(bookingData.awaiting_action_count ?? 0));
     }
     if (ledgerResult.status === "fulfilled") setLedgers(ledgerResult.value.data?.items ?? ledgerResult.value.data?.data ?? []);
     if (payoutResult.status === "fulfilled") setPayouts(payoutResult.value.data?.items ?? payoutResult.value.data?.data ?? []);
@@ -337,7 +341,14 @@ function ApprovedSupplierDashboard() {
     };
   }, [ledgers, payouts]);
 
-  const awaitingAction = (statusCounts.payment_authorized ?? 0) + (statusCounts.pending_supplier_acceptance ?? 0);
+  const visibleAwaitingAction = bookings.filter((booking) =>
+    ["payment_authorized", "pending_supplier_acceptance"].includes(booking.booking_status || ""),
+  ).length;
+  const awaitingAction = Math.max(
+    awaitingActionCount,
+    (statusCounts.payment_authorized ?? 0) + (statusCounts.pending_supplier_acceptance ?? 0),
+    visibleAwaitingAction,
+  );
   const activeTrips = (statusCounts.confirmed ?? 0) + (statusCounts.upcoming ?? 0) + (statusCounts.ongoing ?? 0);
   const firstName = user?.name?.trim().split(/\s+/)[0] || "Partner";
   const approvalStatus = summary.profile_approval_status || "pending";

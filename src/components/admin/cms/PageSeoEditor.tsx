@@ -38,12 +38,14 @@ export default function PageSeoEditor() {
   const [filter, setFilter] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [version, setVersion] = useState(0);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
       const res = await api.get(`/cms/content-blocks/${PAGE_SEO_BLOCK_KEY}`);
       const data = (res.data?.data?.data ?? {}) as PageSeoMap;
+      setVersion(Number(res.data?.data?.version ?? 0));
       setSaved(data);
       setDraft(data);
     } catch {
@@ -103,7 +105,8 @@ export default function PageSeoEditor() {
     }
     setSaving(true);
     try {
-      await api.put(`/cms/content-blocks/${PAGE_SEO_BLOCK_KEY}`, { data });
+      const res = await api.put(`/cms/content-blocks/${PAGE_SEO_BLOCK_KEY}`, { data, expected_version: version });
+      setVersion(Number(res.data?.data?.version ?? version + 1));
       setSaved(data);
       setDraft(data);
       toast.success("SEO settings saved. Changes are live on the next page load.");

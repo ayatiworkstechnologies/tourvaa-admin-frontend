@@ -12,15 +12,28 @@ const staticPages: Array<{
   { path: "", changeFrequency: "weekly", priority: 1 },
   { path: "/tours", changeFrequency: "weekly", priority: 0.9 },
   { path: "/destinations", changeFrequency: "weekly", priority: 0.8 },
+  { path: "/deals", changeFrequency: "weekly", priority: 0.8 },
   { path: "/blogs", changeFrequency: "weekly", priority: 0.8 },
   { path: "/about", changeFrequency: "monthly", priority: 0.7 },
   { path: "/travel-advice", changeFrequency: "monthly", priority: 0.7 },
+  { path: "/help-centre", changeFrequency: "monthly", priority: 0.7 },
   { path: "/contact", changeFrequency: "monthly", priority: 0.7 },
 
+  { path: "/supplier-portal", changeFrequency: "monthly", priority: 0.6 },
+  { path: "/agent-portal", changeFrequency: "monthly", priority: 0.6 },
+  { path: "/affiliate-portal", changeFrequency: "monthly", priority: 0.6 },
+  { path: "/supplier-contact", changeFrequency: "monthly", priority: 0.5 },
+  { path: "/agent-contact", changeFrequency: "monthly", priority: 0.5 },
+
+  { path: "/privacy-policy", changeFrequency: "yearly", priority: 0.3 },
   { path: "/cancellation-policy", changeFrequency: "yearly", priority: 0.3 },
   { path: "/cookie-policy", changeFrequency: "yearly", priority: 0.3 },
   { path: "/terms", changeFrequency: "yearly", priority: 0.3 },
   { path: "/accessibility", changeFrequency: "yearly", priority: 0.3 },
+  { path: "/supplier-terms", changeFrequency: "yearly", priority: 0.3 },
+  { path: "/supplier-privacy", changeFrequency: "yearly", priority: 0.3 },
+  { path: "/partner-terms", changeFrequency: "yearly", priority: 0.3 },
+  { path: "/partner-privacy", changeFrequency: "yearly", priority: 0.3 },
 ];
 
 async function safeJson(path: string): Promise<Record<string, unknown> | null> {

@@ -5,9 +5,11 @@ import {
   LuFileText as FileText,
   LuGlobe as Globe,
   LuHouse as House,
+  LuLayoutDashboard as LayoutDashboard,
   LuLayoutPanelTop as LayoutPanelTop,
   LuMapPinned as MapPinned,
   LuSearchCheck as SearchCheck,
+  LuUsers as Users,
 } from "react-icons/lu";
 import Sidebar, { SidebarNavItem } from "@/components/layout/Sidebar";
 import { ALL_TABS, CMS_DASHBOARD_GROUPS } from "@/app/admin/cms/cmsShared";
@@ -25,6 +27,7 @@ const GROUP_ICONS: Record<string, React.ElementType> = {
   home: House,
   destinations: MapPinned,
   content: FileText,
+  portals: Users,
   site: LayoutPanelTop,
   seo: SearchCheck,
 };
@@ -37,6 +40,7 @@ const GROUP_ICONS: Record<string, React.ElementType> = {
 export default function CmsSidebar(props: CmsSidebarProps) {
   const navItems: SidebarNavItem[] = [
     { label: "Back to Admin", href: "/admin/dashboard", icon: ArrowLeft, module: "cms-back" },
+    { label: "Overview Dashboard", href: "/admin/cms", icon: LayoutDashboard, module: "cms-overview" },
     ...CMS_DASHBOARD_GROUPS.flatMap((group) => {
       const icon = GROUP_ICONS[group.key] ?? Globe;
       return [

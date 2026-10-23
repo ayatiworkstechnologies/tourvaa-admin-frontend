@@ -316,6 +316,7 @@ export default function PageEditor({
                     <button
                       type="button"
                       title="Desktop preview (1440px)"
+                      aria-label="Desktop preview (1440px)"
                       onClick={() => setDevice("desktop")}
                       className={`rounded p-1 text-xs transition ${
                         device === "desktop" ? "bg-slate-900 text-white" : "text-slate-600 hover:bg-slate-100"
@@ -326,6 +327,7 @@ export default function PageEditor({
                     <button
                       type="button"
                       title="Tablet preview (768px)"
+                      aria-label="Tablet preview (768px)"
                       onClick={() => setDevice("tablet")}
                       className={`rounded p-1 text-xs transition ${
                         device === "tablet" ? "bg-slate-900 text-white" : "text-slate-600 hover:bg-slate-100"
@@ -336,6 +338,7 @@ export default function PageEditor({
                     <button
                       type="button"
                       title="Mobile preview (390px)"
+                      aria-label="Mobile preview (390px)"
                       onClick={() => setDevice("mobile")}
                       className={`rounded p-1 text-xs transition ${
                         device === "mobile" ? "bg-slate-900 text-white" : "text-slate-600 hover:bg-slate-100"

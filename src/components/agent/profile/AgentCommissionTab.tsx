@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { LuCalculator as Calculator, LuPercent as Percent, LuSend as Send } from "react-icons/lu";
 import api from "@/lib/api/client";
 import Loader from "@/components/ui/Loader";
+import { useCurrency } from "@/hooks/useCurrency";
 
 type AgentProfile = {
   discount_type?: "percentage" | "fixed" | null;
@@ -14,11 +15,12 @@ type AgentProfile = {
 };
 
 export default function AgentCommissionTab() {
+  const { formatExact } = useCurrency();
   const [profile, setProfile] = useState<AgentProfile | null>(null);
   const [commissionType, setCommissionType] = useState<"percentage" | "fixed">("percentage");
   const [commissionValue, setCommissionValue] = useState("");
   const [calcAmount, setCalcAmount] = useState("");
-  const [calcResult, setCalcResult] = useState<{ gross_amount: string; commission_amount: string } | null>(null);
+  const [calcResult, setCalcResult] = useState<{ gross_amount: string; commission_amount: string; currency?: string } | null>(null);
   const [calcLoading, setCalcLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState("");
@@ -106,7 +108,7 @@ export default function AgentCommissionTab() {
           </p>
 
           {profile?.commission_request_status && (
-            <div className="mt-4 inline-flex items-center gap-2 rounded-xl border border-dash-border bg-white px-3 py-1.5 text-xs font-bold">
+            <div className="mt-4 flex w-fit items-center gap-2 rounded-xl border border-dash-border bg-white px-3 py-1.5 text-xs font-bold">
               <span className="text-dash-muted">Status:</span>
               <span
                 className={`capitalize ${
@@ -131,7 +133,7 @@ export default function AgentCommissionTab() {
           </p>
 
           <div className="mt-4 space-y-3">
-            <div className="grid grid-cols-[140px_1fr] gap-2">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-[140px_1fr]">
               <select
                 value={commissionType}
                 onChange={(e) => setCommissionType(e.target.value as "percentage" | "fixed")}
@@ -202,7 +204,11 @@ export default function AgentCommissionTab() {
 
         {calcResult && (
           <div className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
-            You will earn <strong className="font-black text-emerald-700">{calcResult.commission_amount}</strong> on a {calcResult.gross_amount} booking.
+            You will earn{" "}
+            <strong className="font-black text-emerald-700">
+              {formatExact(calcResult.commission_amount, calcResult.currency || "USD")}
+            </strong>{" "}
+            on a {formatExact(calcResult.gross_amount, calcResult.currency || "USD")} booking.
           </div>
         )}
       </div>

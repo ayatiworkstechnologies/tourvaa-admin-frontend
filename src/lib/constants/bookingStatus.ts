@@ -3,9 +3,8 @@ const CONFIRMED_STATUSES = new Set(["confirmed", "ready_to_travel", "upcoming", 
 // Keep this map aligned with BOOKING_STATUS_TRANSITIONS in the backend. UI
 // actions must be derived from valid transitions, not from a partial deny-list.
 export const BOOKING_STATUS_TRANSITIONS: Readonly<Record<string, readonly string[]>> = {
-  draft: ["pending_payment", "pending_credit_approval", "pending_supplier_assignment", "cancelled"],
-  pending_payment: ["pending_credit_approval", "payment_authorized", "pending_supplier_assignment", "pending_supplier_acceptance", "cancellation_requested", "cancelled", "declined"],
-  pending_credit_approval: ["pending_payment", "payment_authorized", "pending_supplier_assignment", "cancellation_requested", "cancelled", "declined"],
+  draft: ["pending_payment", "pending_supplier_assignment", "cancelled"],
+  pending_payment: ["payment_authorized", "pending_supplier_assignment", "pending_supplier_acceptance", "cancellation_requested", "cancelled", "declined"],
   pending_supplier_assignment: ["pending_payment", "payment_authorized", "pending_supplier_acceptance", "supplier_reassignment_required", "cancellation_requested", "cancelled", "declined"],
   payment_authorized: ["pending_supplier_assignment", "pending_supplier_acceptance", "cancellation_requested", "cancelled", "declined"],
   pending_supplier_acceptance: ["pending_supplier_assignment", "supplier_accepted", "supplier_reassignment_required", "postponed", "cancellation_requested", "cancelled", "declined"],
@@ -46,8 +45,6 @@ export function bookingStatusLabel(status?: string | null, portal: BookingPortal
 
   if (value === "draft") return portal === "admin" ? "Draft" : "Payment Required";
   if (value === "pending_payment") return bookingParty ? "Payment Required" : "Awaiting Payment";
-  if (value === "pending_credit_approval" || value === "credit_approval_pending") return bookingParty ? "Credit Approval in Progress" : "Credit Approval Pending";
-  if (value === "bank_transfer_pending") return bookingParty ? "Bank Transfer Pending" : "Awaiting Bank Transfer";
   if (value === "pending_supplier_assignment") return bookingParty ? BOOKING_AWAITING_CONFIRMATION_LABEL : "Awaiting Supplier Assignment";
   if (value === "payment_authorized") return bookingParty ? BOOKING_AWAITING_CONFIRMATION_LABEL : "Payment Authorized";
   if (value === "pending_supplier_acceptance") {
@@ -56,7 +53,7 @@ export function bookingStatusLabel(status?: string | null, portal: BookingPortal
   }
   if (value === "supplier_accepted") {
     if (portal === "supplier") return "Acceptance Recorded";
-    return bookingParty ? BOOKING_AWAITING_CONFIRMATION_LABEL : "Supplier Accepted";
+    return bookingParty ? "Booking Accepted — Awaiting Tourvaa Confirmation" : "Supplier Accepted";
   }
   if (value === "supplier_reassignment_required") return bookingParty ? "Supplier Reassignment in Progress" : "Supplier Reassignment Required";
   if (CONFIRMED_STATUSES.has(value)) return bookingParty ? "Booking Confirmed" : value === "postponed" ? "Travel Date Updated" : "Booking Confirmed";

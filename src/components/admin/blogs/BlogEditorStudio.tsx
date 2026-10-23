@@ -101,6 +101,35 @@ export default function BlogEditorStudio({
   const [tourSearch, setTourSearch] = useState("");
   const [tourResults, setTourResults] = useState<{ id: number; title: string }[]>([]);
   const [tourSearching, setTourSearching] = useState(false);
+  const [tourTitleMap, setTourTitleMap] = useState<Record<number, string>>(() => {
+    const map: Record<number, string> = {};
+    if (Array.isArray(initialBlog?.related_tours)) {
+      initialBlog.related_tours.forEach((t: { id: number; title: string }) => {
+        if (t?.id && t?.title) map[t.id] = t.title;
+      });
+    }
+    return map;
+  });
+
+  useEffect(() => {
+    const missingIds = form.related_tour_ids.filter((id) => !tourTitleMap[id]);
+    if (!missingIds.length) return;
+    api
+      .get("/tours", { params: { ids: missingIds.join(","), limit: 50 } })
+      .then((res) => {
+        const items = res.data?.items ?? res.data?.data ?? [];
+        if (Array.isArray(items)) {
+          setTourTitleMap((prev) => {
+            const next = { ...prev };
+            items.forEach((t: { id: number; title: string }) => {
+              if (t?.id && t?.title) next[t.id] = t.title;
+            });
+            return next;
+          });
+        }
+      })
+      .catch(() => {});
+  }, [form.related_tour_ids, tourTitleMap]);
 
   // Track unsaved changes
   const updateForm = useCallback((updater: (prev: BlogFormData) => BlogFormData) => {
@@ -188,6 +217,7 @@ export default function BlogEditorStudio({
 
   const addRelatedTour = (tour: { id: number; title: string }) => {
     if (form.related_tour_ids.includes(tour.id)) return;
+    setTourTitleMap((prev) => ({ ...prev, [tour.id]: tour.title }));
     updateForm((prev) => ({ ...prev, related_tour_ids: [...prev.related_tour_ids, tour.id] }));
     setTourSearch("");
     setTourResults([]);
@@ -280,8 +310,8 @@ export default function BlogEditorStudio({
       )}
 
       {/* ── Studio Top Action Bar ── */}
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200/90 bg-white px-5 py-3.5 shadow-xs">
-        <div className="flex items-center gap-3">
+      <div className="flex min-w-0 items-center gap-3 rounded-2xl border border-slate-200/90 bg-white px-5 py-3.5 shadow-xs">
+        <div className="flex items-center gap-3 min-w-0 flex-1">
           <Link
             href="/admin/blogs"
             className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition shadow-2xs"
@@ -313,12 +343,11 @@ export default function BlogEditorStudio({
             </div>
             <p className="text-[11px] text-slate-400">
               {form.slug ? `/blogs/${form.slug}` : "Slug not set"} · {readTime} min read
-              {hasUnsavedChanges && <span className="ml-2 text-amber-500 font-bold">• Unsaved</span>}
             </p>
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="ml-auto flex flex-wrap items-center gap-2">
           <button
             type="button"
             onClick={() => setShowPublicPreview(true)}
@@ -561,10 +590,11 @@ export default function BlogEditorStudio({
                     </div>
                     <button
                       type="button"
+                      aria-label="Remove FAQ item"
                       onClick={() => handleRemoveFaq(idx)}
-                      className="rounded-lg p-1.5 text-slate-400 hover:bg-rose-50 hover:text-rose-600 transition shrink-0"
+                      className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-rose-50 hover:text-rose-600 transition shrink-0"
                     >
-                      <Trash2 size={14} />
+                      <Trash2 size={15} />
                     </button>
                   </div>
                 ))}
@@ -612,20 +642,20 @@ export default function BlogEditorStudio({
         {/* ── Right: Sidebar ── */}
         <div className="lg:col-span-4 space-y-4">
           {/* Sidebar Tab Navigation */}
-          <div className="flex flex-wrap gap-1 rounded-2xl border border-slate-200/90 bg-white p-2 shadow-xs">
+          <div className="no-scrollbar flex gap-1 overflow-x-auto rounded-2xl border border-slate-200/90 bg-white p-2 shadow-xs">
             {SIDE_PANELS.map((panel) => (
               <button
                 key={panel.id}
                 type="button"
                 onClick={() => setActiveSidePanel(panel.id)}
-                className={`inline-flex flex-1 min-w-[60px] items-center justify-center gap-1 rounded-xl px-2 py-2 text-[11px] font-bold transition ${
+                className={`inline-flex shrink-0 items-center justify-center gap-1 rounded-xl px-3 py-2 text-[11px] font-bold transition ${
                   activeSidePanel === panel.id
                     ? "bg-slate-900 text-white shadow-xs"
                     : "text-slate-500 hover:bg-slate-100 hover:text-slate-900"
                 }`}
               >
                 {panel.icon}
-                <span className="hidden sm:inline">{panel.label}</span>
+                <span>{panel.label}</span>
               </button>
             ))}
           </div>
@@ -901,7 +931,13 @@ export default function BlogEditorStudio({
               <div>
                 <div className="flex items-center justify-between mb-1.5">
                   <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500">SEO Meta Title</label>
-                  <span className={`text-[11px] font-mono ${form.seo_title.length > 60 ? "text-amber-600 font-bold" : "text-slate-400"}`}>
+                  <span className={`text-[11px] font-mono ${
+                    form.seo_title.length > 60
+                      ? "text-red-600 font-bold"
+                      : form.seo_title.length >= 55
+                      ? "text-amber-600 font-bold"
+                      : "text-slate-400"
+                  }`}>
                     {form.seo_title.length}/60
                   </span>
                 </div>
@@ -1046,7 +1082,7 @@ export default function BlogEditorStudio({
                     <div key={tid} className="flex items-center justify-between gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
                       <div className="flex items-center gap-2 text-xs font-medium text-slate-700">
                         <Map size={13} className="text-slate-400 shrink-0" />
-                        <span>Tour #{tid}</span>
+                        <span className="truncate">{tourTitleMap[tid] || `Tour #${tid}`}</span>
                       </div>
                       <button
                         type="button"
@@ -1108,7 +1144,7 @@ export default function BlogEditorStudio({
       {/* ── Public Page Live Layout Preview Modal ── */}
       {showPublicPreview && (
         <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/70 p-4 sm:p-8 backdrop-blur-xs flex items-center justify-center">
-          <div className="w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-3xl bg-white shadow-2xl relative">
+          <div className="w-full max-w-4xl max-h-[90dvh] overflow-y-auto rounded-3xl bg-white shadow-2xl relative">
             <div className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-100 bg-white/95 px-6 py-4 backdrop-blur-md">
               <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Full Page Preview</span>
               <button

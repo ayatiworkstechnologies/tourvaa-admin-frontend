@@ -23,7 +23,7 @@ const DEFAULTS: Record<CmsPageBlock["type"], CmsPageBlock> = {
   cta: { type: "cta", heading: "", subtitle: "", button_text: "", button_link: "" },
 };
 
-const inputClass = "w-full rounded-xl border border-dash-border bg-white px-3 py-2 text-sm outline-none focus:border-[#0284C7]";
+const inputClass = "w-full rounded-xl border border-dash-border bg-white px-3.5 py-2.5 text-sm outline-none focus:border-[#0284C7]";
 const labelClass = "mb-1 block text-[11px] font-bold uppercase text-dash-muted";
 
 // The admin-side builder for a CMS Page's `sections` (see CmsPageSections.tsx
@@ -73,14 +73,14 @@ export default function PageSectionsBuilder({ value, onChange }: { value: CmsPag
               {index + 1}. {BLOCK_LABELS[block.type]}
             </span>
             <div className="flex items-center gap-1">
-              <button type="button" title="Move up" disabled={index === 0} onClick={() => moveBlock(index, -1)} className="rounded-lg p-1.5 text-dash-muted hover:bg-dash-bg disabled:opacity-30">
-                <ChevronUp size={15} />
+              <button type="button" title="Move up" aria-label="Move section up" disabled={index === 0} onClick={() => moveBlock(index, -1)} className="flex h-9 w-9 items-center justify-center rounded-lg text-dash-muted hover:bg-dash-bg disabled:opacity-30">
+                <ChevronUp size={16} />
               </button>
-              <button type="button" title="Move down" disabled={index === value.length - 1} onClick={() => moveBlock(index, 1)} className="rounded-lg p-1.5 text-dash-muted hover:bg-dash-bg disabled:opacity-30">
-                <ChevronDown size={15} />
+              <button type="button" title="Move down" aria-label="Move section down" disabled={index === value.length - 1} onClick={() => moveBlock(index, 1)} className="flex h-9 w-9 items-center justify-center rounded-lg text-dash-muted hover:bg-dash-bg disabled:opacity-30">
+                <ChevronDown size={16} />
               </button>
-              <button type="button" title="Remove section" onClick={() => removeBlock(index)} className="rounded-lg p-1.5 text-red-600 hover:bg-red-50">
-                <Trash2 size={15} />
+              <button type="button" title="Remove section" aria-label="Remove section" onClick={() => removeBlock(index)} className="flex h-9 w-9 items-center justify-center rounded-lg text-red-600 hover:bg-red-50">
+                <Trash2 size={16} />
               </button>
             </div>
           </div>

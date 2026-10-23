@@ -32,7 +32,7 @@ type Booking = {
 const AGENT_BOOKING_FILTERS = [
   { value: "", label: "All Booking Statuses" },
   { value: "pending_payment", label: "Pending Payment" },
-  { value: "pending_credit_approval,credit_approval_pending,pending_supplier_assignment,payment_authorized,pending_supplier_acceptance,supplier_accepted,supplier_reassignment_required", label: "Booking Request Received" },
+  { value: "pending_supplier_assignment,payment_authorized,pending_supplier_acceptance,supplier_accepted,supplier_reassignment_required", label: "Booking Request Received" },
   { value: "confirmed", label: "Booking Confirmed" },
   { value: "ongoing", label: "Ongoing" },
   { value: "completed", label: "Completed" },
@@ -42,10 +42,14 @@ const AGENT_BOOKING_FILTERS = [
 
 const AGENT_PAYMENT_FILTERS = [
   { value: "", label: "All Payment Statuses" },
+  { value: "unpaid", label: "Payment Required" },
   { value: "pending", label: "Pending Payment" },
-  { value: "partial", label: "Deposit Paid" },
+  { value: "authorized", label: "Payment Authorized" },
+  { value: "partially_paid", label: "Deposit Paid" },
   { value: "paid", label: "Fully Paid" },
   { value: "failed", label: "Payment Failed" },
+  { value: "refund_pending", label: "Refund Pending" },
+  { value: "partially_refunded", label: "Partially Refunded" },
   { value: "refunded", label: "Refunded" },
   { value: "voided", label: "Voided" },
 ];
@@ -53,7 +57,8 @@ const AGENT_PAYMENT_FILTERS = [
 function agentBookingStatusLabel(status?: string) {
   const value = (status || "").toLowerCase();
   if (value === "pending_payment") return "Pending Payment";
-  if (["pending_credit_approval", "credit_approval_pending", "pending_supplier_assignment", "payment_authorized", "pending_supplier_acceptance", "supplier_accepted", "supplier_reassignment_required"].includes(value)) return "Booking Request Received";
+  if (value === "supplier_accepted") return "Booking Accepted — Awaiting Tourvaa Confirmation";
+  if (["pending_supplier_assignment", "payment_authorized", "pending_supplier_acceptance", "supplier_reassignment_required"].includes(value)) return "Booking Request Received";
   if (["confirmed", "ready_to_travel", "upcoming", "postponed"].includes(value)) return "Booking Confirmed";
   if (value === "ongoing") return "Ongoing";
   if (value === "completed") return "Completed";
@@ -64,7 +69,8 @@ function agentBookingStatusLabel(status?: string) {
 
 function agentPaymentStatusLabel(status?: string) {
   const value = (status || "").toLowerCase();
-  if (value === "partial") return "Deposit Paid";
+  if (["partial", "partially_paid"].includes(value)) return "Deposit Paid";
+  if (value === "authorized") return "Payment Authorized";
   if (value === "paid") return "Fully Paid";
   return value ? value.replaceAll("_", " ") : "-";
 }
@@ -86,7 +92,7 @@ function dateText(value?: string | null) {
 function statusClass(status?: string) {
   const v = (status || "").toLowerCase();
   if (["paid", "completed", "confirmed", "active"].includes(v)) return "bg-emerald-50 text-emerald-700";
-  if (["pending", "partial", "partially_paid", "pending_payment", "pending_credit_approval", "pending_supplier_assignment", "payment_authorized", "pending_supplier_acceptance", "supplier_reassignment_required", "cancellation_requested", "bank_transfer_pending", "credit_approval_pending"].includes(v)) return "bg-amber-50 text-amber-700";
+  if (["unpaid", "pending", "partial", "partially_paid", "authorized", "pending_payment", "pending_supplier_assignment", "payment_authorized", "pending_supplier_acceptance", "supplier_reassignment_required", "cancellation_requested", "refund_pending"].includes(v)) return "bg-amber-50 text-amber-700";
   if (["cancelled", "declined", "failed"].includes(v)) return "bg-rose-50 text-rose-700";
   return "bg-slate-50 text-slate-700";
 }
@@ -157,7 +163,7 @@ export default function AgentBookingsPage() {
     { label: "Total Bookings", value: Object.values(statusCounts).reduce((sum, count) => sum + count, 0), icon: CalendarCheck, tone: "bg-blue-50 text-blue-700" },
     { label: "Confirmed", value: (statusCounts.confirmed ?? 0) + (statusCounts.upcoming ?? 0) + (statusCounts.ongoing ?? 0), icon: CheckCircle2, tone: "bg-emerald-50 text-emerald-700" },
     { label: "Ready to Travel", value: statusCounts.ready_to_travel ?? 0, icon: Plane, tone: "bg-sky-50 text-sky-700" },
-    { label: "Booking Requests", value: (statusCounts.pending_payment ?? 0) + (statusCounts.pending_credit_approval ?? 0) + (statusCounts.credit_approval_pending ?? 0) + (statusCounts.pending_supplier_assignment ?? 0) + (statusCounts.payment_authorized ?? 0) + (statusCounts.pending_supplier_acceptance ?? 0) + (statusCounts.supplier_accepted ?? 0) + (statusCounts.supplier_reassignment_required ?? 0), icon: Clock3, tone: "bg-amber-50 text-amber-700" },
+    { label: "Booking Requests", value: (statusCounts.pending_payment ?? 0) + (statusCounts.pending_supplier_assignment ?? 0) + (statusCounts.payment_authorized ?? 0) + (statusCounts.pending_supplier_acceptance ?? 0) + (statusCounts.supplier_accepted ?? 0) + (statusCounts.supplier_reassignment_required ?? 0), icon: Clock3, tone: "bg-amber-50 text-amber-700" },
     { label: "Cancelled", value: (statusCounts.cancelled ?? 0) + (statusCounts.declined ?? 0) + (statusCounts.refunded ?? 0), icon: XCircle, tone: "bg-rose-50 text-rose-700" },
   ];
 

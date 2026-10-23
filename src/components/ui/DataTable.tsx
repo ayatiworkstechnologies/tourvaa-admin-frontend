@@ -59,6 +59,7 @@ export default function DataTable<T extends { id?: number | string }>({
   minWidthClass,
 }: Props<T>) {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const tableRef = useRef<HTMLTableElement>(null);
   const [horizontalOverflow, setHorizontalOverflow] = useState(false);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
@@ -77,6 +78,11 @@ export default function DataTable<T extends { id?: number | string }>({
     if (!container) return;
     const resizeObserver = new ResizeObserver(updateHorizontalScrollState);
     resizeObserver.observe(container);
+    // Rows can become wider after the outer card has mounted, for example
+    // when asynchronously rendered statuses or action controls appear. Watch
+    // the table too, otherwise the native bottom scrollbar appears without
+    // the visible top navigation controls.
+    if (tableRef.current) resizeObserver.observe(tableRef.current);
     container.addEventListener("scroll", updateHorizontalScrollState, { passive: true });
     const animationFrame = window.requestAnimationFrame(updateHorizontalScrollState);
 
@@ -174,6 +180,7 @@ export default function DataTable<T extends { id?: number | string }>({
         )}
         <div ref={scrollRef} className="overflow-x-auto [-webkit-overflow-scrolling:touch]">
           <table
+            ref={tableRef}
             className={`w-full ${computedMinWidth} border-collapse text-left text-sm`}
             aria-label={ariaLabel}
           >

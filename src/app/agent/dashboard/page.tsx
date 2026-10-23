@@ -592,7 +592,6 @@ export default function AgentDashboardPage() {
                   <option value="">All Statuses</option>
                   <option value="confirmed">Confirmed</option>
                   <option value="pending_payment">Pending Payment</option>
-                  <option value="pending_credit_approval">Pending Credit Approval</option>
                   <option value="pending_supplier_acceptance">Pending Supplier</option>
                   <option value="supplier_reassignment_required">Supplier Reassignment</option>
                   <option value="completed">Completed</option>

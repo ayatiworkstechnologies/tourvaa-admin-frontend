@@ -411,7 +411,20 @@ function NotifyModal({
 }
 
 function StatusHistory({ history }: { history: StatusHistory[] }) {
-  if (history.length === 0) return null;
+  const visibleHistory = history.flatMap((entry) => {
+    // The supplier only needs the operational journey. Payment processing and
+    // internal assignment states must never appear as supplier status events.
+    if (!entry.old_status) return [{ ...entry, label: "Booking Created", displayStatus: "pending" }];
+    const labels: Record<string, { label: string; displayStatus: string }> = {
+      supplier_accepted: { label: "Booking Accepted", displayStatus: "supplier_accepted" },
+      declined: { label: "Booking Declined", displayStatus: "declined" },
+      ongoing: { label: "Ongoing", displayStatus: "ongoing" },
+      completed: { label: "Completed", displayStatus: "completed" },
+    };
+    const status = labels[(entry.new_status || "").toLowerCase()];
+    return status ? [{ ...entry, ...status }] : [];
+  });
+  if (visibleHistory.length === 0) return null;
   return (
     <div className="rounded-xl border border-dash-border bg-white p-5 shadow-sm">
       <div className="mb-4 flex items-center gap-2">
@@ -419,11 +432,11 @@ function StatusHistory({ history }: { history: StatusHistory[] }) {
         <h2 className="font-black text-dash-text">Status History</h2>
       </div>
       <ol className="relative ml-2 border-l-2 border-dash-border">
-        {history.map((h) => (
+        {visibleHistory.map((h) => (
           <li key={h.id} className="mb-5 ml-4 last:mb-0">
-            <span className={`absolute -left-[9px] mt-0.5 h-4 w-4 rounded-full border-2 border-white ${statusDot(h.new_status)}`} />
+            <span className={`absolute -left-[9px] mt-0.5 h-4 w-4 rounded-full border-2 border-white ${statusDot(h.displayStatus)}`} />
             <div className="flex flex-col gap-0.5">
-              <p className="text-sm font-bold text-dash-text capitalize">{h.new_status.replace(/_/g, " ")}</p>
+              <p className="text-sm font-bold text-dash-text">{h.label}</p>
               {h.reason && <p className="text-xs text-dash-muted">{h.reason}</p>}
               <p className="text-[11px] text-dash-subtle">
                 {h.change_source} - {dateStr(h.created_at)} {timeStr(h.created_at)}

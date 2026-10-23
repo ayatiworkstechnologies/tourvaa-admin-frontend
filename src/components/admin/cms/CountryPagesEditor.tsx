@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
+import { LuBookOpen as BookOpen, LuExternalLink as ExternalLink, LuMap as Map } from "react-icons/lu";
 import SearchableSelect from "@/components/ui/SearchableSelect";
 import {
   fetchCmsCountryOptions,
@@ -19,6 +21,7 @@ type PublishState = { tour: string; guide: string; index: string };
 export default function CountryPagesEditor() {
   const [countries, setCountries] = useState<CmsCountryOption[]>([]);
   const [country, setCountry] = useState("");
+  const [activeSection, setActiveSection] = useState("listing");
   const [previewVersion, setPreviewVersion] = useState(0);
   const [countriesLoading, setCountriesLoading] = useState(true);
   const [countriesError, setCountriesError] = useState("");
@@ -89,6 +92,11 @@ export default function CountryPagesEditor() {
     setCountry(next);
   };
 
+  const openSection = (section: "listing" | "guide") => {
+    setActiveSection(section);
+  };
+  const hasAuthoredGuide = publishState.guide === "Authored / public";
+
   const sections: PageEditorSection[] = [
     { key: "listing", label: "Country Tour Page (hero, showcase, SEO)", tabs: ["country-pages"], preview: "tours" },
     {
@@ -118,8 +126,61 @@ export default function CountryPagesEditor() {
       previewVersion={previewVersion}
       selectedCountryId={selectedCountryId}
       onCountryPageDirtyChange={setCountryPageDirty}
+      active={activeSection}
+      onActiveChange={setActiveSection}
+      headerAction={country ? (
+        <div className="flex flex-wrap items-center justify-end gap-1.5" aria-label={`${selectedCountry} page actions`}>
+          <button
+            type="button"
+            onClick={() => openSection("listing")}
+            className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-bold transition ${
+              activeSection === "listing"
+                ? "border-sky-700 bg-sky-700 text-white"
+                : "border-sky-200 bg-sky-50 text-sky-800 hover:border-sky-300 hover:bg-sky-100"
+            }`}
+          >
+            <BookOpen size={13} /> Edit tours page
+          </button>
+          <button
+            type="button"
+            onClick={() => openSection("guide")}
+            className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-bold transition ${
+              activeSection === "guide"
+                ? "border-violet-700 bg-violet-700 text-white"
+                : "border-violet-200 bg-violet-50 text-violet-800 hover:border-violet-300 hover:bg-violet-100"
+            }`}
+          >
+            <Map size={13} /> Edit destination guide
+          </button>
+          <Link
+            href={`/tours/${country}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-bold text-slate-700 transition hover:bg-slate-50"
+          >
+            Tours <ExternalLink size={12} />
+          </Link>
+          {hasAuthoredGuide ? (
+            <Link
+              href={`/destinations/${country}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-bold text-slate-700 transition hover:bg-slate-50"
+            >
+              Guide <ExternalLink size={12} />
+            </Link>
+          ) : (
+            <span
+              title="Save a destination guide before opening its public URL."
+              className="inline-flex cursor-not-allowed items-center gap-1 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs font-bold text-slate-400"
+            >
+              Guide unavailable
+            </span>
+          )}
+        </div>
+      ) : undefined}
       toolbarExtra={
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <SearchableSelect
             id="country-page-preview-picker"
             value={country}

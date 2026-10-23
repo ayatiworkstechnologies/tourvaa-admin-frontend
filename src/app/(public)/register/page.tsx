@@ -371,9 +371,9 @@ export default function RegisterPage() {
                 />
                 <span>
                   I agree to the{" "}
-                  <Link className="font-bold text-blue-600 hover:text-blue-700" href="/terms">Terms &amp; Conditions</Link>
+                  <Link className="font-bold text-blue-600 hover:text-blue-700" href="/terms" target="_blank" rel="noopener noreferrer">Terms &amp; Conditions</Link>
                   {" "}and{" "}
-                  <Link className="font-bold text-blue-600 hover:text-blue-700" href="/privacy-policy">Privacy Policy</Link>.
+                  <Link className="font-bold text-blue-600 hover:text-blue-700" href="/privacy-policy" target="_blank" rel="noopener noreferrer">Privacy Policy</Link>.
                 </span>
               </label>
               <FormFieldError id="registration-terms-error" message={errors.accepted_terms?.message} />

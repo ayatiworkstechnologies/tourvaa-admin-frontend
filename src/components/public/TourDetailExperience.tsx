@@ -891,29 +891,9 @@ export default function TourDetailExperience({
     tour.subtitle,
   ]);
 
-  // Ensure every tour has at least 5 photos for the unified 5-photo mosaic layout
-  const mosaicItems = useMemo(() => {
-    const items = [...galleryItems];
-    const fallbackPool = [
-      "/images/hero-1.jpg",
-      "/images/hero-2.jpg",
-      "/images/destination-desert.jpg",
-      "/images/destination-alpine.jpg",
-      "/images/hero-3.jpg",
-      "/images/about-mountain.png",
-    ];
-    let fallbackIndex = 0;
-    while (items.length < 5) {
-      const fallbackUrl = fallbackPool[fallbackIndex % fallbackPool.length];
-      items.push({
-        url: fallbackUrl,
-        title: `${title} photo ${items.length + 1}`,
-        caption: "",
-      });
-      fallbackIndex++;
-    }
-    return items;
-  }, [galleryItems, title]);
+  // Never fill a tour gallery with unrelated stock media. The supplier's
+  // uploaded images are the only images shown on the public tour page.
+  const mosaicItems = galleryItems;
 
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
@@ -1930,6 +1910,7 @@ export default function TourDetailExperience({
         </section>
 
         {/* ── 3. DYNAMIC PHOTO GALLERY (Unified 5-Photo Mosaic Layout for ALL Tours) ── */}
+        {mosaicItems.length > 0 && (
         <section className="mt-5">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-2.5 h-[340px] sm:h-[420px] md:h-[460px]">
             {/* Slot 1: Large Feature Photo (Spans 2 columns on desktop) */}
@@ -1984,7 +1965,7 @@ export default function TourDetailExperience({
                       >
                         <Camera size={18} />
                         <span>
-                          View All {Math.max(galleryItems.length, 5)} Photos
+                          View All {galleryItems.length} Photos
                         </span>
                       </button>
                     )}
@@ -2002,10 +1983,11 @@ export default function TourDetailExperience({
               className="inline-flex items-center gap-1.5 rounded-full border border-slate-300 bg-white px-4 py-2 text-xs font-bold text-slate-800 shadow-sm cursor-pointer"
             >
               <Camera size={14} />
-              <span>View All {Math.max(galleryItems.length, 5)} Photos</span>
+              <span>View All {galleryItems.length} Photos</span>
             </button>
           </div>
         </section>
+        )}
 
         {/* ── 4. DYNAMIC PRICE HIGHLIGHT BANNER ── */}
         <section className="mt-6 rounded-2xl bg-gradient-to-r from-[#0B1F3A] via-[#102A4E] to-[#1E3A8A] p-5 sm:p-6 text-white shadow-xl relative overflow-hidden border border-blue-900/50">
@@ -2331,14 +2313,11 @@ export default function TourDetailExperience({
               tour.max_group_size ||
               tour.min_booking_size ||
               tour.overview?.group_size ||
-              tour.tour_language ||
-              tour.overview?.tour_type ||
               startLocation ||
               finishLocation ||
               tour.overview?.meal_summary ||
               (tour.itineraries && tour.itineraries.some((it) => it.meals)) ||
               tour.overview?.best_season ||
-              tour.overview?.tour_pace ||
               tour.suitable_age_range) && (
               <div id="key-facts" className="space-y-5 rounded-[28px] border border-slate-100 bg-white p-5 shadow-[0_14px_40px_-32px_rgba(15,36,57,0.4)] sm:p-7">
                 <div className="flex items-center gap-3 mb-1">
@@ -2392,24 +2371,6 @@ export default function TourDetailExperience({
                     </div>
                   )}
 
-                  {(tour.tour_language || tour.overview?.tour_type) && (
-                    <div className="group flex items-center gap-3 border-b border-slate-100 py-3.5 transition-colors hover:bg-slate-50/70">
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
-                        <User size={18} />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-400 truncate">
-                          Tour Guide
-                        </p>
-                        <p className="mt-0.5 text-xs sm:text-sm font-extrabold text-slate-900 truncate">
-                          {tour.tour_language
-                            ? `In ${tour.tour_language}`
-                            : tour.overview?.tour_type}
-                        </p>
-                      </div>
-                    </div>
-                  )}
-
                   {(startLocation || finishLocation) && (
                     <div className="group flex items-center gap-3 border-b border-slate-100 py-3.5 transition-colors hover:bg-slate-50/70">
                       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-violet-50 text-violet-600">
@@ -2456,22 +2417,6 @@ export default function TourDetailExperience({
                         </p>
                         <p className="mt-0.5 text-xs sm:text-sm font-extrabold text-slate-900 truncate">
                           {tour.overview.best_season}
-                        </p>
-                      </div>
-                    </div>
-                  )}
-
-                  {tour.overview?.tour_pace && (
-                    <div className="group flex items-center gap-3 rounded-2xl border border-slate-200/90 bg-white p-3.5 sm:p-4 shadow-xs transition-all duration-200 hover:border-indigo-300 hover:shadow-md">
-                      <div className="flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 transition-all duration-200 group-hover:scale-105 group-hover:bg-indigo-600 group-hover:text-white shadow-xs">
-                        <Gauge size={18} />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-400 truncate">
-                          Tour Pace
-                        </p>
-                        <p className="mt-0.5 text-xs sm:text-sm font-extrabold text-slate-900 truncate">
-                          {tour.overview?.tour_pace}
                         </p>
                       </div>
                     </div>

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
 const generate = vi.hoisted(() => vi.fn());
@@ -21,9 +21,10 @@ describe("Invoice generation", () => {
     const user = userEvent.setup();
     render(<InvoicesPage />);
     await user.click(screen.getByRole("button", { name: "Generate Invoice" }));
-    await user.type(screen.getByLabelText("Booking ID"), "42");
-    await user.selectOptions(screen.getByLabelText("Type"), "partial_payment");
-    const button = screen.getByRole("button", { name: /^Generate$/ });
+    const form = screen.getByRole("form", { name: "Generate invoice" });
+    await user.type(within(form).getByLabelText("Booking ID"), "42");
+    await user.selectOptions(within(form).getByLabelText("Type"), "partial_payment");
+    const button = within(form).getByRole("button", { name: /^Generate$/ });
     await user.dblClick(button);
     expect(generate).toHaveBeenCalledTimes(1);
     expect(generate).toHaveBeenCalledWith(expect.objectContaining({ booking_id: 42, invoice_type: "partial_payment" }));

@@ -63,6 +63,8 @@ const supplierPortalLayout = read("src/app/supplier-portal/layout.tsx");
 const affiliatePortalLayout = read("src/app/affiliate-portal/layout.tsx");
 const affiliatePortalLanding = read("src/app/affiliate-portal/AffiliatePortalContent.tsx");
 const partnerPortalFooter = read("src/components/public/portal/PartnerPortalFooter.tsx");
+const partnerPortalHeader = read("src/components/public/portal/PortalPublicHeader.tsx");
+const agentPortalLanding = read("src/app/agent-portal/page.tsx");
 const publicContactSources = [
   "src/app/(public)/contact/page.tsx",
   "src/app/(public)/account-status/page.tsx",
@@ -114,6 +116,19 @@ check("legacy seeded contact placeholders are suppressed", publicSettings.includ
 check("public footer fetches its link sections from the CMS", publicFooter.includes("fetchFooterSections") && publicFooter.includes("activeFooterSections.map") && !publicFooter.includes("aboutSupportLinks") && !publicFooter.includes("aboutCompanyLinks") && !publicFooter.includes("aboutLoginLinks"));
 check("country catalogue pages keep the shared header but omit only their marketing footer", publicFooter.includes('usePathname') && publicFooter.includes('pathname.match(/^\\/tours\\/([^/]+)\\/?$/)') && publicFooter.includes('if (isCountryTourListing) return null'));
 check("partner landing pages use complete independently editable public footers", agentPortalLayout.includes("showFooter={false}") && supplierPortalLayout.includes("showFooter={false}") && affiliatePortalLayout.includes("showFooter={false}") && affiliatePortalLanding.includes('portal="affiliate"') && partnerPortalFooter.includes("contentBlockKey") && publicFooter.includes("portalSections") && publicFooter.includes("fetchFooterSections"));
+check(
+  "partner header sends each role to its dedicated contact desk and exposes a registration CTA",
+  partnerPortalHeader.includes('"/supplier-contact#contact-form-section"') &&
+    partnerPortalHeader.includes('"/agent-contact#contact-form-section"') &&
+    partnerPortalHeader.includes("Join now") &&
+    partnerPortalHeader.includes('`${portalPath}/login?tab=register`'),
+);
+check(
+  "agent portal section navigation targets real anchored sections",
+  ["overview", "benefits", "how-it-works", "calculator", "documents", "guidelines", "faq", "cta"].every((id) =>
+    agentPortalLanding.includes(`id=\"${id}\"`),
+  ),
+);
 
 const tracker = read("src/components/public/AffiliateReferralTracker.tsx");
 check("public pages capture affiliate referral codes", tracker.includes('get("ref")'));

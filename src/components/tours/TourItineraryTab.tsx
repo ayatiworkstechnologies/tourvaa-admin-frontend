@@ -331,7 +331,15 @@ export default function TourItineraryTab({ tourId, numberOfDays }: { tourId: str
     }
     setSaving(true);
     try {
-      const payload = { ...editing, day_number: sanitizeNumber(editing.day_number, 1), display_order: sanitizeNumber(editing.display_order), image_alt_text: editing.image && !editing.image_alt_text?.trim() ? [editing.day_title, editing.location_name].filter(Boolean).join(" - ").slice(0, 180) : editing.image_alt_text };
+      const payload = {
+        ...editing,
+        images: (editing.images ?? []).filter(Boolean),
+        day_number: sanitizeNumber(editing.day_number, 1),
+        display_order: sanitizeNumber(editing.display_order),
+        image_alt_text: editing.image && !editing.image_alt_text?.trim()
+          ? [editing.day_title, editing.location_name].filter(Boolean).join(" - ").slice(0, 180)
+          : editing.image_alt_text,
+      };
       if (editing.id) {
         const updated = await updateItinerary(tourId, editing.id, payload);
         const resolved = (updated && updated.id) ? updated : { ...payload, id: editing.id };
@@ -515,6 +523,41 @@ export default function TourItineraryTab({ tourId, numberOfDays }: { tourId: str
                 value={editing.image ?? ""}
                 onChange={(value) => setEditing((prev) => (prev ? { ...prev, image: value, image_alt_text: value && !prev.image_alt_text?.trim() ? [prev.day_title, prev.location_name].filter(Boolean).join(" - ").slice(0, 180) : prev.image_alt_text } : prev))}
               />
+            </div>
+            <div className="md:col-span-2 rounded-xl border border-dash-border bg-slate-50/60 p-4">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <h4 className="text-sm font-bold text-dash-text">Itinerary carousel images</h4>
+                  <p className="mt-1 text-xs text-dash-subtle">Add extra photos for this day. They appear alongside the Day Image in the public itinerary carousel.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setEditing((prev) => (prev ? { ...prev, images: [...(prev.images ?? []), ""] } : prev))}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-dash-brand bg-white px-3 py-2 text-xs font-bold text-dash-brand transition hover:bg-blue-50"
+                >
+                  <Plus size={14} /> Add carousel image
+                </button>
+              </div>
+              {(editing.images ?? []).length > 0 && (
+                <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                  {(editing.images ?? []).map((image, index) => (
+                    <AdminAssetUpload
+                      key={`${image}-${index}`}
+                      assetScope="tour"
+                      kind="image"
+                      label={`Carousel image ${index + 1}`}
+                      value={image}
+                      onChange={(value) => setEditing((prev) => {
+                        if (!prev) return prev;
+                        const images = [...(prev.images ?? [])];
+                        if (value) images[index] = value;
+                        else images.splice(index, 1);
+                        return { ...prev, images };
+                      })}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
             <details open={Boolean(errors.image_alt_text) || undefined} className="md:col-span-2 rounded-xl border border-dash-border p-4">
               <summary className="cursor-pointer text-sm font-semibold text-dash-text">Advanced options</summary>

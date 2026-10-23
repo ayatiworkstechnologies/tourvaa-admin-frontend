@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import type { IconType } from "react-icons";
 import {
@@ -62,12 +63,38 @@ export default function CustomerSidebar({
 }: CustomerSidebarProps) {
   const pathname = usePathname();
   const { user, logout } = useAuthContext();
+  const sidebarRef = useRef<HTMLElement>(null);
+  const activeLinkRef = useRef<HTMLAnchorElement>(null);
 
   const displayName = user?.name || "Explorer";
   const displayEmail = user?.email || "explorer@tourvaa.com";
 
+  useEffect(() => {
+    const sidebar = sidebarRef.current;
+    const activeLink = activeLinkRef.current;
+    if (!sidebar || !activeLink) return;
+
+    const frame = window.requestAnimationFrame(() => {
+      const sidebarRect = sidebar.getBoundingClientRect();
+      const linkRect = activeLink.getBoundingClientRect();
+      const isVisible = linkRect.top >= sidebarRect.top && linkRect.bottom <= sidebarRect.bottom;
+      if (!isVisible) {
+        sidebar.scrollTo({
+          top: Math.max(
+            0,
+            sidebar.scrollTop + linkRect.top - sidebarRect.top -
+              (sidebar.clientHeight - linkRect.height) / 2,
+          ),
+          behavior: "auto",
+        });
+      }
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [pathname, navigation.length]);
+
   return (
-    <aside className={`${mobile ? "relative flex h-full w-full" : "fixed inset-y-0 top-20 sm:top-[84px] left-0 hidden lg:flex"} z-40 w-[240px] flex-col overflow-y-auto p-3 sm:p-4 bg-transparent`}>
+    <aside ref={sidebarRef} className={`${mobile ? "relative flex h-full w-full" : "fixed inset-y-0 top-20 sm:top-[84px] left-0 hidden lg:flex"} z-40 w-[240px] flex-col overflow-y-auto p-3 sm:p-4 bg-transparent`}>
       {/* Top User Profile Card */}
       <div className="flex flex-col items-center rounded-2xl border border-slate-200/90 bg-white p-5 text-center shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
         <div className="relative mb-3">
@@ -120,6 +147,7 @@ export default function CustomerSidebar({
           return (
             <Link
               key={href}
+              ref={active ? activeLinkRef : undefined}
               href={href}
               onClick={onNavigate}
                 className={`flex min-h-11 items-center justify-between rounded-xl px-3.5 py-2.5 text-sm font-semibold transition lg:min-h-0 lg:text-xs ${

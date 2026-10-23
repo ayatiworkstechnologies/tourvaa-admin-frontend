@@ -43,7 +43,10 @@ function responseItems<T>(payload: { data?: T[]; items?: T[] }) {
 
 async function fetchCountries(): Promise<GeoCountry[]> {
   if (_countriesCache) return _countriesCache;
-  const res = await api.get("/geo/countries");
+  // Profile, registration, and operational forms need the complete country
+  // catalogue. The public/header selector intentionally uses /public/countries
+  // instead, where only active marketplace countries are exposed.
+  const res = await api.get("/settings/countries", { params: { page: 1, limit: 1000 } });
   _countriesCache = responseItems<Record<string, unknown>>(res.data).map((item) => ({
     id: Number(item.id),
     name: String(item.country_name ?? item.name ?? ""),
@@ -80,7 +83,7 @@ async function fetchCities(stateId?: number | null, countryId?: number | null): 
   return data;
 }
 
-/** Returns all active countries. Cached after first call. */
+/** Returns the complete country catalogue for form fields. Cached per session. */
 export function useGeoCountries() {
   const [countries, setCountries] = useState<GeoCountry[]>(_countriesCache ?? []);
   const [loading, setLoading] = useState(!_countriesCache);

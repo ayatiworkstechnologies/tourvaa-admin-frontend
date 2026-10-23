@@ -102,6 +102,11 @@ function PortalPublicHeaderInner({
   const isLoginPage = pathname.endsWith("/login");
   const isSupplier = portalPath.includes("supplier");
   const isAffiliate = portalPath.includes("affiliate");
+  const contactPath = isSupplier
+    ? "/supplier-contact#contact-form-section"
+    : portalPath.includes("agent")
+      ? "/agent-contact#contact-form-section"
+      : "/contact#contact-form-section";
   const sectionLinks = isAffiliate
     ? [
         { href: "#overview", label: "Overview" },
@@ -237,7 +242,7 @@ function PortalPublicHeaderInner({
 
           {/* Help */}
           <Link
-            href="/contact"
+            href={contactPath}
             className="flex flex-col items-center justify-center text-pub-muted hover:text-pub-fg transition group"
           >
             <Headset size={16} className="text-pub-muted group-hover:text-pub-fg transition" />
@@ -258,6 +263,14 @@ function PortalPublicHeaderInner({
               Sign In
             </span>
           </Link>
+          {!isLoginPage && (
+            <Link
+              href={`${portalPath}/login?tab=register`}
+              className="rounded-lg bg-pub-accent px-3 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-pub-accent/90"
+            >
+              Join now
+            </Link>
+          )}
         </div>
 
         {/* Mobile Hamburger Button */}
@@ -318,7 +331,7 @@ function PortalPublicHeaderInner({
                 );
               })}
               <Link
-                href="/contact"
+                href={contactPath}
                 onClick={() => setMobileMenuOpen(false)}
                 className="flex items-center gap-2.5 rounded-lg p-2 text-xs font-semibold text-pub-muted hover:bg-slate-50"
               >

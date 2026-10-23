@@ -17,8 +17,6 @@ const empty: TourOverview = {
 const inputClass =
   "w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm outline-none transition shadow-2xs focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 placeholder:text-slate-400 text-slate-900";
 
-const RATINGS = ["easy", "moderate", "hard"] as const;
-
 /** `embedded`: rendered inside the tour editor, where the step's single Save
  * button submits this form (id `wizard-form-overview`), so its own button is hidden. */
 export default function TourOverviewTab({ tourId, embedded = false, onSaved }: { tourId: string; embedded?: boolean; onSaved?: () => void }) {
@@ -94,20 +92,7 @@ export default function TourOverviewTab({ tourId, embedded = false, onSaved }: {
         <h2 className="text-xl font-black text-dash-text">Trip Planning Details</h2>
         <p className="mt-1 text-sm text-dash-subtle">Helps travellers decide if this tour fits them.</p>
         <div className="mt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          <label>
-            <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">Physical rating</span>
-            <select
-              value={form.physical_rating}
-              onChange={(e) => update("physical_rating", e.target.value)}
-              className={inputClass}
-            >
-              {RATINGS.map((r) => (
-                <option key={r} value={r}>{r.charAt(0).toUpperCase() + r.slice(1)}</option>
-              ))}
-            </select>
-          </label>
           {field("best_season", "Best season", "e.g. October to March")}
-          {field("tour_pace", "Tour pace", "e.g. Relaxed, Moderate, Fast-paced")}
           {textareaField("ideal_for", "Ideal for", "e.g. Couples, families with teens, first-time visitors")}
           {textareaField("why_choose_this_tour", "Why choose this tour")}
           {textareaField("transportation_summary", "Transportation summary")}

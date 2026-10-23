@@ -126,7 +126,11 @@ export default function Header({
           component. Keep a dedicated lane so a wide profile trigger cannot
           slide underneath it on supplier, agent, or admin pages. */}
       <div
-        className={`flex min-w-0 items-center justify-between gap-2 py-0 pl-3 pr-[132px] sm:pl-6 sm:pr-[140px] md:pl-9 md:pr-[148px] ${spacious ? "h-20" : "h-[70px]"}`}
+        className={`flex min-w-0 items-center justify-between gap-2 py-0 pl-3 ${
+          pathname.startsWith("/admin")
+            ? "pr-3 sm:pr-6 md:pr-8"
+            : "pr-[132px] sm:pr-[140px] md:pr-[148px]"
+        } ${spacious ? "h-20" : "h-[70px]"}`}
       >
         {/* left */}
         <div className="flex min-w-0 items-center gap-3">
@@ -253,7 +257,7 @@ export default function Header({
                   className="fixed inset-0 z-40"
                   onClick={() => setOpen(false)}
                 />
-                <div className="absolute right-0 top-14.5 z-50 w-[min(15rem,calc(100vw-1.5rem))] overflow-hidden rounded-2xl border border-[#E8ECF3] bg-white shadow-[0_16px_48px_-8px_rgba(15,23,42,0.16)]">
+                <div className="absolute right-0 top-full mt-1.5 z-50 w-[min(15rem,calc(100vw-1.5rem))] overflow-hidden rounded-2xl border border-[#E8ECF3] bg-white shadow-[0_16px_48px_-8px_rgba(15,23,42,0.16)]">
                   {/* identity header */}
                   <div className="flex items-center gap-3 border-b border-[#F0F4F8] px-4 py-3.5">
                     {profileImage && !imageFailed ? (
@@ -277,6 +281,13 @@ export default function Header({
                       </p>
                       <p className="text-[12px] text-[#94A3B8]">{role}</p>
                     </div>
+                  </div>
+
+                  <div className="border-b border-[#F0F4F8] p-2.5 sm:hidden">
+                    <span className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-[#94A3B8]">
+                      Currency
+                    </span>
+                    <CurrencySelector />
                   </div>
 
                   <div className="p-1.5">

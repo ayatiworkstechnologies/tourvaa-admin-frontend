@@ -838,6 +838,10 @@ export default function TourFormPage({
            number_of_days: "1",
          }
   );
+  // A wizard parent can receive a refreshed tour object while this form remains
+  // mounted.  Keep that refresh from replacing a supplier's first selection.
+  const hasLocalEditsRef = useRef(false);
+  const hydratedInitialDataKeyRef = useRef<string | null>(null);
   const [supplierCurrency, setSupplierCurrency] = useState("");
 
   // New tours start with the platform's default deposit terms already
@@ -984,11 +988,15 @@ export default function TourFormPage({
   }, [fetchTour]);
 
   useEffect(() => {
-    if (initialData) {
-      setForm(normalizeTourForm(initialData));
-      setActiveDiscount((initialData as { active_discount?: ActiveDiscount }).active_discount ?? null);
-    }
-  }, [initialData]);
+    if (!initialData || hasLocalEditsRef.current) return;
+
+    const snapshotKey = `${String(initialData.id ?? tourId ?? "")}:${String(initialData.updated_at ?? "")}`;
+    if (hydratedInitialDataKeyRef.current === snapshotKey) return;
+
+    setForm(normalizeTourForm(initialData));
+    setActiveDiscount((initialData as { active_discount?: ActiveDiscount }).active_discount ?? null);
+    hydratedInitialDataKeyRef.current = snapshotKey;
+  }, [initialData, tourId]);
 
   useEffect(() => {
     if (!tourId) return;
@@ -1029,8 +1037,10 @@ export default function TourFormPage({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form.state_id]);
 
-  const update = (key: string, value: string) =>
+  const update = (key: string, value: string) => {
+    hasLocalEditsRef.current = true;
     setForm((prev) => ({ ...prev, [key]: value }));
+  };
 
   const selectedSubcategoryIds = useMemo(
     () =>

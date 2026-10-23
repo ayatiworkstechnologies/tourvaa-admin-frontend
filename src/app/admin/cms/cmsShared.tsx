@@ -229,7 +229,12 @@ export type ContentBlockTabConfig = {
     maxItems?: number;
     // For type "records": the inputs of each repeated entry. "csv" edits an array as comma-separated text.
     // "asset" uploads an image (e.g. a team member photo or gallery image) and stores its URL.
-    subfields?: { key: string; label: string; type: "text" | "textarea" | "csv" | "asset" }[];
+    subfields?: {
+      key: string;
+      label: string;
+      type: "text" | "textarea" | "csv" | "asset" | "select" | "url";
+      options?: FieldOption[];
+    }[];
   }[];
 };
 
@@ -1007,7 +1012,7 @@ export const CONTENT_BLOCK_TABS: ContentBlockTabConfig[] = [
           { key: "description", label: "Description", type: "textarea" },
           { key: "image", label: "Card Image", type: "asset" },
           { key: "button_label", label: "Button Label", type: "text" },
-          { key: "button_url", label: "Button Destination (e.g. /supplier-portal/login?tab=register)", type: "text" },
+          { key: "button_url", label: "Button Destination (e.g. /supplier-portal/login?tab=register)", type: "url" },
         ],
       },
     ],
@@ -1027,6 +1032,16 @@ export const CONTENT_BLOCK_TABS: ContentBlockTabConfig[] = [
         hint: "Up to 3 offices, in this order. Save address, phone, hours and time zone for each office. City, country and map position stay fixed per office.",
         maxItems: 3,
         subfields: [
+          {
+            key: "office_id",
+            label: "Office",
+            type: "select",
+            options: [
+              { value: "nz", label: "Auckland, New Zealand" },
+              { value: "lk", label: "Colombo, Sri Lanka" },
+              { value: "in", label: "Chennai, India" },
+            ],
+          },
           { key: "address_line1", label: "Address Line 1", type: "text" },
           { key: "address_line2", label: "Address Line 2", type: "text" },
           { key: "phone", label: "Phone", type: "text" },
@@ -1384,6 +1399,17 @@ export const CONTENT_BLOCK_TABS: ContentBlockTabConfig[] = [
   },
 ];
 
+function safeJsonArray<T = unknown>(raw: unknown): T[] {
+  if (Array.isArray(raw)) return raw as T[];
+  if (typeof raw !== "string" || !raw.trim()) return [];
+  try {
+    const val = JSON.parse(raw);
+    return Array.isArray(val) ? (val as T[]) : [];
+  } catch {
+    return [];
+  }
+}
+
 // ---- ContentBlockPanel ----------------------------------------------------
 // Editor for a single key/JSON homepage content block (About Tourvaa, the
 // blog teaser banner, etc) - unlike CmsTabPanel this isn't a list of rows,
@@ -1420,12 +1446,12 @@ export function ContentBlockPanel({ tab, onChanged }: { tab: ContentBlockTabConf
       for (const f of tab.fields) {
         const raw = values[f.key] ?? "";
         data[f.key] = f.type === "records"
-          ? (JSON.parse(raw || "[]") as Record<string, string>[])
+          ? safeJsonArray<Record<string, string>>(raw)
               .map((rec) => Object.fromEntries((f.subfields ?? []).map((sf) => [sf.key, sf.type === "csv" ? (rec[sf.key] ?? "").split(",").map((v) => v.trim()).filter(Boolean) : (rec[sf.key] ?? "").trim()])))
               .filter((rec) => Object.values(rec).some((v) => (Array.isArray(v) ? v.length : v)))
               .slice(0, f.maxItems)
           : f.type === "list"
-          ? (JSON.parse(raw || "[]") as string[]).map((v) => v.trim()).filter(Boolean)
+          ? safeJsonArray<string>(raw).map((v) => v.trim()).filter(Boolean)
           : f.key === "features"
           ? raw.split(",").map((v) => v.trim()).filter(Boolean)
           : f.type === "number" ? (raw === "" ? "" : Number(raw))
@@ -1435,8 +1461,12 @@ export function ContentBlockPanel({ tab, onChanged }: { tab: ContentBlockTabConf
       // Keep keys this form doesn't edit (e.g. a section's `enabled` flag,
       // which is switched from the Home Page section list) - re-read the
       // latest block so a switch flipped after this form loaded isn't undone.
-      const latest = await api.get(`/cms/content-blocks/${tab.blockKey}`).then((r) => (r.data?.data?.data ?? {}) as Record<string, unknown>).catch(() => ({}));
-      await api.put(`/cms/content-blocks/${tab.blockKey}`, { data: { ...latest, ...data } });
+      const latestResponse = await api.get(`/cms/content-blocks/${tab.blockKey}`).then((r) => r.data?.data ?? {}).catch(() => ({}));
+      const latest = (latestResponse?.data ?? {}) as Record<string, unknown>;
+      await api.put(`/cms/content-blocks/${tab.blockKey}`, {
+        data: { ...latest, ...data },
+        expected_version: Number(latestResponse?.version ?? 0),
+      });
       toast.success(`${tab.label} updated.`);
       onChanged?.();
     } catch {
@@ -1474,7 +1504,7 @@ export function ContentBlockPanel({ tab, onChanged }: { tab: ContentBlockTabConf
                     />
                   ) : f.type === "records" ? (
                     <div className="space-y-3">
-                      {(JSON.parse(values[f.key] || "[]") as Record<string, string>[]).map((rec, idx, all) => {
+                      {safeJsonArray<Record<string, string>>(values[f.key]).map((rec, idx, all) => {
                         const setAll = (next: Record<string, string>[]) => setValues((v) => ({ ...v, [f.key]: JSON.stringify(next) }));
                         return (
                           <div key={idx} className="space-y-2 rounded-xl border border-dash-border bg-slate-50/60 p-3">
@@ -1497,9 +1527,22 @@ export function ContentBlockPanel({ tab, onChanged }: { tab: ContentBlockTabConf
                                     onChange={(e) => setAll(all.map((r, i) => (i === idx ? { ...r, [sf.key]: e.target.value } : r)))}
                                     className="w-full resize-none rounded-xl border border-dash-border bg-white px-3 py-2 text-sm outline-none focus:border-[#0284C7]"
                                   />
+                                ) : sf.type === "select" ? (
+                                  <select
+                                    value={rec[sf.key] ?? ""}
+                                    onChange={(event) => setAll(all.map((r, i) => (i === idx ? { ...r, [sf.key]: event.target.value } : r)))}
+                                    className="w-full rounded-lg border border-dash-border bg-white px-3 py-2 text-sm outline-none focus:border-dash-brand"
+                                  >
+                                    <option value="">Select office</option>
+                                    {(sf.options ?? []).map((option) => {
+                                      const value = typeof option === "string" ? option : option.value;
+                                      const label = typeof option === "string" ? option : option.label;
+                                      return <option key={value} value={value}>{label}</option>;
+                                    })}
+                                  </select>
                                 ) : (
                                   <input
-                                    type="text"
+                                    type={sf.type === "url" ? "url" : "text"}
                                     value={rec[sf.key] ?? ""}
                                     onChange={(e) => setAll(all.map((r, i) => (i === idx ? { ...r, [sf.key]: e.target.value } : r)))}
                                     className="w-full rounded-xl border border-dash-border bg-white px-3 py-2 text-sm outline-none focus:border-[#0284C7]"
@@ -1513,18 +1556,18 @@ export function ContentBlockPanel({ tab, onChanged }: { tab: ContentBlockTabConf
                       })}
                       <button
                         type="button"
-                        disabled={typeof f.maxItems === "number" && (JSON.parse(values[f.key] || "[]") as Record<string, string>[]).length >= f.maxItems}
-                        onClick={() => setValues((v) => ({ ...v, [f.key]: JSON.stringify([...(JSON.parse(v[f.key] || "[]") as Record<string, string>[]), {}]) }))}
+                        disabled={typeof f.maxItems === "number" && safeJsonArray<Record<string, string>>(values[f.key]).length >= f.maxItems}
+                        onClick={() => setValues((v) => ({ ...v, [f.key]: JSON.stringify([...safeJsonArray<Record<string, string>>(v[f.key]), {}]) }))}
                         className="rounded-xl border border-dashed border-[#9CCFF0] px-3 py-2 text-xs font-bold text-[#0284C7] hover:bg-[#F7FBFF] disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-dash-subtle disabled:hover:bg-transparent"
                       >
-                        {typeof f.maxItems === "number" && (JSON.parse(values[f.key] || "[]") as Record<string, string>[]).length >= f.maxItems
+                        {typeof f.maxItems === "number" && safeJsonArray<Record<string, string>>(values[f.key]).length >= f.maxItems
                           ? `Maximum ${f.maxItems} cards reached`
                           : "+ Add"}
                       </button>
                     </div>
                   ) : f.type === "list" ? (
                     <div className="space-y-2">
-                      {(JSON.parse(values[f.key] || "[]") as string[]).map((item, idx, all) => {
+                      {safeJsonArray<string>(values[f.key]).map((item, idx, all) => {
                         const setAll = (next: string[]) => setValues((v) => ({ ...v, [f.key]: JSON.stringify(next) }));
                         return (
                           <div key={idx} className="flex gap-2">
@@ -1540,7 +1583,7 @@ export function ContentBlockPanel({ tab, onChanged }: { tab: ContentBlockTabConf
                       })}
                       <button
                         type="button"
-                        onClick={() => setValues((v) => ({ ...v, [f.key]: JSON.stringify([...(JSON.parse(v[f.key] || "[]") as string[]), ""]) }))}
+                        onClick={() => setValues((v) => ({ ...v, [f.key]: JSON.stringify([...safeJsonArray<string>(v[f.key]), ""]) }))}
                         className="rounded-xl border border-dashed border-[#9CCFF0] px-3 py-2 text-xs font-bold text-[#0284C7] hover:bg-[#F7FBFF]"
                       >
                         + Add

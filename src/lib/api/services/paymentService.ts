@@ -1,4 +1,4 @@
-﻿import api from "@/lib/api/client";
+import api from "@/lib/api/client";
 
 export type PaymentTransaction = {
   id: number;
@@ -155,6 +155,11 @@ export async function processRefund(paymentId: number | string, amount: number, 
     reason: reason ?? "Refund issued by admin",
   });
 
+  return response.data.data;
+}
+
+export async function getPaymentStatus(paymentId: number | string) {
+  const response = await api.get<ApiDataResponse<Payment>>(`/payments/${paymentId}/status`);
   return response.data.data;
 }
 

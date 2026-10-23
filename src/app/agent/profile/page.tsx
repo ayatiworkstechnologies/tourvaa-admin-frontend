@@ -34,6 +34,12 @@ export default function AgentProfilePage() {
     setActiveTab(TABS.some((tab) => tab.id === requestedTab) ? requestedTab! : "agency");
   }, [requestedTab]);
 
+  const advanceToNextTab = (completedTabId: string) => {
+    const completedIndex = TABS.findIndex((tab) => tab.id === completedTabId);
+    const nextTab = completedIndex >= 0 ? TABS[completedIndex + 1] : undefined;
+    if (nextTab) setActiveTab(nextTab.id);
+  };
+
   return (
     <AgentPageShell>
       <AgentPageHeader
@@ -77,13 +83,13 @@ export default function AgentProfilePage() {
         {/* All tabs stay mounted (hidden via CSS, not unmounted) so
             in-progress form edits on inactive tabs survive switching. */}
         <div className={activeTab === "agency" ? "" : "hidden"}>
-          <AgencyDetailsTab />
+          <AgencyDetailsTab onSaved={() => advanceToNextTab("agency")} />
         </div>
         <div className={activeTab === "billing" ? "" : "hidden"}>
-          <AgentBankAndInvoicingTab />
+          <AgentBankAndInvoicingTab onSaved={() => advanceToNextTab("billing")} />
         </div>
         <div className={activeTab === "documents" ? "" : "hidden"}>
-          <VerificationDocumentsTab />
+          <VerificationDocumentsTab onVerificationSubmitted={() => advanceToNextTab("documents")} />
         </div>
         <div className={activeTab === "commission" ? "" : "hidden"}>
           <AgentCommissionTab />

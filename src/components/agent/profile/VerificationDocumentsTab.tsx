@@ -47,7 +47,7 @@ function statusClass(status: string) {
   return "bg-amber-50 text-amber-700 ring-amber-200";
 }
 
-export default function VerificationDocumentsTab() {
+export default function VerificationDocumentsTab({ onVerificationSubmitted }: { onVerificationSubmitted?: () => void }) {
   const toast = useToast();
   const [agentId, setAgentId] = useState<number | null>(null);
   const [approvalStatus, setApprovalStatus] = useState("pending");
@@ -113,6 +113,7 @@ export default function VerificationDocumentsTab() {
       await api.post("/agents/submit-verification");
       toast.success("Verification submitted. An admin will review each document.");
       await load();
+      onVerificationSubmitted?.();
     } catch (submitError) {
       toast.error(errorMessage(submitError, "Verification could not be submitted."));
     } finally {

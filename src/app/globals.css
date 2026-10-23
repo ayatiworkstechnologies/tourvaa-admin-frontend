@@ -248,17 +248,7 @@ button {
   background: var(--primary);
 }
 
-@keyframes fadeUp {
-  from {
-    opacity: 0;
-    transform: translateY(18px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
+/* fadeUp defined below in the hero animation group — single definition kept to avoid CSS cascade conflicts */
 
 @keyframes floatIn {
   from {
@@ -678,7 +668,7 @@ button {
 /* Shared public theme: keeps every marketing route visually connected to the homepage. */
 .public-site {
   --public-primary: var(--color-pub-secondary);
-  --public-primary-hover: var(--color-pub-secondary);
+  --public-primary-hover: var(--color-pub-secondary-hover);
   --public-primary-soft: color-mix(in srgb, var(--color-pub-secondary) 10%, white);
   --public-ink: #000000;
   background: var(--color-pub-bg);

@@ -290,7 +290,7 @@ export default function AgentPortalLandingPage() {
     <>
     <main className="overflow-x-hidden bg-white text-pub-fg">
       {/* ── 1. HERO SECTION ── */}
-      <section className="mx-auto max-w-[1380px] px-4 sm:px-6 pt-4 sm:pt-6">
+      <section id="overview" className="mx-auto max-w-[1380px] px-4 sm:px-6 pt-4 sm:pt-6 scroll-mt-24">
         <div className="relative min-h-[440px] sm:min-h-[480px] md:min-h-[520px] w-full overflow-hidden rounded-[24px] sm:rounded-[32px] bg-pub-primary flex items-center justify-center p-6 sm:p-12 shadow-xl">
           <Image
             src="/images/agent-portal-hero.png"
@@ -492,7 +492,7 @@ export default function AgentPortalLandingPage() {
       </section>
 
       {/* ── 4. POWERFUL TOOLS BUILT FOR TRAVEL ADVISORS ── */}
-      <section className="mx-auto max-w-[1380px] px-4 sm:px-6 mt-20 sm:mt-24">
+      <section id="benefits" className="mx-auto max-w-[1380px] px-4 sm:px-6 mt-20 sm:mt-24 scroll-mt-28">
         <div className="text-center max-w-2xl mx-auto">
           <h2 className="text-2xl sm:text-3xl font-semibold text-pub-fg tracking-tight">
             Powerful tools built for travel advisors
@@ -528,7 +528,7 @@ export default function AgentPortalLandingPage() {
       </section>
 
       {/* ── 5. FROM REGISTRATION TO CONFIDENT CLIENT BOOKINGS ── */}
-      <section className="mt-20 sm:mt-24 bg-pub-bg/60 py-16 sm:py-20 border-y border-pub-border">
+      <section id="how-it-works" className="mt-20 sm:mt-24 bg-pub-bg/60 py-16 sm:py-20 border-y border-pub-border scroll-mt-28">
         <div className="mx-auto max-w-[1380px] px-4 sm:px-6">
           <div className="text-center mb-10 sm:mb-12">
             <h2 className="text-2xl sm:text-3xl font-semibold text-pub-fg tracking-tight">
@@ -591,7 +591,7 @@ export default function AgentPortalLandingPage() {
       </section>
 
       {/* ── 6. WHAT YOU NEED TO GET VERIFIED ── */}
-      <section className="mx-auto max-w-[1380px] px-4 sm:px-6 mt-20 sm:mt-24">
+      <section id="documents" className="mx-auto max-w-[1380px] px-4 sm:px-6 mt-20 sm:mt-24 scroll-mt-28">
         <div className="text-center max-w-2xl mx-auto mb-10 sm:mb-12">
           <h2 className="text-2xl sm:text-3xl font-semibold text-pub-fg tracking-tight">
             What you need to get verified
@@ -644,7 +644,7 @@ export default function AgentPortalLandingPage() {
       </section>
 
       {/* ── 7. WHAT WE EXPECT FROM PARTNER TRAVEL AGENTS ── */}
-      <section className="mt-20 sm:mt-24 bg-pub-bg/60 py-16 sm:py-20 border-y border-pub-border">
+      <section id="guidelines" className="mt-20 sm:mt-24 bg-pub-bg/60 py-16 sm:py-20 border-y border-pub-border scroll-mt-28">
         <div className="mx-auto max-w-[1380px] px-4 sm:px-6">
           <div className="text-center mb-10 sm:mb-12">
             <h2 className="text-2xl sm:text-3xl font-semibold text-pub-fg tracking-tight">
@@ -671,7 +671,7 @@ export default function AgentPortalLandingPage() {
       </section>
 
       {/* ── 8. FREQUENTLY ASKED QUESTIONS ── */}
-      <section className="mx-auto max-w-4xl px-4 sm:px-6 mt-20 sm:mt-24">
+      <section id="faq" className="mx-auto max-w-4xl px-4 sm:px-6 mt-20 sm:mt-24 scroll-mt-28">
         <div className="text-center mb-10 sm:mb-12">
           <h2 className="text-2xl sm:text-3xl font-semibold text-pub-fg tracking-tight">
             Frequently Asked Questions
@@ -717,7 +717,7 @@ export default function AgentPortalLandingPage() {
       </section>
 
       {/* ── 9. READY TO EMPOWER YOUR TRAVEL AGENCY? ── */}
-      <section className="bg-pub-primary py-16 sm:py-20 text-white text-center mt-20 sm:mt-24">
+      <section id="cta" className="bg-pub-primary py-16 sm:py-20 text-white text-center mt-20 sm:mt-24 scroll-mt-28">
         <div className="mx-auto max-w-4xl px-4 sm:px-6">
           <h2 className="text-2xl sm:text-4xl font-bold text-white tracking-tight">
             {cta.heading || DEFAULT_CTA.heading}

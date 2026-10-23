@@ -16,7 +16,7 @@ import {
 } from "@/lib/api/services/affiliateService";
 import { getApiErrorMessage } from "@/lib/utils/errorHandler";
 
-const inputCls = "w-full rounded-xl border border-dash-border bg-white px-3 py-2 text-sm outline-none focus:border-dash-brand";
+const inputCls = "w-full rounded-xl border border-dash-border bg-white px-3.5 py-2.5 text-sm outline-none focus:border-dash-brand";
 const labelCls = "mb-1 block text-xs font-bold uppercase tracking-wide text-dash-muted";
 
 function scopeLabel(r: AffiliateCommissionRule) {
@@ -155,15 +155,36 @@ export default function AdminAffiliateCommissionRulesPage() {
               </div>
               <div>
                 <label className={labelCls}>Affiliate ID (optional)</label>
-                <input value={form.affiliate_id} onChange={(e) => setForm((f) => ({ ...f, affiliate_id: e.target.value }))} className={inputCls} />
+                <input
+                  type="number"
+                  min="1"
+                  value={form.affiliate_id}
+                  onChange={(e) => setForm((f) => ({ ...f, affiliate_id: e.target.value }))}
+                  placeholder="e.g. 12 (leave blank for all)"
+                  className={inputCls}
+                />
               </div>
               <div>
                 <label className={labelCls}>Tour ID (optional)</label>
-                <input value={form.tour_id} onChange={(e) => setForm((f) => ({ ...f, tour_id: e.target.value }))} className={inputCls} />
+                <input
+                  type="number"
+                  min="1"
+                  value={form.tour_id}
+                  onChange={(e) => setForm((f) => ({ ...f, tour_id: e.target.value }))}
+                  placeholder="e.g. 45 (leave blank for all)"
+                  className={inputCls}
+                />
               </div>
               <div>
                 <label className={labelCls}>Category ID (optional)</label>
-                <input value={form.category_id} onChange={(e) => setForm((f) => ({ ...f, category_id: e.target.value }))} className={inputCls} />
+                <input
+                  type="number"
+                  min="1"
+                  value={form.category_id}
+                  onChange={(e) => setForm((f) => ({ ...f, category_id: e.target.value }))}
+                  placeholder="e.g. 3 (leave blank for all)"
+                  className={inputCls}
+                />
               </div>
               <div>
                 <label className={labelCls}>Commission Type</label>

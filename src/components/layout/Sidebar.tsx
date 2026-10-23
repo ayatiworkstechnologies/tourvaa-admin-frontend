@@ -1,7 +1,7 @@
 "use client";
 
 import { createPortal } from "react-dom";
-import { useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { LuChevronLeft as ChevronLeft, LuChevronRight as ChevronRight, LuLock as Lock, LuLogOut as LogOut, LuCompass as Compass } from "react-icons/lu";
@@ -170,6 +170,8 @@ export default function Sidebar({
   const { logout } = useAuth();
   const [tooltip, setTooltip] = useState<TooltipState>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
+  const navigationRef = useRef<HTMLElement>(null);
+  const activeNavigationItemRef = useRef<HTMLAnchorElement>(null);
   const colors = SIDEBAR_THEMES[theme];
 
   useLayoutEffect(() => {
@@ -181,6 +183,32 @@ export default function Sidebar({
   const dashboardHref = navItems[0]?.href || "/";
   const mainItems = navItems.filter((item) => item.placement !== "bottom");
   const bottomItems = navItems.filter((item) => item.placement === "bottom");
+
+  useEffect(() => {
+    const navigation = navigationRef.current;
+    const activeItem = activeNavigationItemRef.current;
+    if (!navigation || !activeItem) return;
+
+    const frame = window.requestAnimationFrame(() => {
+      const navigationRect = navigation.getBoundingClientRect();
+      const itemRect = activeItem.getBoundingClientRect();
+      const isVisible =
+        itemRect.top >= navigationRect.top && itemRect.bottom <= navigationRect.bottom;
+
+      if (!isVisible) {
+        navigation.scrollTo({
+          top: Math.max(
+            0,
+            navigation.scrollTop + itemRect.top - navigationRect.top -
+              (navigation.clientHeight - itemRect.height) / 2,
+          ),
+          behavior: "auto",
+        });
+      }
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [pathname, searchParams, collapsed, mainItems.length]);
 
   function showTooltip(e: React.MouseEvent<HTMLElement>, label: string) {
     if (!collapsed) return;
@@ -269,6 +297,7 @@ export default function Sidebar({
     return (
       <Link
         key={`${item.module ?? index}-${item.href}`}
+        ref={active && item.placement !== "bottom" ? activeNavigationItemRef : undefined}
         href={item.href}
         onMouseEnter={(e) => showTooltip(e, item.label)}
         onMouseLeave={hideTooltip}
@@ -350,7 +379,7 @@ export default function Sidebar({
               type="button"
               onClick={onToggleCollapse}
               aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-              className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border shadow-sm transition-colors ${colors.toggle} ${
+              className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border shadow-sm transition-colors ${colors.toggle} ${
                 collapsed ? "absolute -right-3.5 top-6.5 z-50" : ""
               }`}
             >
@@ -361,7 +390,7 @@ export default function Sidebar({
 
         {/* nav + logout */}
         <div className="relative flex min-h-0 flex-1 flex-col pb-4 pt-3">
-          <nav className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden scrollbar-none">
+          <nav ref={navigationRef} className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden scrollbar-none">
             {renderGroupedItems(mainItems)}
           </nav>
 
@@ -390,7 +419,7 @@ export default function Sidebar({
         createPortal(
           <div
             ref={tooltipRef}
-            className="pointer-events-none fixed left-22 z-9999 -translate-y-1/2 whitespace-nowrap rounded-lg bg-[#1E293B] px-3 py-1.5 text-xs font-semibold text-white shadow-xl"
+            className="pointer-events-none fixed left-[5.5rem] z-[9999] -translate-y-1/2 whitespace-nowrap rounded-lg bg-[#1E293B] px-3 py-1.5 text-xs font-semibold text-white shadow-xl"
           >
             {/* arrow */}
             <span className="absolute -left-1 top-1/2 -translate-y-1/2 border-4 border-transparent border-r-[#1E293B]" />

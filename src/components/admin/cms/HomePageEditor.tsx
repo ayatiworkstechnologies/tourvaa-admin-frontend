@@ -69,6 +69,12 @@ const extraKey = (id: string) => `extra:${id}`;
 const getBlock = (key: string) =>
   api.get(`/cms/content-blocks/${key}`).then((r) => (r.data?.data?.data ?? {}) as Record<string, unknown>);
 
+const getBlockSnapshot = (key: string) =>
+  api.get(`/cms/content-blocks/${key}`).then((r) => ({
+    data: (r.data?.data?.data ?? {}) as Record<string, unknown>,
+    version: Number(r.data?.data?.version ?? 0),
+  }));
+
 const INPUT = "w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand";
 
 export default function HomePageEditor() {
@@ -109,14 +115,15 @@ export default function HomePageEditor() {
     setBusy(sec.key);
     try {
       if (sec.visibility.kind === "map") {
-        const data = { ...visibility, [sec.key]: next };
-        await api.put(`/cms/content-blocks/${SECTION_VISIBILITY_BLOCK_KEY}`, { data });
-        setVisibility(data);
+        const current = await getBlockSnapshot(SECTION_VISIBILITY_BLOCK_KEY);
+        const data = { ...current.data, [sec.key]: next };
+        await api.put(`/cms/content-blocks/${SECTION_VISIBILITY_BLOCK_KEY}`, { data, expected_version: current.version });
+        setVisibility(data as SectionVisibility);
       } else {
         const { blockKey } = sec.visibility;
         // Merge into the latest block so the section's heading copy is kept.
-        const current = await getBlock(blockKey);
-        await api.put(`/cms/content-blocks/${blockKey}`, { data: { ...current, enabled: next } });
+        const current = await getBlockSnapshot(blockKey);
+        await api.put(`/cms/content-blocks/${blockKey}`, { data: { ...current.data, enabled: next }, expected_version: current.version });
         setBlockEnabled((b) => ({ ...b, [blockKey]: next }));
       }
       toast.success(`${sec.label} ${next ? "shown on" : "hidden from"} the homepage.`);
@@ -136,7 +143,8 @@ export default function HomePageEditor() {
       setBusy(busyKey);
       try {
         const next = { enabled: true, sections };
-        await api.put(`/cms/content-blocks/${EXTRA_SECTIONS_BLOCK_KEY}`, { data: next });
+        const current = await getBlockSnapshot(EXTRA_SECTIONS_BLOCK_KEY);
+        await api.put(`/cms/content-blocks/${EXTRA_SECTIONS_BLOCK_KEY}`, { data: next, expected_version: current.version });
         setExtras(next);
         setPreviewVersion((v) => v + 1);
         return true;

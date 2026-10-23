@@ -51,9 +51,11 @@ export default function AdminLayout({ children, title, menus, user }: Props) {
       {mobileOpen && (
         <div className="fixed inset-0 z-50 lg:hidden">
           <button
-            className="absolute inset-0 bg-black/30"
+            type="button"
+            className="absolute inset-0 bg-black/30 backdrop-blur-xs"
             onClick={() => setMobileOpen(false)}
             aria-label="Close menu"
+            tabIndex={-1}
           />
           <div className="relative h-full w-[min(290px,86vw)] bg-white shadow-2xl">
             {inCms ? (

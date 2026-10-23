@@ -92,6 +92,7 @@ export default function CountryDestinationInfoPanel({
   const [info, setInfo] = useState<CountryDestinationInfo | null>(null);
   const chapterNavRef = useRef<HTMLDivElement>(null);
   const countryLoadRequestRef = useRef(0);
+  const contentVersionRef = useRef(0);
   const usesControlledCountries = controlledCountryOptions !== undefined;
   const countryOptions = controlledCountryOptions ?? localCountryOptions;
   const countriesLoading = usesControlledCountries
@@ -168,6 +169,7 @@ export default function CountryDestinationInfoPanel({
     try {
       const res = await api.get(`/cms/content-blocks/country_info_${slug}`);
       const blockData = res.data?.data?.data as Partial<CountryDestinationInfo> | undefined;
+      contentVersionRef.current = Number(res.data?.data?.version ?? 0);
 
       if (blockData && blockData.country_name) {
         // Merge with defaults to ensure all fields exist
@@ -215,7 +217,11 @@ export default function CountryDestinationInfoPanel({
         ...info,
         updated_at: new Date().toISOString(),
       };
-      await api.put(`/cms/content-blocks/country_info_${slug}`, { data: payload });
+      const res = await api.put(`/cms/content-blocks/country_info_${slug}`, {
+        data: payload,
+        expected_version: contentVersionRef.current,
+      });
+      contentVersionRef.current = Number(res.data?.data?.version ?? contentVersionRef.current + 1);
       toast.success(`Destination Guide for ${info.country_name} published successfully!`);
       onSaved?.();
     } catch (err) {

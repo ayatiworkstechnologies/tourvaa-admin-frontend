@@ -614,6 +614,19 @@ export default function ReviewListPage({ module, title, requiredPermission }: Pr
           { name: "agent_name", label: "Agent Name", required: true },
           { name: "email", label: "Email", type: "email", required: true },
           { name: "password", label: "Password", type: "password", required: true },
+          {
+            name: "country_id",
+            label: "Country (optional)",
+            type: "select",
+            options: countries.map((country) => ({ label: country.name, value: String(country.id) })),
+          },
+          {
+            name: "currency",
+            label: "Operating Currency",
+            type: "select",
+            required: true,
+            options: currencies.map((currency) => ({ label: `${currency.symbol} - ${currency.code} - ${currency.name}`, value: currency.code })),
+          },
         ] : [
           { name: "name", label: "Affiliate Name", required: true },
           { name: "email", label: "Email", type: "email", required: true },

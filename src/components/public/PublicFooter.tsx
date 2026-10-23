@@ -134,16 +134,9 @@ export default function PublicFooter({ contentBlockKey }: { contentBlockKey?: st
   const [footerSections, setFooterSections] = useState<CmsFooterSection[]>(
     normalizeFooterSections(FALLBACK_FOOTER_SECTIONS),
   );
-  // Generic placeholder hosts until the admin sets Tourvaa's real handles via
-  // the Website CMS - see F-05 in _audit_tools/CONSOLIDATED-BUG-REPORT.md.
-  const [socialLinks, setSocialLinks] = useState<SocialLinksBlock>({
-    facebook: "https://facebook.com",
-    instagram: "https://instagram.com",
-    youtube: "https://youtube.com",
-    whatsapp: "https://whatsapp.com",
-    twitter: "https://twitter.com",
-    linkedin: "https://linkedin.com",
-  });
+  // Do not send visitors to generic social-network homepages while the CMS
+  // handles are unconfigured. Icons appear only for real configured links.
+  const [socialLinks, setSocialLinks] = useState<SocialLinksBlock>({});
   const [portalContent, setPortalContent] = useState<PortalFooterContent | null>(null);
 
   // Country catalogue pages intentionally finish after their results and do
@@ -454,60 +447,60 @@ export default function PublicFooter({ contentBlockKey }: { contentBlockKey?: st
 
             {/* Social Media Icons */}
             <div className="flex flex-wrap items-center gap-3.5 sm:gap-4 text-white/90">
-              <a
-                href={activeSocialLinks.facebook || "https://facebook.com"}
+              {activeSocialLinks.facebook && <a
+                href={activeSocialLinks.facebook}
                 target="_blank"
                 rel="noreferrer"
                 aria-label="Facebook"
                 className="transition-transform duration-200 hover:scale-125 hover:text-white"
               >
                 <FaFacebookF size={16} />
-              </a>
-              <a
-                href={activeSocialLinks.instagram || "https://instagram.com"}
+              </a>}
+              {activeSocialLinks.instagram && <a
+                href={activeSocialLinks.instagram}
                 target="_blank"
                 rel="noreferrer"
                 aria-label="Instagram"
                 className="transition-transform duration-200 hover:scale-125 hover:text-white"
               >
                 <FaInstagram size={16} />
-              </a>
-              <a
-                href={activeSocialLinks.youtube || "https://youtube.com"}
+              </a>}
+              {activeSocialLinks.youtube && <a
+                href={activeSocialLinks.youtube}
                 target="_blank"
                 rel="noreferrer"
                 aria-label="YouTube"
                 className="transition-transform duration-200 hover:scale-125 hover:text-white"
               >
                 <FaYoutube size={16} />
-              </a>
-              <a
-                href={activeSocialLinks.whatsapp || "https://whatsapp.com"}
+              </a>}
+              {activeSocialLinks.whatsapp && <a
+                href={activeSocialLinks.whatsapp}
                 target="_blank"
                 rel="noreferrer"
                 aria-label="WhatsApp"
                 className="transition-transform duration-200 hover:scale-125 hover:text-white"
               >
                 <FaWhatsapp size={16} />
-              </a>
-              <a
-                href={activeSocialLinks.twitter || "https://twitter.com"}
+              </a>}
+              {activeSocialLinks.twitter && <a
+                href={activeSocialLinks.twitter}
                 target="_blank"
                 rel="noreferrer"
                 aria-label="X Twitter"
                 className="transition-transform duration-200 hover:scale-125 hover:text-white"
               >
                 <FaXTwitter size={16} />
-              </a>
-              <a
-                href={activeSocialLinks.linkedin || "https://linkedin.com"}
+              </a>}
+              {activeSocialLinks.linkedin && <a
+                href={activeSocialLinks.linkedin}
                 target="_blank"
                 rel="noreferrer"
                 aria-label="LinkedIn"
                 className="transition-transform duration-200 hover:scale-125 hover:text-white"
               >
                 <FaLinkedinIn size={16} />
-              </a>
+              </a>}
             </div>
           </div>
         </div>

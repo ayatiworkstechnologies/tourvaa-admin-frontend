@@ -140,13 +140,25 @@ check("agent support compose is connected", portalMessageThread.includes("sendOw
 
 const profile = read("src/app/agent/profile/page.tsx");
 const agentBankAndInvoicing = read("src/components/agent/profile/AgentBankAndInvoicingTab.tsx");
+const agencyDetails = read("src/components/agent/profile/AgencyDetailsTab.tsx");
 const verificationDocuments = read("src/components/agent/profile/VerificationDocumentsTab.tsx");
+const adminAgentDetail = read("src/app/admin/agents/[id]/page.tsx");
+const reviewList = read("src/components/operations/ReviewListPage.tsx");
 check("agent profile exposes business verification documents", profile.includes("VerificationDocumentsTab") && profile.includes("Business Verification"));
 check("locked agent bank identifiers remain masked after saving", agentBankAndInvoicing.includes("swift_code: saved.swift_code") && agentBankAndInvoicing.includes("values are masked after saving"));
 check("agent profile uses the restructured shared portal tab and content layout without fleet controls", profile.includes("overflow-x-auto") && profile.includes("w-full rounded-2xl") && profile.includes('role="tablist"') && !profile.includes("My Vehicles"));
 check("agent verification lists the required business document categories", ["company_registration", "iata_accreditation", "industry_certification", "other_licences", "supporting_documents"].every((type) => verificationDocuments.includes(type)));
 check("agent verification waits for all required non-rejected uploads", verificationDocuments.includes("allRequiredReady") && verificationDocuments.includes('document.status !== "rejected"') && verificationDocuments.includes("Submit for verification"));
 check("rejected agent documents show re-upload instructions", verificationDocuments.includes("Re-upload required") && verificationDocuments.includes("rejection_reason"));
+check("blank optional agent business email is sent as null", agencyDetails.includes("business_email: form.business_email.trim() || null"));
+check("agent profile advances after each completed onboarding module", profile.includes('onSaved={() => advanceToNextTab("agency")}') && profile.includes('onSaved={() => advanceToNextTab("billing")}') && profile.includes('onVerificationSubmitted={() => advanceToNextTab("documents")}') && agentBankAndInvoicing.includes("onSaved?.()") && verificationDocuments.includes("onVerificationSubmitted?.()"));
+check("agent profile keeps years in operation synchronized with the admin business record", agencyDetails.includes("years_in_business: parseInt(form.years_in_operation) || 0") && adminAgentDetail.includes("Number(record?.years_in_operation || 0) > 0"));
+check("admins select and can later change an agent operating currency", reviewList.includes('module === "agents" ? [') && reviewList.includes('label: "Operating Currency"') && adminAgentDetail.includes("Change operating currency") && adminAgentDetail.includes('updateReviewRecord("agents", id, { currency: String(payload.currency || "") })'));
+check("agent profile captures and saves monthly customer volume", agencyDetails.includes("monthly_customers_count: string") && agencyDetails.includes("monthly_customers_count: parseInt(form.monthly_customers_count) || 0") && agencyDetails.includes(">Monthly Customers<"));
+const agentService = readBackend("app/services/agents.py");
+const notificationTriggers = readBackend("app/utils/notification_triggers.py");
+check("commission requests notify admins in-app and by email", agentService.includes("notify_agent_commission_requested") && notificationTriggers.includes('notification_type="agent_commission_requested"') && notificationTriggers.includes('key="agent_commission_requested"'));
+check("commission decisions notify the agent in-app and by email", agentService.includes("notify_agent_commission_decision") && notificationTriggers.includes('notification_type=f"agent_commission_{decision}"') && notificationTriggers.includes('f"agent_commission_{decision}"'));
 
 const layout = read("src/app/agent/layout.tsx");
 const portalTheme = read("src/lib/constants/portalThemes.ts");

@@ -22,6 +22,7 @@ import {
   PublicTourDetail,
 } from "@/lib/api/publicClient";
 import { mediaUrl } from "@/lib/utils/mediaUrl";
+import { publicTourUrl } from "@/lib/utils/tourUrl";
 import { useCurrency } from "@/hooks/useCurrency";
 import WishlistButton from "@/components/public/WishlistButton";
 import Loader from "@/components/ui/Loader";
@@ -38,6 +39,7 @@ type CompareTourItem = {
   id: number;
   title: string;
   place: string;
+  country_name?: string;
   image: string;
   days: string;
   durationTag: string;
@@ -77,6 +79,7 @@ type CompareBase = {
   id: number;
   title: string;
   place: string;
+  country_name?: string;
   image: string;
   currency: string;
   rawPrice: number;
@@ -108,6 +111,7 @@ function buildCompareItem(
     id: base.id,
     title: detail?.title || base.title,
     place: destination,
+    country_name: detail?.country_name || base.country_name,
     image: detail?.banner_image ? mediaUrl(detail.banner_image) : base.image,
     days: `${daysCount} Days / ${nightsCount} Nights`,
     durationTag: `${daysCount}D | ${nightsCount}N`,
@@ -160,6 +164,7 @@ function tourToBase(tour: PublicTour): CompareBase {
     id: tour.id,
     title: tour.title,
     place: tour.country_name || tour.city_name || "Worldwide",
+    country_name: tour.country_name,
     image: tour.banner_image ? mediaUrl(tour.banner_image) : FALLBACK_TOUR_IMG,
     currency: tour.currency || "USD",
     rawPrice: tour.price_start_per_person ?? 0,
@@ -679,7 +684,9 @@ export default function ComparePage() {
                       price: tour.rawPrice,
                       currency: tour.currency,
                       duration: tour.days,
-                      href: tour.slug ? `/tours/${tour.slug}` : `/tours`,
+                      href: tour.slug
+                        ? publicTourUrl({ country_name: tour.country_name, title: tour.title, slug: tour.slug })
+                        : "/tours",
                     };
 
                     return (
@@ -1204,7 +1211,9 @@ export default function ComparePage() {
                   {activeItems.map((tour) => (
                     <Link
                       key={tour.id}
-                      href={tour.slug ? `/tours/${tour.slug}` : `/tours`}
+                      href={tour.slug
+                        ? publicTourUrl({ country_name: tour.country_name, title: tour.title, slug: tour.slug })
+                        : "/tours"}
                       className="inline-flex w-full items-center justify-center rounded-lg bg-pub-primary py-3 px-4 text-center text-xs sm:text-sm font-bold text-white shadow-xs transition duration-200 hover:bg-pub-primary-dark active:scale-[0.99]"
                     >
                       Book {tour.title}

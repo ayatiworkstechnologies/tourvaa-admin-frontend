@@ -15,6 +15,7 @@ export type BlogItem = {
   seo_description?: string | null;
   og_image?: string | null;
   related_tour_ids?: number[] | null;
+  related_tours?: { id: number; title: string }[] | null;
   scheduled_at?: string | null;
   status: "draft" | "published" | "scheduled";
   published_at?: string | null;

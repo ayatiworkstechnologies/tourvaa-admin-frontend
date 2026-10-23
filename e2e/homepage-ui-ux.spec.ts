@@ -50,9 +50,9 @@ test.describe("Homepage UI and UX Comprehensive Audit", () => {
       await expect(dropdown.getByText("Welcome to Tourvaa")).toBeVisible();
       await expect(dropdown.getByText("Traveller Account")).toBeVisible();
       await expect(dropdown.locator("a:has-text('Sign In')")).toBeVisible();
-      await expect(dropdown.locator("a:has-text('Travel Agent Portal')")).toBeVisible();
+      await expect(dropdown.locator("a:has-text('Agent Portal')")).toBeVisible();
       await expect(dropdown.locator("a:has-text('Affiliate Partner')")).toBeVisible();
-      await expect(dropdown.locator("a:has-text('Tour Operator / Supplier')")).toBeVisible();
+      await expect(dropdown.locator("a:has-text('Supplier Portal')")).toBeVisible();
       await dropdown.screenshot({ path: "test-results/profile-dropdown-before-login.png" });
 
       await page.keyboard.press("Escape");

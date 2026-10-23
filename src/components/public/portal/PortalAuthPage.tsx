@@ -516,9 +516,9 @@ function RegisterPanel({ config, safeRedirect, onSwitchToLogin }: { config: Port
         />
         <span>
           I agree to the{" "}
-          <Link className={`font-bold ${t.link}`} href={config.accountType === "SUPPLIER" ? "/supplier-terms" : config.accountType === "CUSTOMER" ? "/terms" : "/partner-terms"}>Terms & Conditions</Link>
+          <Link className={`font-bold ${t.link}`} href={config.accountType === "SUPPLIER" ? "/supplier-terms" : config.accountType === "CUSTOMER" ? "/terms" : "/partner-terms"} target="_blank" rel="noopener noreferrer">Terms & Conditions</Link>
           {" "}and{" "}
-          <Link className={`font-bold ${t.link}`} href={config.accountType === "SUPPLIER" ? "/supplier-privacy" : config.accountType === "CUSTOMER" ? "/privacy-policy" : "/partner-privacy"}>Privacy Policy</Link>.
+          <Link className={`font-bold ${t.link}`} href={config.accountType === "SUPPLIER" ? "/supplier-privacy" : config.accountType === "CUSTOMER" ? "/privacy-policy" : "/partner-privacy"} target="_blank" rel="noopener noreferrer">Privacy Policy</Link>.
         </span>
       </label>
 

@@ -61,6 +61,7 @@ import { useAuthContext } from "@/providers/AuthProvider";
 import { useToast } from "@/hooks/useToast";
 import { useGeoCountries } from "@/hooks/useGeo";
 import { useCurrency } from "@/hooks/useCurrency";
+import { getCurrencyList, loadCurrencyList, type CurrencyListItem } from "@/lib/utils/currency";
 import { openPrivateDocument } from "@/lib/api/services/privateDocumentService";
 
 type DetailValue = string | number | boolean | null | undefined;
@@ -168,7 +169,7 @@ export default function AgentDetailPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [modal, setModal] = useState<
-    "reject" | "partial" | "commercial" | "block" | "reject-document" | null
+    "reject" | "partial" | "commercial" | "block" | "currency" | "reject-document" | null
   >(null);
   const [activeTab, setActiveTab] = useState<
     | "overview"
@@ -184,6 +185,7 @@ export default function AgentDetailPage() {
   const [agentCommissionMax, setAgentCommissionMax] = useState<number | null>(
     null,
   );
+  const [currencies, setCurrencies] = useState<CurrencyListItem[]>(() => getCurrencyList());
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
   const copyValue = (value: string, label: string) => {
@@ -214,6 +216,10 @@ export default function AgentDetailPage() {
       .catch(() => {});
   }, []);
 
+  useEffect(() => {
+    void loadCurrencyList().then(setCurrencies).catch(() => {});
+  }, []);
+
   const approvalStatus = String(record?.approval_status || "").toLowerCase();
   const accountStatus = String(record?.status || "").toLowerCase();
   const isApproved = ["approved", "approved_live"].includes(approvalStatus);
@@ -232,6 +238,7 @@ export default function AgentDetailPage() {
   const canBlock =
     hasPermission("agents.edit") || hasPermission("agents.approve");
   const canEditLocation = hasPermission("agents.edit");
+  const canEditCurrency = hasPermission("agents.edit");
   const canReviewDocuments =
     hasPermission("agents.approve") || hasPermission("agents.reject");
   const canViewBookings =
@@ -299,10 +306,11 @@ export default function AgentDetailPage() {
 
   const storedBusinessYears = businessInfo?.years_in_business;
   const yearsInBusiness: DetailValue =
-    typeof storedBusinessYears === "string" ||
-    typeof storedBusinessYears === "number"
-      ? storedBusinessYears
-      : record?.years_in_operation;
+    Number(record?.years_in_operation || 0) > 0
+      ? record?.years_in_operation
+      : (typeof storedBusinessYears === "string" || typeof storedBusinessYears === "number"
+        ? storedBusinessYears
+        : record?.years_in_operation);
 
   const viewDocument = async (documentId: number) => {
     try {
@@ -520,6 +528,14 @@ export default function AgentDetailPage() {
                   className="inline-flex items-center gap-1.5 rounded-xl border border-dash-border bg-white px-3.5 py-2 text-xs font-bold text-dash-text hover:bg-slate-50 transition"
                 >
                   <MapPin size={14} className="text-dash-subtle" /> Edit Location
+                </button>
+              )}
+              {canEditCurrency && (
+                <button
+                  onClick={() => setModal("currency")}
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-dash-border bg-white px-3.5 py-2 text-xs font-bold text-dash-text hover:bg-slate-50 transition"
+                >
+                  <Coins size={14} className="text-dash-subtle" /> Change operating currency
                 </button>
               )}
             </div>
@@ -1656,6 +1672,22 @@ export default function AgentDetailPage() {
           </section>
 
           {/* Action Modals */}
+          <ActionModal
+            open={modal === "currency"}
+            title="Change Operating Currency"
+            saving={saving}
+            submitLabel="Save Currency"
+            onClose={() => setModal(null)}
+            onSubmit={(payload) => void run(() => updateReviewRecord("agents", id, { currency: String(payload.currency || "") }), "Operating currency updated.")}
+            initialValues={{ currency: record.currency || "" }}
+            fields={[{
+              name: "currency",
+              label: "Operating Currency",
+              type: "select",
+              required: true,
+              options: currencies.map((currency) => ({ label: `${currency.symbol} - ${currency.code} - ${currency.name}`, value: currency.code })),
+            }]}
+          />
           <ActionModal
             open={modal === "reject"}
             title="Reject agent"

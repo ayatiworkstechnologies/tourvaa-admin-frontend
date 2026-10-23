@@ -76,6 +76,12 @@ check(
     reviewList.includes("setEndDate(nextEndDate)"),
 );
 check(
+  "portal country forms load the complete catalogue while the header keeps its public active-country source",
+  geoHooks.includes('api.get("/settings/countries"') &&
+    geoHooks.includes("limit: 1000") &&
+    !geoHooks.includes('api.get("/geo/countries")'),
+);
+check(
   "all dashboard and report date filters use the shared range calendar",
   [adminDashboard, adminReports, supplierDashboard, supplierReports].every((source) => source.includes("<DateRangePicker")) &&
     [adminDashboard, adminReports, supplierDashboard, supplierReports].every((source) => !source.includes("<DatePicker")),

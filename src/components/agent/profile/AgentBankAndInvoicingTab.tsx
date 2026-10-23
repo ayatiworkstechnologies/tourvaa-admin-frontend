@@ -61,7 +61,7 @@ const Label = ({ children }: { children: React.ReactNode }) => (
   <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">{children}</span>
 );
 
-export default function AgentBankAndInvoicingTab() {
+export default function AgentBankAndInvoicingTab({ onSaved }: { onSaved?: () => void }) {
   const toast = useToast();
   const { countries } = useGeoCountries();
   const [form, setForm] = useState<InvoicingForm>(emptyForm);
@@ -211,6 +211,7 @@ export default function AgentBankAndInvoicingTab() {
         setBankLocked(Boolean(saved.bank_details_locked));
       }
       toast.success("Bank, invoicing and billing details saved.");
+      onSaved?.();
     } catch (error) {
       toast.error(errorMessage(error));
     } finally {

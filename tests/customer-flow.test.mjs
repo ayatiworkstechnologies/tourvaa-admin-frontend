@@ -39,6 +39,29 @@ check(
     detail.includes("window.setInterval(refreshTour, PUBLIC_TOUR_REFRESH_INTERVAL_MS)"),
 );
 const detailExperience = read("src/components/public/TourDetailExperience.tsx");
+const portalAuth = read("src/components/public/portal/PortalAuthPage.tsx");
+const customerRegister = read("src/app/(public)/register/page.tsx");
+const cookieConsent = read("src/components/public/CookieConsentBanner.tsx");
+check(
+  "supplier, agent, affiliate, and customer registration policy links open safely in a new tab",
+  (portalAuth.match(/target="_blank" rel="noopener noreferrer"/g) ?? []).length >= 2 &&
+    (customerRegister.match(/target="_blank" rel="noopener noreferrer"/g) ?? []).length >= 2,
+);
+check(
+  "cookie policy links open safely in a new tab and visitors can choose each optional category",
+  (cookieConsent.match(/target="_blank"/g) ?? []).length >= 2 &&
+    cookieConsent.includes('aria-checked={prefs.analytics}') &&
+    cookieConsent.includes('aria-checked={prefs.preferences}') &&
+    cookieConsent.includes('aria-checked={prefs.marketing}') &&
+    cookieConsent.includes("Save Choices"),
+);
+check(
+  "public tour details do not add stock gallery media or repeat guide and pace in Travel Essentials",
+  detailExperience.includes("const mosaicItems = galleryItems") &&
+    !detailExperience.includes("fallbackPool") &&
+    !detailExperience.includes("(tour.tour_language || tour.overview?.tour_type) && (") &&
+    !detailExperience.includes("{tour.overview?.tour_pace && ("),
+);
 check(
   "tour overview starts compact and can reveal its full content",
   detailExperience.includes("overviewCanCollapse") &&

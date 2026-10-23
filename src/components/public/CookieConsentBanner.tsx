@@ -124,6 +124,8 @@ export default function CookieConsentBanner() {
           customize your preferences anytime. See our{" "}
           <Link
             href="/cookie-policy"
+            target="_blank"
+            rel="noopener noreferrer"
             className="font-bold text-pub-accent underline underline-offset-2 hover:text-pub-primary transition"
           >
             Cookie Policy
@@ -131,6 +133,8 @@ export default function CookieConsentBanner() {
           and{" "}
           <Link
             href="/privacy-policy"
+            target="_blank"
+            rel="noopener noreferrer"
             className="font-bold text-pub-primary underline underline-offset-2 hover:text-pub-secondary transition"
           >
             Privacy Policy
@@ -193,7 +197,39 @@ export default function CookieConsentBanner() {
               </button>
             </div>
 
-            {/* 3. Marketing & Personalization */}
+            {/* 3. Preferences */}
+            <div className="flex items-center justify-between gap-3 border-t border-slate-200/60 pt-2.5">
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-1.5">
+                  <Sliders size={12} className="text-violet-600" />
+                  <span className="font-bold text-slate-900">
+                    Preferences &amp; Functionality
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-500 leading-tight mt-0.5">
+                  Remembers optional display and experience preferences between visits.
+                </p>
+              </div>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={prefs.preferences}
+                onClick={() =>
+                  setPrefs((p) => ({ ...p, preferences: !p.preferences }))
+                }
+                className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                  prefs.preferences ? "bg-violet-600" : "bg-slate-300"
+                }`}
+              >
+                <span
+                  className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                    prefs.preferences ? "translate-x-4" : "translate-x-0"
+                  }`}
+                />
+              </button>
+            </div>
+
+            {/* 4. Marketing & Personalization */}
             <div className="flex items-center justify-between gap-3 border-t border-slate-200/60 pt-2.5">
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-1.5">

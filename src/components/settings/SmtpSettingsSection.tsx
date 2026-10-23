@@ -19,13 +19,14 @@ type SmtpSummary = {
   timeout_seconds: number;
 };
 
-const inputClass = "w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand";
+const inputClass = "w-full rounded-xl border border-dash-border bg-white px-3.5 py-2.5 text-sm outline-none focus:border-dash-brand";
 
 export default function SmtpSettingsSection() {
   const [summary, setSummary] = useState<SmtpSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
+  const [messageTone, setMessageTone] = useState<"success" | "error">("success");
 
   const [isEnabled, setIsEnabled] = useState(false);
   const [host, setHost] = useState("");
@@ -97,9 +98,11 @@ export default function SmtpSettingsSection() {
       if (password.trim()) payload.password = password.trim();
 
       await api.put("/settings/smtp", payload);
+      setMessageTone("success");
       setMessage("SMTP settings updated successfully.");
       await load();
     } catch {
+      setMessageTone("error");
       setMessage("Could not update SMTP settings.");
     } finally {
       setSaving(false);
@@ -146,13 +149,25 @@ export default function SmtpSettingsSection() {
 
   return (
     <form onSubmit={save} className="space-y-6">
-      {message && <p className="rounded-xl bg-sky-50 px-4 py-3 text-sm text-dash-brand-hover">{message}</p>}
+      {message && (
+        <p className={`rounded-xl px-4 py-3 text-sm ${
+          messageTone === "error"
+            ? "bg-red-50 text-red-700"
+            : "bg-sky-50 text-dash-brand-hover"
+        }`}>{message}</p>
+      )}
 
       <div className="rounded-xl border border-dash-border p-5">
         <div className="mb-4 flex items-center justify-between">
           <h4 className="font-bold text-dash-text">SMTP Server</h4>
-          <label className="flex items-center gap-2 text-sm font-semibold">
-            <input type="checkbox" checked={isEnabled} onChange={(e) => setIsEnabled(e.target.checked)} /> Use this configuration
+          <label className="flex items-center gap-2 text-sm font-semibold text-dash-body cursor-pointer">
+            <input
+              type="checkbox"
+              checked={isEnabled}
+              onChange={(e) => setIsEnabled(e.target.checked)}
+              className="h-4 w-4 rounded border-slate-300 text-dash-brand accent-dash-brand focus:ring-dash-brand transition cursor-pointer"
+            />
+            Use this configuration
           </label>
         </div>
         <p className="mb-4 text-xs text-dash-subtle">
@@ -181,11 +196,23 @@ export default function SmtpSettingsSection() {
       <div className="rounded-xl border border-dash-border p-5">
         <h4 className="mb-4 font-bold text-dash-text">Connection</h4>
         <div className="grid gap-4 md:grid-cols-3">
-          <label className="flex items-center gap-2 text-sm font-semibold">
-            <input type="checkbox" checked={useSsl} onChange={(e) => setUseSsl(e.target.checked)} /> Use SSL
+          <label className="flex items-center gap-2 text-sm font-semibold text-dash-body cursor-pointer">
+            <input
+              type="checkbox"
+              checked={useSsl}
+              onChange={(e) => setUseSsl(e.target.checked)}
+              className="h-4 w-4 rounded border-slate-300 text-dash-brand accent-dash-brand focus:ring-dash-brand transition cursor-pointer"
+            />
+            Use SSL
           </label>
-          <label className="flex items-center gap-2 text-sm font-semibold">
-            <input type="checkbox" checked={useStarttls} onChange={(e) => setUseStarttls(e.target.checked)} /> Use STARTTLS
+          <label className="flex items-center gap-2 text-sm font-semibold text-dash-body cursor-pointer">
+            <input
+              type="checkbox"
+              checked={useStarttls}
+              onChange={(e) => setUseStarttls(e.target.checked)}
+              className="h-4 w-4 rounded border-slate-300 text-dash-brand accent-dash-brand focus:ring-dash-brand transition cursor-pointer"
+            />
+            Use STARTTLS
           </label>
           <label><span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Timeout (seconds)</span><input type="number" value={timeoutSeconds} onChange={(e) => setTimeoutSeconds(e.target.value)} className={inputClass} /></label>
         </div>
@@ -199,7 +226,7 @@ export default function SmtpSettingsSection() {
           test reflects them.
         </p>
         <div className="flex flex-wrap items-end gap-3">
-          <label className="min-w-56 flex-1">
+          <label className="min-w-0 sm:min-w-56 flex-1">
             <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Send to</span>
             <input type="email" value={testEmail} onChange={(e) => setTestEmail(e.target.value)} placeholder="name@company.com" className={inputClass} />
           </label>

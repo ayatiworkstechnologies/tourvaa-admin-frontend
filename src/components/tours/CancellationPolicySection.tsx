@@ -151,7 +151,7 @@ export default function CancellationPolicySection({ tourId }: { tourId: string }
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-xl font-bold text-dash-text">Cancellation Policy</h2>
           <p className="text-sm text-dash-subtle">Refund tiers based on days before departure. Rules with no match here fall back to the global policy.</p>
@@ -160,7 +160,7 @@ export default function CancellationPolicySection({ tourId }: { tourId: string }
         <button
           type="button"
           onClick={() => setShowForm(true)}
-          className="inline-flex items-center gap-2 rounded-xl bg-dash-brand px-4 py-2 text-sm font-bold text-white"
+          className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-dash-brand px-4 py-2 text-sm font-bold text-white"
         >
           <Plus size={16} /> Add Rule
         </button>
@@ -192,8 +192,8 @@ export default function CancellationPolicySection({ tourId }: { tourId: string }
       )}
 
       {rules.length > 0 && (
-        <div className="overflow-hidden rounded-xl border border-dash-border">
-          <table className="w-full text-sm">
+        <div className="overflow-x-auto rounded-xl border border-dash-border">
+          <table className="w-full min-w-[540px] text-sm">
             <thead className="bg-[#F7F9FC] text-left text-xs font-bold uppercase text-dash-subtle">
               <tr>
                 <th className="px-4 py-2.5">Days before departure</th>
@@ -212,10 +212,10 @@ export default function CancellationPolicySection({ tourId }: { tourId: string }
                   <td className="px-4 py-2.5 text-dash-subtle">{rule.description || "-"}</td>
                   <td className="px-4 py-2.5 text-right">
                     <div className="flex justify-end gap-2">
-                      <button type="button" onClick={() => startEdit(rule)} className="rounded-lg border border-dash-border p-1.5 text-dash-subtle hover:bg-[#F7F9FC]">
+                      <button type="button" aria-label="Edit rule" onClick={() => startEdit(rule)} className="flex h-8 w-8 items-center justify-center rounded-lg border border-dash-border text-dash-subtle hover:bg-[#F7F9FC]">
                         <Pencil size={14} />
                       </button>
-                      <button type="button" onClick={() => remove(rule.id)} className="rounded-lg border border-[#FFCDD2] p-1.5 text-red-500 hover:bg-[#FFF0F0]">
+                      <button type="button" aria-label="Delete rule" onClick={() => remove(rule.id)} className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#FFCDD2] text-red-500 hover:bg-[#FFF0F0]">
                         <Trash2 size={14} />
                       </button>
                     </div>
@@ -231,7 +231,7 @@ export default function CancellationPolicySection({ tourId }: { tourId: string }
         <form onSubmit={save} noValidate className="rounded-xl border-2 border-dash-brand bg-white p-6">
           <h3 className="mb-4 font-bold text-dash-text">{editingId ? "Edit Cancellation Rule" : "New Cancellation Rule"}</h3>
           <ErrorSummary errors={errors} />
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
             <FormField name="days_before_tour_min" label="From (days before)" required error={errors.days_before_tour_min} hint="The rule starts this many days before departure. 0 = departure day.">
               <input id="days_before_tour_min" name="days_before_tour_min" type="number" min={0} value={form.days_before_tour_min}
                 onChange={(e) => { setForm((f) => ({ ...f, days_before_tour_min: e.target.value })); clearError("days_before_tour_min"); }}

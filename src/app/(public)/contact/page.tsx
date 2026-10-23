@@ -184,7 +184,14 @@ const DEFAULT_PARTNERS: Required<PartnerItem>[] = [
 ];
 const DEFAULT_PARTNERS_HEADING = { eyebrow: "PARTNERSHIP CHANNELS", heading: "Dedicated Solutions for Industry Partners", subtitle: "Specialized business portals and rapid support desks for operators, travel agencies, and media." };
 
-type OfficeItem = { address_line1?: string; address_line2?: string; phone?: string; hours?: string; timezone?: string };
+type OfficeItem = {
+  office_id?: string;
+  address_line1?: string;
+  address_line2?: string;
+  phone?: string;
+  hours?: string;
+  timezone?: string;
+};
 const DEFAULT_OFFICES_HEADING = { eyebrow: "GLOBAL FOOTPRINT", heading: "Our Regional Headquarters", subtitle: "Local knowledge. Worldwide coordination. Select an office below to inspect our regional headquarters and operational contact details." };
 
 // Fetches an admin-editable content block and returns its `data`, falling
@@ -256,6 +263,14 @@ export default function ContactPage({ audience }: { audience?: "supplier" | "age
     ? [0, 1, 2, 3].map((i) => ({ ...DEFAULT_PARTNERS[i], ...partnersBlock.items?.[i] }))
     : DEFAULT_PARTNERS;
   const officeItems = officesBlock.items ?? [];
+  // Current CMS records identify their office explicitly.  The positional
+  // fallback retains compatibility with records saved before this field was
+  // introduced, but new/reordered records can no longer update the wrong city.
+  const officeItemsById = new Map(
+    officeItems
+      .filter((item) => item.office_id === "nz" || item.office_id === "lk" || item.office_id === "in")
+      .map((item) => [item.office_id as string, item]),
+  );
 
   const { supportEmail } = usePublicSettings();
   const [openFaqId, setOpenFaqId] = useState<string>("cancellation");
@@ -1084,7 +1099,7 @@ export default function ContactPage({ audience }: { audience?: "supplier" | "age
             {OFFICES.map((office, index) => {
               const isSelected = activeOfficeId === office.id;
               const defaultMeta = OFFICE_CONTACT_META[office.id];
-              const cmsMeta = officeItems[index];
+              const cmsMeta = officeItemsById.get(office.id) ?? officeItems[index];
               const meta = {
                 phone: cmsMeta?.phone || defaultMeta.phone,
                 hours: cmsMeta?.hours || defaultMeta.hours,
