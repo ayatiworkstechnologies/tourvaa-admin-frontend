@@ -63,7 +63,7 @@ export default function TourOverviewTab({ tourId, embedded = false, onSaved }: {
 
   const field = (key: keyof TourOverview, label: string, placeholder?: string) => (
     <label key={key}>
-      <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">{label}</span>
+      <span className="mb-1.5 block text-xs font-bold text-slate-700">{label}</span>
       <input
         value={(form[key] as string) ?? ""}
         onChange={(e) => update(key, e.target.value)}
@@ -75,7 +75,7 @@ export default function TourOverviewTab({ tourId, embedded = false, onSaved }: {
 
   const textareaField = (key: keyof TourOverview, label: string, placeholder?: string) => (
     <label key={key} className="md:col-span-2 lg:col-span-3">
-      <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">{label}</span>
+      <span className="mb-1.5 block text-xs font-bold text-slate-700">{label}</span>
       <textarea
         value={(form[key] as string) ?? ""}
         onChange={(e) => update(key, e.target.value)}

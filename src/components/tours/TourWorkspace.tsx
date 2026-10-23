@@ -325,12 +325,27 @@ export function TourWorkspaceContent({
   stepLabel?: string;
 }) {
   const colors = theme[role];
+  const parts = stepLabel ? stepLabel.split("·") : [];
+  const stepNumberText = parts[0]?.trim();
+  const stepTitleText = parts[1]?.trim();
+
   return (
-    <div className={`mt-4 rounded-2xl border bg-white p-5 pb-28 sm:p-7 sm:pb-28 ${colors.contentBorder} ${colors.contentShadow} ${className}`}>
+    <div className={`mt-4 rounded-3xl border border-slate-200/90 bg-white p-6 pb-28 sm:p-8 sm:pb-28 shadow-[0_4px_24px_rgba(15,23,42,0.03)] ${className}`}>
       {stepLabel && (
-        <div className={`mb-5 flex items-center gap-2 border-b pb-4 ${colors.divider}`}>
-          <span className={`h-1.5 w-1.5 rounded-full ${colors.progressBar}`} />
-          <span className={`text-[11px] font-black uppercase tracking-[.1em] ${colors.progressText}`}>{stepLabel}</span>
+        <div className={`mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 border-b pb-4 ${colors.divider}`}>
+          <div className="flex flex-wrap items-center gap-2.5">
+            <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-black uppercase tracking-wider ${
+              role === "supplier" ? "bg-emerald-50 text-emerald-800 border border-emerald-200/90" : "bg-blue-50 text-blue-800 border border-blue-200/90"
+            }`}>
+              <span className={`h-2 w-2 rounded-full ${colors.progressBar}`} />
+              {stepNumberText || stepLabel}
+            </span>
+            {stepTitleText && (
+              <h2 className="text-lg sm:text-xl font-black tracking-tight text-slate-900">
+                {stepTitleText}
+              </h2>
+            )}
+          </div>
         </div>
       )}
       {children}

@@ -763,10 +763,10 @@ function FormSection({
   badge?: string;
 }) {
   return (
-    <section className="rounded-2xl border border-slate-200/90 bg-white shadow-xs transition-shadow">
+    <section className="rounded-2xl border border-slate-200/90 bg-white shadow-2xs transition-all hover:shadow-xs">
       <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4 sm:px-6 rounded-t-2xl bg-gradient-to-r from-slate-50/50 via-white to-slate-50/20">
         <div className="flex items-center gap-3">
-          <span className={`flex h-9 w-9 flex-none items-center justify-center rounded-xl shadow-2xs ${
+          <span className={`flex h-10 w-10 flex-none items-center justify-center rounded-xl shadow-xs ${
             role === "supplier" ? "bg-emerald-50 text-emerald-700 border border-emerald-100" : "bg-blue-50 text-blue-700 border border-blue-100"
           }`}>
             <Icon size={18} />
@@ -847,8 +847,8 @@ export default function TourFormPage({
       ? "focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
       : "focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
   }`;
-  const defaultInputClass = `${baseInputClass} border-slate-200 bg-white text-slate-800 hover:border-slate-300 placeholder:text-slate-400`;
-  const errorInputClass = `${baseInputClass} border-red-400 bg-red-50/20 text-slate-900 focus:border-red-500 focus:ring-red-100 placeholder:text-red-300`;
+  const defaultInputClass = `${baseInputClass} border-slate-200/90 bg-slate-50/50 text-slate-900 hover:border-slate-300 hover:bg-slate-50 focus:bg-white placeholder:text-slate-400`;
+  const errorInputClass = `${baseInputClass} border-red-400 bg-red-50/30 text-slate-900 focus:border-red-500 focus:ring-red-100 placeholder:text-red-300`;
   const inputClass = defaultInputClass;
   const getInputClass = (fieldName: string) => (errors[fieldName] ? errorInputClass : defaultInputClass);
 

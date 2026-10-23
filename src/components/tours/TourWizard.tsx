@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useConfirm } from "@/hooks/useConfirm";
+import { useToast } from "@/hooks/useToast";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   LuArrowLeft as ArrowLeft,
@@ -12,18 +13,20 @@ import {
   LuCompass as MapPinned,
   LuRotateCcw as RotateCcw,
   LuLoaderCircle as Loader2,
+  LuSparkles as Sparkles,
 } from "react-icons/lu";
 
 import api from "@/lib/api/client";
 import TourFormPage from "@/components/cms/TourFormPage";
 import { TourWorkspaceContent, TourWorkspaceHeader } from "@/components/tours/TourWorkspace";
 import { WizardSideStepper } from "@/components/tours/wizard/WizardSideStepper";
+import { LiveTourPreview } from "@/components/tours/wizard/LiveTourPreview";
 import { WizardStickyActionBar, type WizardBarButton } from "@/components/tours/wizard/WizardStickyActionBar";
 import { WizardReviewSubmit } from "@/components/tours/wizard/WizardReviewSubmit";
 import { useStepCompletion } from "@/components/tours/wizard/useStepCompletion";
 import { WIZARD_STEPS } from "@/components/tours/wizard/steps";
 import TourOverviewTab from "@/components/tours/TourOverviewTab";
-import TourStyleGuideSection from "@/components/tours/TourStyleGuideSection";
+import TourStyleGuideSection, { type TourStyleDraft } from "@/components/tours/TourStyleGuideSection";
 import TourHighlightsTab from "@/components/tours/TourHighlightsTab";
 import TourItineraryTab from "@/components/tours/TourItineraryTab";
 import TourItemsTab from "@/components/tours/TourItemsTab";
@@ -36,6 +39,7 @@ import TourCalendarTab from "@/components/tours/TourCalendarTab";
 import TourExtensionsTab from "@/components/tours/TourExtensionsTab";
 import TourDiscountsTab from "@/components/tours/TourDiscountsTab";
 import TourSimilarTab from "@/components/tours/TourSimilarTab";
+import { saveOverview, updateTourGroupSize } from "@/lib/api/services/tourDetailService";
 
 type Tour = {
   [key: string]: unknown;
@@ -117,6 +121,7 @@ const STEP_FORM_IDS: Record<string, string[]> = {
 
 export default function TourWizard({ tourId, role }: { tourId?: string; role: "admin" | "supplier" }) {
   const router = useRouter();
+  const toast = useToast();
   const isSupplier = role === "supplier";
   const basePath = isSupplier ? "/supplier/tours" : "/admin/tours";
   // SEO is maintained by Tourvaa. Supplier users receive the same editor
@@ -136,10 +141,12 @@ export default function TourWizard({ tourId, role }: { tourId?: string; role: "a
   // True once a persistent form on the current step has been edited and not yet
   // saved; navigation asks before throwing those edits away.
   const [dirty, setDirty] = useState(false);
+  const [showLivePreview, setShowLivePreview] = useState(false);
   const [savedAt, setSavedAt] = useState<Date | null>(null);
   // "Save & Next" bookkeeping (see saveCurrentStep): forms still to report saved, and whether to advance.
   const [pendingSaves, setPendingSaves] = useState(0);
   const [advanceAfterSave, setAdvanceAfterSave] = useState(false);
+  const [createStyleDraft, setCreateStyleDraft] = useState<TourStyleDraft | null>(null);
 
   const moveToStep = useCallback((index: number) => {
     setActiveIndex(index);
@@ -239,7 +246,7 @@ export default function TourWizard({ tourId, role }: { tourId?: string; role: "a
     void fetchComments();
   }, [fetchTour, fetchComments]);
 
-  const { statuses, refresh: refreshCompletion } = useStepCompletion(tourId, tour);
+  const { statuses, counts, refresh: refreshCompletion } = useStepCompletion(tourId, tour);
 
   const getApiErrorMessage = (error: unknown, fallback: string) => {
     const response = (error as { response?: { data?: { detail?: string; message?: string } } })?.response;
@@ -294,6 +301,24 @@ export default function TourWizard({ tourId, role }: { tourId?: string; role: "a
     setPendingSaves((n) => Math.max(0, n - 1));
   }, [fetchTour, refreshCompletion]);
 
+  const saveCreateStyleDraft = useCallback(async (createdTourId: number) => {
+    if (!createStyleDraft) return;
+
+    const writes: Promise<unknown>[] = [];
+    if (createStyleDraft.hasStyleChanges) {
+      writes.push(saveOverview(createdTourId, createStyleDraft.overview));
+    }
+    if (createStyleDraft.hasGroupSizeChanges) {
+      const min = Number(createStyleDraft.minGroupSize);
+      const max = Number(createStyleDraft.maxGroupSize);
+      if (!Number.isInteger(min) || !Number.isInteger(max) || min < 1 || max < min) {
+        throw new Error("Enter a valid group size: minimum must be at least 1 and cannot exceed maximum.");
+      }
+      writes.push(updateTourGroupSize(createdTourId, min, max));
+    }
+    await Promise.all(writes);
+  }, [createStyleDraft]);
+
   useEffect(() => {
     if (advanceAfterSave && pendingSaves === 0) {
       setAdvanceAfterSave(false);
@@ -323,10 +348,21 @@ export default function TourWizard({ tourId, role }: { tourId?: string; role: "a
                 role={role}
                 sections={["basic-core"]}
                 formId="wizard-form-create"
-                onSaved={(saved) => {
+                onSaved={async (saved) => {
                   const id = (saved as { id?: number } | undefined)?.id;
+                  if (id) {
+                    try {
+                      await saveCreateStyleDraft(id);
+                    } catch (error) {
+                      toast.warning(error instanceof Error ? error.message : "Tour was created, but its draft styles could not be saved. You can save them from Step 1.");
+                    }
+                  }
                   router.push(id ? `${basePath}/${id}/edit?step=location` : basePath);
                 }}
+              />
+              <TourStyleGuideSection
+                minBookingSize={1}
+                onDraftChange={setCreateStyleDraft}
               />
             </TourWorkspaceContent>
             <WizardStickyActionBar
@@ -440,6 +476,9 @@ export default function TourWizard({ tourId, role }: { tourId?: string; role: "a
           <span className="text-[11px] text-dash-muted">
             {banner ? banner.message : "Changes save inside each section below."}
           </span>
+          <button type="button" onClick={() => setShowLivePreview(true)} className="inline-flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50/90 px-3 py-1 text-xs font-bold text-blue-700 hover:bg-blue-100 hover:border-blue-300 transition shadow-2xs"><Sparkles size={12} className="text-blue-600" /><span>Live Card Preview</span></button>
+          <span className="hidden">
+          </span>
           {!isSupplier && (
             <span className="basis-full text-[11px] text-dash-muted sm:basis-auto sm:ml-auto">
               Created: <b className="font-semibold text-dash-body">{auditDate(tour?.created_at)}</b>
@@ -477,8 +516,9 @@ export default function TourWizard({ tourId, role }: { tourId?: string; role: "a
       )}
 
       {dialog}
+      <LiveTourPreview isOpen={showLivePreview} onClose={() => setShowLivePreview(false)} tour={tour} statuses={statuses} counts={counts} />
       <div className="mt-4 flex flex-col gap-4 lg:flex-row">
-        <WizardSideStepper role={role} activeIndex={activeIndex} visitedIndexes={visitedSteps} statuses={statuses} onSelect={(i) => void selectStep(i)} steps={wizardSteps} />
+        <WizardSideStepper role={role} activeIndex={activeIndex} visitedIndexes={visitedSteps} statuses={statuses} onSelect={(i) => void selectStep(i)} steps={wizardSteps} onOpenLivePreview={() => setShowLivePreview(true)} />
         <div className="min-w-0 flex-1">
 
           {openCommentsForStep.length > 0 && (

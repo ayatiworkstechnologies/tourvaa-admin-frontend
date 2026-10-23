@@ -10,7 +10,7 @@ import {
   LuCircleCheck as CheckCircle,
   LuRotateCcw as RotateCcw,
 } from "react-icons/lu";
-import { CalendarEntry, getCalendar, createCalendarEntry, updateCalendarEntry, deleteCalendarEntry, UnavailableDate, getUnavailableDates, createUnavailableDate, deleteUnavailableDate, AvailabilityConfig, getAvailabilityConfig, saveAvailabilityConfig } from "@/lib/api/services/tourDetailService";
+import { CalendarEntry, getCalendar, updateCalendarEntry, deleteCalendarEntry, UnavailableDate, getUnavailableDates, createUnavailableDate, deleteUnavailableDate, AvailabilityConfig, getAvailabilityConfig, saveAvailabilityConfig } from "@/lib/api/services/tourDetailService";
 import { getApiErrorMessage } from "@/lib/utils/errorHandler";
 import { generateScheduleDates, MONTH_WEEK_OPTIONS } from "@/lib/tours/availabilitySchedule";
 import { useToast } from "@/hooks/useToast";
@@ -21,8 +21,6 @@ import DatePicker from "@/components/ui/DatePicker";
 import { numberInputValue, parseNumberInput, sanitizeNumber } from "@/lib/utils/numberInput";
 
 const STATUSES = ["available", "unavailable", "sold_out", "blocked"];
-const emptyEntry = (): CalendarEntry => ({ tour_date: "", available_seats: 10, booked_seats: 0, status: "available" });
-
 const MONTH_OPTIONS = [
   { value: "all", label: "All Months" },
   { value: "01", label: "January (01)" },
@@ -89,9 +87,6 @@ export default function TourCalendarTab({ tourId }: { tourId: string }) {
   const [savingSchedule, setSavingSchedule] = useState(false);
   const [removeUnmatched, setRemoveUnmatched] = useState(false);
   const [syncingSeats, setSyncingSeats] = useState(false);
-  // Calendar seats are the total departure capacity. The group size limits
-  // adults + children in one booking and must not replace this value.
-  const calendarSeatDefault = schedule.seats_per_occurrence || 10;
 
   // Filters & Pagination state for Tour Calendar
   const [selectedYear, setSelectedYear] = useState<string>("all");
@@ -332,13 +327,15 @@ export default function TourCalendarTab({ tourId }: { tourId: string }) {
     setSaving(true);
     try {
       const payload = { ...editing, available_seats: sanitizeNumber(editing.available_seats), booked_seats: sanitizeNumber(editing.booked_seats) };
-      if (editing.id) {
-        const updated = await updateCalendarEntry(tourId, editing.id, payload);
-        setEntries((prev) => prev.map((i) => i.id === updated.id ? updated : i));
-      } else {
-        const created = await createCalendarEntry(tourId, payload);
-        setEntries((prev) => [...prev, created]);
+      // Departure dates are generated from the saved schedule. This editor
+      // only changes an existing generated date; it must not create a one-off
+      // manual date outside that availability schedule.
+      if (!editing.id) {
+        toast.error("Choose a scheduled departure date to edit.");
+        return;
       }
+      const updated = await updateCalendarEntry(tourId, editing.id, payload);
+      setEntries((prev) => prev.map((i) => i.id === updated.id ? updated : i));
       setEditing(null);
       toast.success("Saved.");
     } catch (error: unknown) {
@@ -607,13 +604,6 @@ export default function TourCalendarTab({ tourId }: { tourId: string }) {
                 <span>Apply {schedule.seats_per_occurrence || 10} Total Seats to All</span>
               </button>
             )}
-            <button
-              type="button"
-              onClick={() => setEditing({ ...emptyEntry(), available_seats: calendarSeatDefault })}
-              className="inline-flex items-center gap-2 rounded-xl bg-dash-brand px-4 py-2 text-sm font-bold text-white shadow-xs transition hover:opacity-90 active:scale-95 cursor-pointer self-start sm:self-auto"
-            >
-              <Plus size={16} /> Add Date
-            </button>
           </div>
         </div>
 
