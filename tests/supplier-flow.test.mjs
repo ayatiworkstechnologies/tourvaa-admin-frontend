@@ -204,7 +204,9 @@ check(
   sharedTourForm.includes("hasLocalEditsRef") &&
     sharedTourForm.includes("hydratedInitialDataKeyRef") &&
     sharedTourForm.includes("hasLocalEditsRef.current = true") &&
-    sharedTourForm.includes("hydratedInitialDataKeyRef.current === snapshotKey"),
+    sharedTourForm.includes("hydratedInitialDataKeyRef.current === snapshotKey") &&
+    sharedTourForm.includes("formState.isDirty") &&
+    sharedTourForm.includes("shouldTouch: true"),
 );
 check(
   "supplier edit reuses its loaded tour record in the shared form",

@@ -858,7 +858,14 @@ export default function TourFormPage({
   // A wizard parent can receive a refreshed tour object while this form remains
   // mounted.  Keep that refresh from replacing a supplier's first selection.
   const hasLocalEditsRef = useRef(false);
-  const hydratedInitialDataKeyRef = useRef<string | null>(null);
+  // `useForm` already consumes initialData as its default values. Mark that
+  // first snapshot as hydrated so the post-mount effect below cannot reset a
+  // select after its first change event has fired.
+  const hydratedInitialDataKeyRef = useRef<string | null>(
+    initialData
+      ? `${String(initialData.id ?? tourId ?? "")}:${String(initialData.updated_at ?? "")}`
+      : null
+  );
   const [supplierCurrency, setSupplierCurrency] = useState("");
 
   // New tours start with the platform's default deposit terms already
@@ -1017,7 +1024,10 @@ export default function TourFormPage({
   }, [fetchTour]);
 
   useEffect(() => {
-    if (!initialData || hasLocalEditsRef.current) return;
+    // Only accept a genuinely newer parent snapshot before the user has
+    // interacted with this form. In particular, do not replace the first
+    // category selection with a late parent refresh.
+    if (!initialData || hasLocalEditsRef.current || formState.isDirty) return;
 
     const snapshotKey = `${String(initialData.id ?? tourId ?? "")}:${String(initialData.updated_at ?? "")}`;
     if (hydratedInitialDataKeyRef.current === snapshotKey) return;
@@ -1025,7 +1035,7 @@ export default function TourFormPage({
     reset(normalizeTourForm(initialData));
     setActiveDiscount((initialData as { active_discount?: ActiveDiscount }).active_discount ?? null);
     hydratedInitialDataKeyRef.current = snapshotKey;
-  }, [initialData, reset, tourId]);
+  }, [formState.isDirty, initialData, reset, tourId]);
 
   useEffect(() => {
     if (!tourId) return;
@@ -1068,7 +1078,7 @@ export default function TourFormPage({
 
   const update = (key: string, value: string) => {
     hasLocalEditsRef.current = true;
-    setValue(key, value, { shouldDirty: true });
+    setValue(key, value, { shouldDirty: true, shouldTouch: true });
   };
 
   const selectedSubcategoryIds = useMemo(
