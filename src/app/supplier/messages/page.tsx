@@ -5,7 +5,7 @@ import PortalMessageThread from "@/components/messaging/PortalMessageThread";
 export default function SupplierMessagesPage() {
   return (
     <SupplierPageShell>
-      <SupplierPageHeader title="Messages" description="Contact Tourvaa for booking matters or operational support. Tourvaa manages all customer and agent communication." icon={MessageSquare} />
+      <SupplierPageHeader title="Messages" description="Contact Tourvaa for account and operational support. Booking conversations are handled directly with the booking contact." icon={MessageSquare} />
 
       <div className="mt-4">
         <PortalMessageThread portal="supplier" />

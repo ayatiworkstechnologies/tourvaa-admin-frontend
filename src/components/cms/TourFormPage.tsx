@@ -2,6 +2,7 @@
 
 import { ErrorSummary } from "@/components/tours/FormKit";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useForm, useWatch } from "react-hook-form";
 import {
   LuAlignLeft as AlignLeft,
   LuArrowLeft as ArrowLeft,
@@ -60,6 +61,7 @@ const ALL_SECTIONS: Section[] = ["basic-core", "settings", "location", "media", 
 
 type DropdownOption = { id: number; label: string };
 type SubcategoryOption = { id: number; label: string; category_id: number | null };
+type TourFormValues = Record<string, string>;
 
 function normalizeTourForm(data: Record<string, unknown>) {
   return Object.fromEntries(
@@ -805,16 +807,40 @@ export default function TourFormPage({
   const isSupplier = role === "supplier";
   // Checkout charges are controlled by Tourvaa. Suppliers can configure the
   // deposit policy but must not view or modify tax and service-fee settings.
-  const [errors, setErrors] = useState<Record<string, string>>({});
-
-  const clearError = (field: string) => {
-    setErrors((prev) => {
-      if (!prev[field]) return prev;
-      const next = { ...prev };
-      delete next[field];
-      return next;
+  const {
+    clearErrors: clearHookErrors,
+    formState,
+    getFieldState,
+    getValues,
+    handleSubmit,
+    reset,
+    setError,
+    setValue,
+    control,
+  } = useForm<TourFormValues>({
+    defaultValues: initialData
+      ? normalizeTourForm(initialData)
+      : { currency: "USD", status: "draft", number_of_days: "1" },
+  });
+  const form = useWatch({ control }) ?? {};
+  const errors = useMemo<Record<string, string>>(
+    () => Object.fromEntries(
+      Object.entries(formState.errors).map(([field, error]) => [field, error?.message ?? "This field is invalid."])
+    ),
+    [formState.errors]
+  );
+  const replaceErrors = useCallback((next: Record<string, string>) => {
+    clearHookErrors();
+    Object.entries(next).forEach(([field, message]) => {
+      setError(field, { type: "manual", message });
     });
-  };
+  }, [clearHookErrors, setError]);
+  const mergeErrors = useCallback((next: Record<string, string>) => {
+    Object.entries(next).forEach(([field, message]) => {
+      setError(field, { type: "server", message });
+    });
+  }, [setError]);
+  const clearError = (field: string) => clearHookErrors(field);
 
   const baseInputClass = `w-full rounded-xl border px-4 py-2.5 text-sm outline-none transition shadow-2xs font-normal ${
     isSupplier
@@ -829,15 +855,6 @@ export default function TourFormPage({
   const saveButtonClass = isSupplier
     ? "bg-gradient-to-r from-emerald-600 to-teal-700 text-white shadow-md shadow-emerald-500/20 hover:from-emerald-700 hover:to-teal-800 hover:shadow-lg hover:-translate-y-0.5 active:scale-95 transition-all"
     : "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/20 hover:from-blue-700 hover:to-indigo-700 hover:shadow-lg hover:-translate-y-0.5 active:scale-95 transition-all";
-  const [form, setForm] = useState<Record<string, string>>(() =>
-    initialData
-      ? normalizeTourForm(initialData)
-      : {
-          currency: "USD",
-          status: "draft",
-           number_of_days: "1",
-         }
-  );
   // A wizard parent can receive a refreshed tour object while this form remains
   // mounted.  Keep that refresh from replacing a supplier's first selection.
   const hasLocalEditsRef = useRef(false);
@@ -851,42 +868,54 @@ export default function TourFormPage({
   // and friends) -- editable from here, not locked to the default.
   useEffect(() => {
     if (initialData || tourId) return;
+    let active = true;
     api.get("/settings/public").then((res) => {
+      if (!active) return;
       const settings = res.data?.data ?? {};
-      setForm((prev) => ({
-        ...prev,
-        deposit_type: prev.deposit_type ?? "percentage",
-        deposit_percentage: prev.deposit_percentage ?? settings.default_deposit_percentage ?? "20",
-        deposit_cutoff_days: prev.deposit_cutoff_days ?? settings.default_deposit_cutoff_days ?? "30",
-        balance_payment_deadline_days: prev.balance_payment_deadline_days ?? settings.default_balance_payment_deadline_days ?? "14",
-      }));
+      const setDefault = (field: string, value: string) => {
+        // Do not let a late settings response replace anything the person has
+        // already selected or typed on Step 1.
+        if (!getValues(field) && !getFieldState(field).isDirty) {
+          setValue(field, value, { shouldDirty: false });
+        }
+      };
+      setDefault("deposit_type", "percentage");
+      setDefault("deposit_percentage", String(settings.default_deposit_percentage ?? "20"));
+      setDefault("deposit_cutoff_days", String(settings.default_deposit_cutoff_days ?? "30"));
+      setDefault("balance_payment_deadline_days", String(settings.default_balance_payment_deadline_days ?? "14"));
     }).catch(() => {
       // Non-fatal -- the fields stay blank and the same defaults still
       // apply automatically at booking time either way.
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    return () => { active = false; };
+  }, [getFieldState, getValues, initialData, setValue, tourId]);
 
   // New tours created by a supplier start pre-filled with that supplier's
   // own country/currency (set on their profile - see CompanyInfoTab) rather
   // than always defaulting to blank country / USD. The supplier can still
   // change either field manually afterward.
   useEffect(() => {
-    if (!isSupplier) return;
+    // A saved tour owns its own location and currency. Supplier profile
+    // values are defaults for a *new* tour only; applying them during edit
+    // was overwriting Step 1 values after the page had loaded.
+    if (!isSupplier || initialData || tourId) return;
+    let active = true;
     api.get("/suppliers/me").then((res) => {
+      if (!active) return;
       const supplier = res.data?.data ?? {};
       const profileCurrency = String(supplier.currency || "").trim().toUpperCase();
       if (profileCurrency) setSupplierCurrency(profileCurrency);
-      setForm((prev) => ({
-        ...prev,
-        country_id: prev.country_id || (supplier.country_id ? String(supplier.country_id) : prev.country_id),
-        currency: profileCurrency || prev.currency,
-      }));
+      if (!getValues("country_id") && !getFieldState("country_id").isDirty && supplier.country_id) {
+        setValue("country_id", String(supplier.country_id), { shouldDirty: false });
+      }
+      if (!getFieldState("currency").isDirty && profileCurrency) {
+        setValue("currency", profileCurrency, { shouldDirty: false });
+      }
     }).catch(() => {
       // Non-fatal -- the form just keeps its blank/USD defaults.
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    return () => { active = false; };
+  }, [getFieldState, getValues, initialData, isSupplier, setValue, tourId]);
   const [loading, setLoading] = useState(Boolean(tourId && !initialData));
   const [saving, setSaving] = useState(false);
   const [conflict, setConflict] = useState<{ message: string; current_updated_by?: number } | null>(null);
@@ -974,14 +1003,14 @@ export default function TourFormPage({
     setLoading(true);
     try {
       const data = await getCms("/tours", tourId);
-      setForm(normalizeTourForm(data));
+      reset(normalizeTourForm(data));
       setActiveDiscount((data as { active_discount?: ActiveDiscount }).active_discount ?? null);
     } catch {
       toast.error("Could not load tour.");
     } finally {
       setLoading(false);
     }
-  }, [initialData, toast, tourId]);
+  }, [initialData, reset, toast, tourId]);
 
   useEffect(() => {
     void fetchTour();
@@ -993,10 +1022,10 @@ export default function TourFormPage({
     const snapshotKey = `${String(initialData.id ?? tourId ?? "")}:${String(initialData.updated_at ?? "")}`;
     if (hydratedInitialDataKeyRef.current === snapshotKey) return;
 
-    setForm(normalizeTourForm(initialData));
+    reset(normalizeTourForm(initialData));
     setActiveDiscount((initialData as { active_discount?: ActiveDiscount }).active_discount ?? null);
     hydratedInitialDataKeyRef.current = snapshotKey;
-  }, [initialData, tourId]);
+  }, [initialData, reset, tourId]);
 
   useEffect(() => {
     if (!tourId) return;
@@ -1019,7 +1048,7 @@ export default function TourFormPage({
           if (!active) return;
           const supplierCurrency = res.data?.data?.currency;
           if (supplierCurrency && supplierCurrency !== "USD") {
-            setForm((prev) => (prev.currency === "USD" ? { ...prev, currency: supplierCurrency } : prev));
+            if (getValues("currency") === "USD") setValue("currency", supplierCurrency);
           }
         }).catch(() => {
           // Non-fatal -- the tour just keeps its existing USD currency.
@@ -1039,7 +1068,7 @@ export default function TourFormPage({
 
   const update = (key: string, value: string) => {
     hasLocalEditsRef.current = true;
-    setForm((prev) => ({ ...prev, [key]: value }));
+    setValue(key, value, { shouldDirty: true });
   };
 
   const selectedSubcategoryIds = useMemo(
@@ -1181,7 +1210,7 @@ export default function TourFormPage({
       }
     }
 
-    setErrors(newErrors);
+    replaceErrors(newErrors);
 
     if (Object.keys(newErrors).length > 0) {
       const firstField = Object.keys(newErrors)[0];
@@ -1199,9 +1228,7 @@ export default function TourFormPage({
     return true;
   };
 
-  const submit = async (event: React.FormEvent) => {
-    event.preventDefault();
-
+  const submit = async () => {
     if (!validateForm(sections)) {
       return;
     }
@@ -1281,7 +1308,7 @@ export default function TourFormPage({
         ? await updateCms("/tours", tourId, payload)
         : await createCms("/tours", payload);
       toast.success("Tour saved successfully.");
-      setErrors({});
+      clearHookErrors();
       await onSaved?.(saved);
     } catch (err: unknown) {
       const response = (err as { response?: { status?: number; data?: Record<string, unknown> } })?.response;
@@ -1302,7 +1329,7 @@ export default function TourFormPage({
           }
         }
         if (Object.keys(serverErrors).length > 0) {
-          setErrors((prev) => ({ ...prev, ...serverErrors }));
+          mergeErrors(serverErrors);
           const firstField = Object.keys(serverErrors)[0];
           const el = document.querySelector(`[data-field="${firstField}"], [name="${firstField}"]`);
           el?.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -1333,7 +1360,7 @@ export default function TourFormPage({
     setLoading(true);
     try {
       const data = await getCms("/tours", tourId);
-      setForm(normalizeTourForm(data));
+      reset(normalizeTourForm(data));
       setConflict(null);
     } catch {
       toast.error("Could not reload the tour.");
@@ -1391,7 +1418,7 @@ export default function TourFormPage({
           <Loader label="Loading tour..." />
         </div>
       ) : (
-        <form onSubmit={submit} id={formId} noValidate className={`${embedded ? "" : "mx-auto mt-4 max-w-6xl"} space-y-4`}>
+        <form onSubmit={handleSubmit(submit)} id={formId} noValidate className={`${embedded ? "" : "mx-auto mt-4 max-w-6xl"} space-y-4`}>
           <ErrorSummary errors={Object.fromEntries(Object.entries(errors).filter(([, message]) => Boolean(message)))} />
           {/* Embedded in the tour editor, the step's single Save button (bottom bar) submits this form. */}
           {!embedded && (

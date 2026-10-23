@@ -90,9 +90,12 @@ export function useGeoCountries() {
 
   useEffect(() => {
     if (_countriesCache) { setCountries(_countriesCache); return; }
+    let cancelled = false;
     fetchCountries()
-      .then(setCountries)
-      .finally(() => setLoading(false));
+      .then((data) => { if (!cancelled) setCountries(data); })
+      .catch(() => { if (!cancelled) setCountries([]); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
   }, []);
 
   return { countries, loading };

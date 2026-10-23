@@ -44,9 +44,8 @@ function saveQueuedMessages(bookingId: number, messages: QueuedBookingMessage[])
   try { window.localStorage.setItem(queueStorageKey(bookingId), JSON.stringify(messages)); } catch { /* best effort */ }
 }
 
-/** Booking-specific conversation between the portal user and Tourvaa Admin.
- * Server-side recipient filtering keeps Admin-to-Supplier and
- * Admin-to-Agent/Customer replies in their own private portal threads. */
+/** Direct booking conversation between the booking initiator and supplier.
+ * Admin can monitor the same history but is never a delivery recipient. */
 export default function BookingMessageThread({ bookingId, compact = false }: { bookingId: number; compact?: boolean }) {
   const [thread, setThread] = useState<BookingConversationThread | null>(null);
   const [loading, setLoading] = useState(true);
@@ -56,7 +55,7 @@ export default function BookingMessageThread({ bookingId, compact = false }: { b
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [isOnline, setIsOnline] = useState(true);
   const [queuedMessages, setQueuedMessages] = useState<QueuedBookingMessage[]>([]);
-  const [adminTyping, setAdminTyping] = useState(false);
+  const [supplierTyping, setSupplierTyping] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
   const typingStopTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -127,8 +126,8 @@ export default function BookingMessageThread({ bookingId, compact = false }: { b
   const sendSocketEvent = useMessagingSocket(
     useCallback(
       (event) => {
-        if (event.type === "admin_presence") {
-          setThread((prev) => (prev ? { ...prev, admin_online: event.online } : prev));
+        if (event.type === "participant_presence") {
+          setThread((prev) => (prev && prev.supplier_user_id === event.user_id ? { ...prev, supplier_online: event.online } : prev));
           return;
         }
         if (event.type === "new_booking_message") {
@@ -140,8 +139,8 @@ export default function BookingMessageThread({ bookingId, compact = false }: { b
           ));
           return;
         }
-        if (event.type === "typing" && event.scope === "booking" && event.conversation_id === thread?.id && event.sender_role === "admin") {
-          setAdminTyping(event.is_typing);
+        if (event.type === "typing" && event.scope === "booking" && event.conversation_id === thread?.id && event.sender_role === "supplier") {
+          setSupplierTyping(event.is_typing);
           return;
         }
         if (event.type === "booking_message_deleted") {
@@ -243,15 +242,15 @@ export default function BookingMessageThread({ bookingId, compact = false }: { b
     <div className={`flex flex-col rounded-xl border border-dash-border bg-white shadow-sm ${compact ? "min-h-64" : "h-[480px]"}`}>
       <div className="border-b border-dash-border-soft px-5 py-3">
         <div className="flex items-center justify-between gap-3">
-          <p className="font-bold text-dash-text">Message Tourvaa Support</p>
+          <p className="font-bold text-dash-text">Message your supplier</p>
           <div className="flex items-center gap-2">
             {!isOnline && <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-1 text-[11px] font-bold text-amber-800"><WifiOff size={13} />Device offline</span>}
-            <PresenceBadge online={thread?.admin_online ?? false} subject="Tourvaa Admin" />
+            <PresenceBadge online={thread?.supplier_online ?? false} subject={thread?.supplier_name || "Supplier"} />
           </div>
         </div>
-        <p className="mt-0.5 text-xs text-dash-subtle">Ask about this booking directly. Drafts are saved on this device.</p>
+        <p className="mt-0.5 text-xs text-dash-subtle">Messages go directly to your supplier. Drafts are saved on this device.</p>
         {!isOnline && <p className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-2 text-xs text-amber-900">Messages written now are saved on this device and queued until you reconnect.</p>}
-        {adminTyping && <p className="mt-1 text-xs font-medium text-dash-brand">Tourvaa Admin is typing…</p>}
+        {supplierTyping && <p className="mt-1 text-xs font-medium text-dash-brand">{thread?.supplier_name || "Supplier"} is typing…</p>}
       </div>
 
       <div className={`flex-1 space-y-3 overflow-y-auto px-5 py-4 ${compact ? "max-h-80 min-h-32" : ""}`}>
@@ -266,12 +265,12 @@ export default function BookingMessageThread({ bookingId, compact = false }: { b
                 <span className="rounded-full border border-dash-border bg-white px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-dash-muted shadow-sm">{group.date}</span>
               </div>
               {group.messages.map((msg) => {
-                const isAdminMessage = msg.sender_role === "admin";
-                const isOwnMessage = !isAdminMessage;
+                const isSupplierMessage = msg.sender_role === "supplier";
+                const isOwnMessage = !isSupplierMessage;
                 const deliveryLabel = emailDeliveryLabel(msg);
                 return (
-                  <div key={msg.id} className={`group flex items-end gap-1.5 ${isAdminMessage ? "justify-start" : "justify-end"}`}>
-                    {!msg.is_deleted && !isAdminMessage && (
+                  <div key={msg.id} className={`group flex items-end gap-1.5 ${isSupplierMessage ? "justify-start" : "justify-end"}`}>
+                    {!msg.is_deleted && isOwnMessage && (
                       <button
                         type="button"
                         onClick={() => removeMessage(msg.id)}
@@ -283,9 +282,9 @@ export default function BookingMessageThread({ bookingId, compact = false }: { b
                         <Trash2 size={13} />
                       </button>
                     )}
-                    <div className={`max-w-[80%] rounded-2xl px-4 py-2.5 ${isAdminMessage ? "bg-dash-bg text-dash-text" : "bg-dash-brand text-white"} ${msg.is_deleted ? "italic opacity-70" : ""}`}>
-                      <p className={`whitespace-pre-wrap ${isAdminMessage ? "text-xs" : "text-sm"}`}>{msg.is_deleted ? "This message was deleted." : msg.body}</p>
-                      <div className={`mt-1 flex items-center gap-2 text-[10px] ${isAdminMessage ? "text-dash-subtle" : "text-white/70"}`}>
+                    <div className={`max-w-[80%] rounded-2xl px-4 py-2.5 ${isSupplierMessage ? "bg-dash-bg text-dash-text" : "bg-dash-brand text-white"} ${msg.is_deleted ? "italic opacity-70" : ""}`}>
+                      <p className={`whitespace-pre-wrap ${isSupplierMessage ? "text-xs" : "text-sm"}`}>{msg.is_deleted ? "This message was deleted." : msg.body}</p>
+                      <div className={`mt-1 flex items-center gap-2 text-[10px] ${isSupplierMessage ? "text-dash-subtle" : "text-white/70"}`}>
                         <span>{messageTime(msg.created_at)}</span>
                         {deliveryLabel && !msg.is_deleted && (
                           <span className="inline-flex items-center gap-1" title={deliveryLabel}>
@@ -293,7 +292,7 @@ export default function BookingMessageThread({ bookingId, compact = false }: { b
                           </span>
                         )}
                         {isOwnMessage && !msg.is_deleted && (
-                          <span className="inline-flex items-center gap-0.5" title={msg.read_at ? "Read by Tourvaa Admin" : "Sent to Tourvaa Admin"}>
+                          <span className="inline-flex items-center gap-0.5" title={msg.read_at ? "Read by supplier" : "Sent to supplier"}>
                             <CheckCheck size={11} /> {msg.read_at ? "Read" : "Sent"}
                           </span>
                         )}

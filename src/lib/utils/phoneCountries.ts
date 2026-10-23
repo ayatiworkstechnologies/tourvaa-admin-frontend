@@ -58,6 +58,14 @@ export function countryForIso(iso: CountryCode): PhoneCountry | undefined {
   return BY_ISO.get(iso);
 }
 
+/** Map the ISO value stored by the geographic-country catalogue to a phone
+ * country.  A form can therefore keep its address country and calling code
+ * aligned without hard-coding a default such as India. */
+export function isoForCountryCode(value: string | null | undefined): CountryCode | undefined {
+  const iso = String(value ?? "").trim().toUpperCase() as CountryCode;
+  return BY_ISO.has(iso) ? iso : undefined;
+}
+
 /** Reverse lookup for loading a legacy stored "+<dialcode><digits>" value
  * back into a country selection - tries the longest matching dial code
  * first (some codes are prefixes of others, e.g. +1 vs +1xxx isn't a

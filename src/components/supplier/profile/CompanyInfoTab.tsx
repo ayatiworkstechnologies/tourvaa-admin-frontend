@@ -12,7 +12,7 @@ import CountryPhoneInput from "@/components/ui/CountryPhoneInput";
 import SearchableSelect from "@/components/ui/SearchableSelect";
 import CurrencySelect from "@/components/ui/CurrencySelect";
 import { combinePhone, validateMobile, mobileHelp, validatePassword, passwordHelp } from "@/lib/utils/validators";
-import { dialCodeForIso, isoForDialCode } from "@/lib/utils/phoneCountries";
+import { dialCodeForIso, isoForCountryCode, isoForDialCode } from "@/lib/utils/phoneCountries";
 import type { CountryCode } from "libphonenumber-js/min";
 
 function apiErr(err: unknown, fallback: string) {
@@ -366,6 +366,8 @@ export default function CompanyInfoTab({ onSaved }: { onSaved?: () => void }) {
               <SearchableSelect value={form.country_id}
                 onChange={(nextCountryId) => {
                   setSelectedStateId("");
+                  const phoneIso = isoForCountryCode(countries.find((country) => String(country.id) === nextCountryId)?.code);
+                  if (phoneIso) { setPhoneCountryIso(phoneIso); setContactPhoneCountryIso(phoneIso); }
                   setForm(f => {
                     // Auto-fill currency from the newly selected country unless
                     // the supplier already set one manually.

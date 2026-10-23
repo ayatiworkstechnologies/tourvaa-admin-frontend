@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useSyncExternalStore } from "react";
 import api from "@/lib/api/client";
 import { currencySymbol, formatCurrency, formatCurrencyCompact } from "@/lib/utils/currency";
 
@@ -34,13 +34,22 @@ export const PUBLIC_HEADER_COUNTRY_CODES = [
   "AU", "SE", "AT", "BE", "DE", "CA", "FI", "IL", "GB", "NZ", "FR",
   "JP", "KR", "IN", "CN",
 ] as const;
-const listeners = new Set<(state: CurrencyState) => void>();
+const listeners = new Set<() => void>();
 let state: CurrencyState = { code: "USD", baseCode: "USD", rates: { USD: 1 }, loading: true, isStale: false, forced: false, countryCode: "", countrySource: "unknown" };
 let loadPromise: Promise<void> | null = null;
 
 function emit(next: Partial<CurrencyState>) {
   state = { ...state, ...next };
-  listeners.forEach((listener) => listener(state));
+  listeners.forEach((listener) => listener());
+}
+
+function subscribeCurrency(listener: () => void) {
+  listeners.add(listener);
+  return () => listeners.delete(listener);
+}
+
+function getCurrencySnapshot() {
+  return state;
 }
 
 function localeCountry(): string {
@@ -227,10 +236,9 @@ export async function setDisplayCountry(code: string, preferredCurrency?: string
 }
 
 export function useCurrency() {
-  const [snapshot, setSnapshot] = useState(state);
+  const snapshot = useSyncExternalStore(subscribeCurrency, getCurrencySnapshot, getCurrencySnapshot);
 
   useEffect(() => {
-    listeners.add(setSnapshot);
     void loadCurrency();
     const syncStoredCurrency = (event: StorageEvent) => {
       if (event.newValue == null) return;
@@ -243,7 +251,6 @@ export function useCurrency() {
     };
     window.addEventListener("storage", syncStoredCurrency);
     return () => {
-      listeners.delete(setSnapshot);
       window.removeEventListener("storage", syncStoredCurrency);
     };
   }, []);

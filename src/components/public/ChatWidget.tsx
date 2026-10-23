@@ -513,6 +513,7 @@ export default function ChatWidget() {
   };
 
   const handleFeedback = (index: number, messageId: number, rating: 1 | -1) => {
+    if (!sessionKey) return;
     setMessages((prev) => {
       const next = [...prev];
       const current = next[index];
@@ -520,7 +521,7 @@ export default function ChatWidget() {
       next[index] = { ...current, feedback: rating };
       return next;
     });
-    void submitChatFeedback(messageId, rating).catch(() => {
+    void submitChatFeedback(messageId, sessionKey, rating).catch(() => {
       setMessages((prev) => {
         const next = [...prev];
         next[index] = { ...next[index], feedback: null };

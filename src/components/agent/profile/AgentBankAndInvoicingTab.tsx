@@ -8,7 +8,7 @@ import { useGeoCountries } from "@/hooks/useGeo";
 import { useToast } from "@/hooks/useToast";
 import CountryPhoneInput from "@/components/ui/CountryPhoneInput";
 import { combinePhone, validateMobile } from "@/lib/utils/validators";
-import { dialCodeForIso, isoForDialCode } from "@/lib/utils/phoneCountries";
+import { dialCodeForIso, isoForCountryCode, isoForDialCode } from "@/lib/utils/phoneCountries";
 import type { CountryCode } from "libphonenumber-js/min";
 
 type InvoicingForm = {
@@ -279,7 +279,12 @@ export default function AgentBankAndInvoicingTab({ onSaved }: { onSaved?: () => 
             <select
               required
               value={form.country_id}
-              onChange={(e) => set("country_id", e.target.value)}
+              onChange={(e) => {
+                const countryId = e.target.value;
+                const phoneIso = isoForCountryCode(countries.find((country) => String(country.id) === countryId)?.code);
+                if (phoneIso) setFinancePhoneCountryIso(phoneIso);
+                set("country_id", countryId);
+              }}
               className={fieldClass}
             >
               <option value="">Select country</option>

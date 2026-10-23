@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { phoneValidationError, validatePhoneForCountry } from "@/lib/utils/phoneCountries";
+import { isoForCountryCode, phoneValidationError, validatePhoneForCountry } from "@/lib/utils/phoneCountries";
 
 describe("country-aware mobile validation", () => {
   it("rejects short Indian mobile numbers with a specific message", () => {
@@ -25,5 +25,11 @@ describe("country-aware mobile validation", () => {
   it("validates other countries using their numbering plan", () => {
     expect(validatePhoneForCountry("AU", "0412345678")).toBe(true);
     expect(validatePhoneForCountry("AU", "6789")).toBe(false);
+  });
+
+  it("maps a geographic country code to the matching phone country", () => {
+    expect(isoForCountryCode("us")).toBe("US");
+    expect(isoForCountryCode("IN")).toBe("IN");
+    expect(isoForCountryCode("not-a-country")).toBeUndefined();
   });
 });

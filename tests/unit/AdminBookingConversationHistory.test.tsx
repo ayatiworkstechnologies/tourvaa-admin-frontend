@@ -1,13 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { render, screen, waitFor, within } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
+import { render, screen } from "@testing-library/react";
 
 const getAdminBookingConversations = vi.fn();
-const replyToAdminBookingConversation = vi.fn();
 
 vi.mock("@/lib/api/services/messagingService", () => ({
   getAdminBookingConversations: (...args: unknown[]) => getAdminBookingConversations(...args),
-  replyToAdminBookingConversation: (...args: unknown[]) => replyToAdminBookingConversation(...args),
 }));
 
 const { default: AdminBookingConversationHistory } = await import(
@@ -44,45 +41,24 @@ const conversation = {
 describe("AdminBookingConversationHistory", () => {
   beforeEach(() => {
     getAdminBookingConversations.mockReset();
-    replyToAdminBookingConversation.mockReset();
     getAdminBookingConversations.mockResolvedValue(structuredClone([conversation]));
   });
 
-  it("keeps supplier and agent messages in separate columns", async () => {
+  it("shows one chronological participant history for admin monitoring", async () => {
     render(<AdminBookingConversationHistory bookingId={42} />);
 
-    const supplier = await screen.findByRole("region", { name: "Supplier conversation" });
-    const agent = screen.getByRole("region", { name: "Agent conversation" });
-
-    expect(within(supplier).getByText("Supplier message")).toBeInTheDocument();
-    expect(within(supplier).getByText("Supplier reply")).toBeInTheDocument();
-    expect(within(supplier).queryByText("Agent message")).not.toBeInTheDocument();
-    expect(within(agent).getByText("Agent message")).toBeInTheDocument();
-    expect(within(agent).getByText("Agent reply")).toBeInTheDocument();
-    expect(within(agent).queryByText("Supplier message")).not.toBeInTheDocument();
-    expect(within(supplier).getByText("Online")).toBeInTheDocument();
-    expect(within(agent).getByText("Offline")).toBeInTheDocument();
+    const history = await screen.findByRole("region", { name: "Direct booking conversation" });
+    expect(history).toHaveTextContent("Southern Tours");
+    expect(history).toHaveTextContent("Brightlane Agent");
+    expect(history).toHaveTextContent("Supplier message");
+    expect(history).toHaveTextContent("Agent message");
+    expect(history).toHaveTextContent("Admin monitoring only");
   });
 
-  it("sends each reply to the selected portal and keeps it in that column", async () => {
-    const user = userEvent.setup();
-    replyToAdminBookingConversation.mockResolvedValue({
-      id: 5,
-      conversation_id: 17,
-      sender_role: "admin",
-      sender_user_id: 1,
-      sender_name: "Admin",
-      recipient_role: "supplier",
-      body: "New supplier reply",
-      created_at: "2026-10-07T04:00:00Z",
-    });
+  it("does not offer an Admin compose control", async () => {
     render(<AdminBookingConversationHistory bookingId={42} />);
-
-    const supplier = await screen.findByRole("region", { name: "Supplier conversation" });
-    await user.type(within(supplier).getByRole("textbox", { name: "Message for supplier" }), "New supplier reply");
-    await user.click(within(supplier).getByRole("button", { name: "Reply to supplier" }));
-
-    expect(replyToAdminBookingConversation).toHaveBeenCalledWith(17, "New supplier reply", "supplier");
-    await waitFor(() => expect(within(supplier).getByText("New supplier reply")).toBeInTheDocument());
+    await screen.findByRole("region", { name: "Direct booking conversation" });
+    expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
+    expect(screen.getByText("Admin receives no message-email copies and cannot reply in this participant thread.")).toBeInTheDocument();
   });
 });

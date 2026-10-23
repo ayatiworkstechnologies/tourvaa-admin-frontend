@@ -848,17 +848,17 @@ export default function SupplierBookingDetailPage() {
           </div>
         )}
 
-        {/* Supplier booking messages are private to Tourvaa Admin. */}
+        {/* Direct supplier-to-booking-contact conversation; Admin monitors only. */}
         <div id="booking-messages" className="flex h-[500px] scroll-mt-28 flex-col overflow-hidden rounded-2xl border border-dash-border bg-white shadow-sm lg:col-span-2">
           <div className="flex items-start justify-between gap-3 border-b border-dash-border-soft px-5 py-4">
             <div className="flex min-w-0 items-start gap-2">
               <MessageSquare size={18} className="mt-0.5 shrink-0 text-emerald-600" />
               <div>
-                <h2 className="font-black text-dash-text">Message Tourvaa Admin</h2>
-                <p className="mt-0.5 text-xs text-dash-subtle">Private booking messages with the Tourvaa Admin team.</p>
+                <h2 className="font-black text-dash-text">Message booking contact</h2>
+                <p className="mt-0.5 text-xs text-dash-subtle">Direct messages with the customer or travel agent for this booking.</p>
               </div>
             </div>
-            <PresenceBadge online={messageThread?.admin_online ?? false} subject="Tourvaa Admin" />
+            <PresenceBadge online={messageThread?.initiator_online ?? false} subject={messageThread?.initiator_name || "Booking contact"} />
           </div>
 
           <div className="flex-1 space-y-3 overflow-y-auto bg-dash-bg/40 px-5 py-4">
@@ -866,7 +866,7 @@ export default function SupplierBookingDetailPage() {
             <div className="flex h-full flex-col items-center justify-center rounded-xl border border-dashed border-dash-border bg-white py-10 text-center">
               <MessageSquare size={28} className="text-dash-subtle" />
               <p className="mt-3 text-sm font-bold text-dash-text">No messages yet</p>
-              <p className="mt-1 text-xs text-dash-muted">Messages sent to or received from Tourvaa Admin will appear here.</p>
+              <p className="mt-1 text-xs text-dash-muted">Messages sent to or received from the booking contact will appear here.</p>
             </div>
           ) : (
             messageGroups.map((group) => (
@@ -876,7 +876,7 @@ export default function SupplierBookingDetailPage() {
                   const isSupplierMessage = message.sender_role === "supplier";
                   return <div key={message.id} className={`flex ${isSupplierMessage ? "justify-end" : "justify-start"}`}>
                     <div className={`max-w-[80%] rounded-2xl px-4 py-2.5 shadow-sm ${isSupplierMessage ? "bg-emerald-600 text-white" : "bg-white text-dash-text"}`}>
-                      <p className={`text-[10px] font-bold ${isSupplierMessage ? "text-emerald-100" : "text-dash-subtle"}`}>{isSupplierMessage ? "You" : "Tourvaa Admin"}</p>
+                      <p className={`text-[10px] font-bold ${isSupplierMessage ? "text-emerald-100" : "text-dash-subtle"}`}>{isSupplierMessage ? "You" : messageThread?.initiator_name || "Booking contact"}</p>
                       <p className={`mt-1 whitespace-pre-wrap ${isSupplierMessage ? "text-sm" : "text-xs"}`}>{message.is_deleted ? "This message was deleted." : message.body}</p>
                       <p className={`mt-1 text-[10px] ${isSupplierMessage ? "text-emerald-100" : "text-dash-subtle"}`}>{message.created_at ? new Date(message.created_at).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" }) : ""}</p>
                     </div>
@@ -891,7 +891,7 @@ export default function SupplierBookingDetailPage() {
             <input
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
-              placeholder="Write a message to Tourvaa Admin..."
+              placeholder="Write a message to the booking contact..."
               className="flex-1 rounded-xl border border-dash-border px-3 py-2 text-sm outline-none focus:border-emerald-500"
             />
             <button

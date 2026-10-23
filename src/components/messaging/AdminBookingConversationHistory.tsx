@@ -252,6 +252,47 @@ export default function AdminBookingConversationHistory({ bookingId }: { booking
     return <p className="rounded-xl border border-dashed border-dash-border px-4 py-6 text-center text-xs text-dash-muted">No customer, agent, or supplier portal messages for this booking yet.</p>;
   }
 
+  // Booking messages are a direct participant conversation. Admin can audit
+  // the complete, chronological history but cannot compose into the thread.
+  const directConversation = conversations[0];
+  const directMessages = conversations
+    .flatMap((conversation) => conversation.messages)
+    .filter((message, index, messages) => messages.findIndex((candidate) => candidate.id === message.id) === index)
+    .sort((first, second) => new Date(first.created_at).getTime() - new Date(second.created_at).getTime());
+
+  return (
+    <section aria-label="Direct booking conversation" className="flex h-[30rem] min-h-80 flex-col overflow-hidden rounded-xl border border-dash-border-soft bg-dash-bg p-4">
+      <div className="flex items-start justify-between gap-3 border-b border-dash-border-soft pb-3">
+        <div className="min-w-0">
+          <h3 className="text-sm font-bold text-dash-text">Participant conversation</h3>
+          <p className="mt-0.5 text-xs text-dash-muted">
+            {directConversation.initiator_name || directConversation.initiator_role} and {directConversation.supplier_name || "Supplier"} — Admin monitoring only
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <PresenceBadge online={directConversation.initiator_online} subject={directConversation.initiator_role} />
+          <PresenceBadge online={directConversation.supplier_online} subject="Supplier" />
+        </div>
+      </div>
+      <div className="mt-3 min-h-0 flex-1 space-y-3 overflow-y-auto pr-1">
+        {directMessages.map((message) => {
+          const fromSupplier = message.sender_role === "supplier";
+          const sender = message.sender_name || (fromSupplier ? "Supplier" : directConversation.initiator_name || directConversation.initiator_role);
+          return (
+            <article key={message.id} className={`max-w-[82%] rounded-xl px-3 py-2 ${fromSupplier ? "mr-auto bg-white" : "ml-auto bg-blue-50"}`}>
+              <div className="flex items-center justify-between gap-3 text-[10px]">
+                <span className="font-bold text-dash-text">{sender}</span>
+                <span className="text-dash-subtle">{displayDate(message.created_at)} {displayTime(message.created_at)}</span>
+              </div>
+              <p className="mt-1 whitespace-pre-wrap break-words text-sm text-dash-body">{message.is_deleted ? "This message was deleted." : message.body}</p>
+            </article>
+          );
+        })}
+      </div>
+      <p className="mt-3 border-t border-dash-border-soft pt-3 text-xs text-dash-muted">Admin receives no message-email copies and cannot reply in this participant thread.</p>
+    </section>
+  );
+
   // A booking has one supplier side and one booking-origin side.  Keep those
   // two portal conversations side-by-side: an Agent-created booking gets an
   // Agent column, while a direct booking gets a Customer column.  Historical
@@ -271,15 +312,18 @@ export default function AdminBookingConversationHistory({ bookingId }: { booking
           )),
         }
       : null,
-    initiatorConversation
-      ? {
-          conversation: initiatorConversation,
-          role: initiatorConversation.initiator_role as "agent" | "customer",
-          messages: conversations.flatMap((conversation) => conversation.messages.filter(
-            (message) => message.sender_role === initiatorConversation.initiator_role || (message.sender_role === "admin" && message.recipient_role === initiatorConversation.initiator_role),
-          )),
-        }
-      : null,
+    ...(() => {
+      if (!initiatorConversation) return [null];
+      const directInitiator = initiatorConversation!;
+      const initiatorRole = directInitiator.initiator_role as "agent" | "customer";
+      return [{
+        conversation: directInitiator,
+        role: initiatorRole,
+        messages: conversations.flatMap((conversation) => conversation.messages.filter(
+          (message) => message.sender_role === initiatorRole || (message.sender_role === "admin" && message.recipient_role === initiatorRole),
+        )),
+      }];
+    })(),
   ].filter((thread): thread is { conversation: BookingConversationThread; role: "supplier" | "agent" | "customer"; messages: BookingMessage[] } => Boolean(thread));
 
   return (

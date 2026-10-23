@@ -222,11 +222,10 @@ const messagingService = read("src/lib/api/services/messagingService.ts");
 check("supplier message history is connected", messages.includes('PortalMessageThread portal="supplier"') && portalMessageThread.includes("getOwnConversation(portal)") && messagingService.includes('supplier: "/supplier/messages"'));
 check("supplier support compose is connected", portalMessageThread.includes("sendOwnMessage(portal") && messagingService.includes("api.post(OWN_MESSAGES_PATH[portal]"));
 check(
-  "supplier messages route customer and agent communication through Tourvaa",
+  "supplier messages route booking communication directly to the customer or agent",
   messages.includes('PortalMessageThread portal="supplier"') &&
-    messages.includes("Tourvaa manages all customer and agent communication.") &&
-    !messages.includes("Customers & Agents") &&
-    messagingService.includes("Supplier <-> Tourvaa Admin"),
+    !messages.includes("Tourvaa manages all customer and agent communication.") &&
+    messagingService.includes("initiator <-> supplier"),
 );
 
 const payouts = read("src/app/supplier/payouts/page.tsx");

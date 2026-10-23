@@ -7,10 +7,11 @@ import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
 import { useToast } from "@/hooks/useToast";
 import CountryPhoneInput from "@/components/ui/CountryPhoneInput";
 import { combinePhone, validateMobile } from "@/lib/utils/validators";
-import { dialCodeForIso } from "@/lib/utils/phoneCountries";
+import { dialCodeForIso, isoForCountryCode } from "@/lib/utils/phoneCountries";
 import type { CountryCode } from "libphonenumber-js/min";
 import { AgentPageHeader, AgentPageShell, AgentSection } from "@/components/agent/AgentPage";
 import { useGeoCities, useGeoCountries, useGeoStates } from "@/hooks/useGeo";
+import { useDebounce } from "@/hooks/useDebounce";
 
 type Customer = {
   id: number;
@@ -39,15 +40,6 @@ function dateText(value?: string | null) {
   if (!value) return "-";
   const d = new Date(value);
   return Number.isNaN(d.getTime()) ? value : d.toLocaleDateString("en-US", { day: "2-digit", month: "short", year: "numeric" });
-}
-
-function useDebounce<T>(value: T, delay: number): T {
-  const [debounced, setDebounced] = useState(value);
-  useEffect(() => {
-    const t = setTimeout(() => setDebounced(value), delay);
-    return () => clearTimeout(t);
-  }, [value, delay]);
-  return debounced;
 }
 
 const BLANK = {
@@ -122,6 +114,16 @@ export default function AgentCustomersPage() {
   function field(key: keyof typeof BLANK) {
     return (e: React.ChangeEvent<HTMLInputElement>) =>
       setForm((f) => ({ ...f, [key]: e.target.value }));
+  }
+
+  function changeCustomerCountry(countryId: string) {
+    const country = countries.find((item) => String(item.id) === countryId);
+    const phoneIso = isoForCountryCode(country?.code);
+    // The address country is the sensible initial calling code for a new
+    // customer. The dedicated phone picker remains available for travellers
+    // whose mobile number is registered in a different country.
+    if (phoneIso) setPhoneCountryIso(phoneIso);
+    setForm((current) => ({ ...current, country_id: countryId, state_id: "", city_id: "" }));
   }
 
   async function createCustomer(e: React.FormEvent<HTMLFormElement>) {
@@ -297,7 +299,7 @@ export default function AgentCustomersPage() {
                   <label className="text-xs font-bold uppercase tracking-wide text-dash-muted">Country</label>
                   <select
                     value={form.country_id}
-                    onChange={(e) => setForm((f) => ({ ...f, country_id: e.target.value, state_id: "", city_id: "" }))}
+                    onChange={(e) => changeCustomerCountry(e.target.value)}
                     className="rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-dash-brand"
                   >
                     <option value="">Select country</option>

@@ -78,6 +78,7 @@ check("existing customer email can be linked to the agent", publicBooking.includ
 const customers = read("src/app/agent/customers/page.tsx");
 check("agent customer create supplies full_name", customers.includes("full_name: fullName"));
 check("agent customer phone is normalized", customers.includes("combinePhone"));
+check("agent customer country selection defaults the phone code to the selected address country", customers.includes("changeCustomerCountry") && customers.includes("isoForCountryCode(country?.code)"));
 check("agent customer create captures address and location", ["country", "state", "city", "address_line_1", "address_line_2", "postal_code"].every((field) => customers.includes(field)));
 check("new customer remains in customer management", !customers.includes("/agent/bookings/create?customer_id="));
 check("customer list exposes retryable API failures", customers.includes("Customers could not be loaded") && customers.includes("Retry"));

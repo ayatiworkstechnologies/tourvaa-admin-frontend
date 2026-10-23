@@ -13,7 +13,7 @@ import SearchableSelect from "@/components/ui/SearchableSelect";
 import {
   combinePhone, digitsOnly, mobileHelp, passwordHelp, validateMobile, validatePassword,
 } from "@/lib/utils/validators";
-import { dialCodeForIso, isoForDialCode } from "@/lib/utils/phoneCountries";
+import { dialCodeForIso, isoForCountryCode, isoForDialCode } from "@/lib/utils/phoneCountries";
 import type { CountryCode } from "libphonenumber-js/min";
 
 function apiErr(err: unknown, fallback: string) {
@@ -360,7 +360,11 @@ export default function AgencyDetailsTab({ onSaved }: { onSaved?: () => void }) 
             {/* Country */}
             <label className="block">
               <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Country <span className="text-red-500">*</span></span>
-              <SearchableSelect value={form.country_id} onChange={(countryId) => { setSelectedStateId(""); setForm(f => ({ ...f, country_id: countryId, city_id: "" })); }} options={countries.map((country) => ({ value: String(country.id), label: country.name }))} placeholder="Select country" searchPlaceholder="Search countries" />
+              <SearchableSelect value={form.country_id} onChange={(countryId) => {
+                const phoneIso = isoForCountryCode(countries.find((country) => String(country.id) === countryId)?.code);
+                if (phoneIso) { setPhoneCountryIso(phoneIso); setPrimaryPhoneCountryIso(phoneIso); }
+                setSelectedStateId(""); setForm(f => ({ ...f, country_id: countryId, city_id: "" }));
+              }} options={countries.map((country) => ({ value: String(country.id), label: country.name }))} placeholder="Select country" searchPlaceholder="Search countries" />
             </label>
 
             {/* State */}

@@ -232,6 +232,17 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
   // Client-side-only filters
   const [selectedDestination, setSelectedDestination] = useState(queryDestination);
   const [selectedRating, setSelectedRating] = useState(queryRating);
+  const [showMoreFilters, setShowMoreFilters] = useState(Boolean(queryDestination || queryRating || queryDepartureMonth || querySubcategory));
+
+  // Count of filters inside the secondary expandable panel
+  const secondaryFiltersCount = useMemo(() => {
+    let count = 0;
+    if (selectedDestination) count++;
+    if (selectedRating) count++;
+    if (selectedDepartureMonth) count++;
+    if (selectedSubcategory) count++;
+    return count;
+  }, [selectedDestination, selectedRating, selectedDepartureMonth, selectedSubcategory]);
 
   // Sync state when URL searchParams change
   useEffect(() => {
@@ -804,73 +815,85 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
             </div>
           </div>
 
-          {/* Grid / List View Switcher & Clear Filters */}
-          <div className="flex items-center gap-2.5 self-start sm:self-auto">
+          {/* Controls: Reset + Sort + View switcher */}
+          <div className="flex flex-wrap items-center gap-2.5 self-start sm:self-auto">
             {activeFiltersCount > 0 && (
               <button
                 type="button"
                 onClick={clearAllFilters}
-                className="flex items-center gap-1.5 rounded-xl border border-red-200/90 bg-red-50/80 px-3 py-2 text-xs font-bold text-red-600 hover:bg-red-100 hover:border-red-300 transition shadow-2xs"
+                className="flex items-center gap-1.5 rounded-xl border border-rose-200/90 bg-rose-50/80 px-3 py-2 text-xs font-bold text-rose-600 hover:bg-rose-100 hover:border-rose-300 transition shadow-2xs"
               >
                 <RotateCcw size={12} />
                 <span>Reset filters</span>
               </button>
             )}
 
+            {/* Modern Sort Dropdown */}
+            <div className="relative inline-flex items-center rounded-xl border border-slate-200/90 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 shadow-2xs hover:border-slate-300 hover:bg-slate-50/70 transition">
+              <ArrowUpDown size={13} className="text-slate-400 mr-1.5 shrink-0" />
+              <span className="text-slate-400 font-semibold mr-1">Sort:</span>
+              <span className="text-slate-800 font-bold truncate max-w-[130px]">
+                {sortOrder === "newest"
+                  ? "Newest"
+                  : sortOrder === "price_asc"
+                  ? "Price: Low to High"
+                  : sortOrder === "price_desc"
+                  ? "Price: High to Low"
+                  : "Duration: Shortest"}
+              </span>
+              <ChevronDown size={13} className="text-slate-400 ml-1.5 shrink-0 pointer-events-none" />
+              <select
+                value={sortOrder}
+                onChange={(e) => handleSortChange(e.target.value as typeof sortOrder)}
+                aria-label="Sort tours"
+                className="absolute inset-0 h-full w-full opacity-0 cursor-pointer"
+              >
+                <option value="newest">Newest First</option>
+                <option value="price_asc">Price: Low to High</option>
+                <option value="price_desc">Price: High to Low</option>
+                <option value="duration_asc">Duration: Shortest First</option>
+              </select>
+            </div>
+
             {/* Segmented Grid / List Control */}
-            <div className="inline-flex items-center rounded-2xl bg-slate-100 p-1 border border-slate-200/80 shadow-2xs">
+            <div className="inline-flex items-center rounded-xl bg-slate-100 p-1 border border-slate-200/80 shadow-2xs">
               <button
                 type="button"
                 onClick={() => setViewMode("grid")}
                 aria-label="Grid view"
-                className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold transition-all ${
+                className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-bold transition-all ${
                   viewMode === "grid"
                     ? "bg-white text-blue-600 shadow-xs"
                     : "text-slate-500 hover:text-slate-800"
                 }`}
               >
-                <LayoutGrid size={15} />
+                <LayoutGrid size={14} />
                 <span className="hidden sm:inline">Grid</span>
               </button>
               <button
                 type="button"
                 onClick={() => setViewMode("list")}
                 aria-label="List view"
-                className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold transition-all ${
+                className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-bold transition-all ${
                   viewMode === "list"
                     ? "bg-white text-blue-600 shadow-xs"
                     : "text-slate-500 hover:text-slate-800"
                 }`}
               >
-                <List size={15} />
+                <List size={14} />
                 <span className="hidden sm:inline">List</span>
               </button>
             </div>
           </div>
         </div>
 
-        {/* ── 4. Search, filter, and sort controls (Upgraded Modern Filter Suite) ── */}
+        {/* ── 4. Unified Modern Filter Command Center ── */}
         <section
-          aria-label="Tour filters"
-          className="mt-6 rounded-3xl border border-slate-200/90 bg-white/95 p-4 shadow-[0_8px_30px_rgb(0,0,0,0.04)] backdrop-blur-xs sm:p-6"
+          aria-label="Tour search and filters"
+          className="mt-6 rounded-2xl sm:rounded-3xl border border-slate-200/80 bg-white p-3.5 sm:p-5 shadow-[0_4px_24px_rgba(15,23,42,0.04)] transition-all"
         >
-          {/* Top Row: Filters Indicator Capsule + Unified Search Input + Available Departures */}
-          <div className="flex flex-col gap-3 md:flex-row md:items-center">
-            {/* Filters Counter Capsule */}
-            <div className="inline-flex h-11 shrink-0 items-center gap-2.5 rounded-xl border border-slate-200/90 bg-slate-50 px-3.5 text-xs sm:text-sm font-bold text-pub-primary shadow-2xs">
-              <Sliders size={16} className={activeFiltersCount > 0 ? "text-blue-600" : "text-slate-500"} />
-              <span>Filters</span>
-              <span
-                className={`flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-black tabular-nums transition ${
-                  activeFiltersCount > 0
-                    ? "bg-blue-600 text-white shadow-xs"
-                    : "bg-slate-200 text-slate-700"
-                }`}
-              >
-                {activeFiltersCount}
-              </span>
-            </div>
-
+          {/* Main Action Bar: Search Bar + Quick Filter Pills + All Filters Button */}
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
             {/* Quick Search Input */}
             <div className="relative min-w-0 flex-1">
               <input
@@ -885,7 +908,7 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
                   }
                 }}
                 aria-label="Search tours"
-                className="h-11 w-full rounded-xl border border-slate-200/90 bg-slate-50/70 py-2.5 pl-10 pr-9 text-xs sm:text-sm font-medium text-slate-800 placeholder-slate-400 outline-none shadow-2xs transition hover:bg-slate-50 focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10"
+                className="h-11 w-full rounded-xl border border-slate-200/80 bg-slate-50/70 py-2.5 pl-10 pr-9 text-xs sm:text-sm font-medium text-slate-900 placeholder-slate-400 outline-none shadow-2xs transition hover:bg-slate-50 focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10"
               />
               <Search size={16} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
               {searchTerm && (
@@ -896,417 +919,369 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
                     handleSearchSubmit("");
                   }}
                   aria-label="Clear search"
-                  className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1 text-slate-400 hover:bg-slate-200/60 hover:text-slate-600 transition"
                 >
                   <X size={13} />
                 </button>
               )}
             </div>
 
-            {/* Available Departures Toggle */}
-            <button
-              type="button"
-              onClick={handleAvailableOnlyToggle}
-              aria-pressed={availableOnly}
-              className={`inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-xs sm:text-sm font-bold transition-all active:scale-[0.98] ${
-                availableOnly
-                  ? "border border-blue-600 bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-xs hover:from-blue-700 hover:to-indigo-700"
-                  : "border border-slate-200/90 bg-white text-slate-700 shadow-2xs hover:border-slate-300 hover:bg-slate-50 hover:text-pub-primary"
-              }`}
-            >
-              <CalendarDays size={16} className={availableOnly ? "text-blue-100" : "text-slate-400"} />
-              <span>Available departures</span>
-              {availableOnly && (
-                <span className="flex h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+            {/* Quick Filters Pill Cluster */}
+            <div className="flex flex-wrap items-center gap-2 sm:gap-2.5">
+              {/* 1. Available departures toggle */}
+              <button
+                type="button"
+                onClick={handleAvailableOnlyToggle}
+                aria-pressed={availableOnly}
+                className={`inline-flex h-11 shrink-0 items-center gap-2 rounded-xl px-3.5 text-xs sm:text-sm font-bold transition-all active:scale-[0.98] ${
+                  availableOnly
+                    ? "border border-blue-600 bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-xs"
+                    : "border border-slate-200/80 bg-white text-slate-700 shadow-2xs hover:border-slate-300 hover:bg-slate-50 hover:text-pub-primary"
+                }`}
+              >
+                <CalendarDays size={15} className={availableOnly ? "text-blue-100" : "text-slate-400"} />
+                <span>Available departures</span>
+                {availableOnly && (
+                  <span className="flex h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                )}
+              </button>
+
+              {/* 2. Budget Pill Dropdown */}
+              <div
+                className={`group relative inline-flex h-11 shrink-0 items-center justify-between rounded-xl border px-3.5 text-xs sm:text-sm transition-all shadow-2xs ${
+                  selectedBudget
+                    ? "border-blue-500 bg-blue-50/80 text-blue-900 font-bold ring-1 ring-blue-500/20"
+                    : "border-slate-200/80 bg-white text-slate-700 font-semibold hover:border-slate-300 hover:bg-slate-50"
+                }`}
+              >
+                <div className="flex items-center gap-2 min-w-0 pr-4">
+                  <Banknote size={15} className={selectedBudget ? "text-blue-600" : "text-slate-400 group-hover:text-slate-600"} />
+                  <span className="truncate max-w-[130px]">
+                    {selectedBudget ? (displayBudgetOptions.find((b) => b.value === selectedBudget)?.label || selectedBudget) : "Budget"}
+                  </span>
+                </div>
+                <div className="flex items-center gap-1 shrink-0">
+                  {selectedBudget && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleBudgetChange("");
+                      }}
+                      aria-label="Clear budget"
+                      className="relative z-10 rounded-full p-0.5 text-blue-600 hover:bg-blue-200/60 transition"
+                    >
+                      <X size={12} />
+                    </button>
+                  )}
+                  <ChevronDown size={13} className={`pointer-events-none transition-transform group-hover:translate-y-0.5 ${selectedBudget ? "text-blue-600" : "text-slate-400"}`} />
+                </div>
+                <select
+                  value={selectedBudget}
+                  onChange={(e) => handleBudgetChange(e.target.value)}
+                  aria-label="Budget"
+                  className="absolute inset-0 h-full w-full opacity-0 cursor-pointer"
+                >
+                  <option value="">All Budgets</option>
+                  {displayBudgetOptions.map((opt) => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* 3. Duration Pill Dropdown */}
+              <div
+                className={`group relative inline-flex h-11 shrink-0 items-center justify-between rounded-xl border px-3.5 text-xs sm:text-sm transition-all shadow-2xs ${
+                  selectedDuration
+                    ? "border-blue-500 bg-blue-50/80 text-blue-900 font-bold ring-1 ring-blue-500/20"
+                    : "border-slate-200/80 bg-white text-slate-700 font-semibold hover:border-slate-300 hover:bg-slate-50"
+                }`}
+              >
+                <div className="flex items-center gap-2 min-w-0 pr-4">
+                  <Clock size={15} className={selectedDuration ? "text-blue-600" : "text-slate-400 group-hover:text-slate-600"} />
+                  <span className="truncate max-w-[110px]">
+                    {selectedDuration ? `${selectedDuration} Days` : "Duration"}
+                  </span>
+                </div>
+                <div className="flex items-center gap-1 shrink-0">
+                  {selectedDuration && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleDurationChange("");
+                      }}
+                      aria-label="Clear duration"
+                      className="relative z-10 rounded-full p-0.5 text-blue-600 hover:bg-blue-200/60 transition"
+                    >
+                      <X size={12} />
+                    </button>
+                  )}
+                  <ChevronDown size={13} className={`pointer-events-none transition-transform group-hover:translate-y-0.5 ${selectedDuration ? "text-blue-600" : "text-slate-400"}`} />
+                </div>
+                <select
+                  value={selectedDuration}
+                  onChange={(e) => handleDurationChange(e.target.value)}
+                  aria-label="Duration"
+                  className="absolute inset-0 h-full w-full opacity-0 cursor-pointer"
+                >
+                  <option value="">Any Duration</option>
+                  <option value="1">1 Day</option>
+                  <option value="2-6">2–6 Days</option>
+                  <option value="7-10">7–10 Days</option>
+                  <option value="11-14">11–14 Days</option>
+                  <option value="15+">15+ Days</option>
+                  <option value="1-3">1–3 Days</option>
+                  <option value="4-7">4–7 Days</option>
+                  <option value="8+">8+ Days</option>
+                </select>
+              </div>
+
+              {/* 4. Category Pill Dropdown (when categories exist) */}
+              {categories.length > 0 && (
+                <div
+                  className={`group relative inline-flex h-11 shrink-0 items-center justify-between rounded-xl border px-3.5 text-xs sm:text-sm transition-all shadow-2xs ${
+                    queryCategory
+                      ? "border-blue-500 bg-blue-50/80 text-blue-900 font-bold ring-1 ring-blue-500/20"
+                      : "border-slate-200/80 bg-white text-slate-700 font-semibold hover:border-slate-300 hover:bg-slate-50"
+                  }`}
+                >
+                  <div className="flex items-center gap-2 min-w-0 pr-4">
+                    <Compass size={15} className={queryCategory ? "text-blue-600" : "text-slate-400 group-hover:text-slate-600"} />
+                    <span className="truncate max-w-[130px]">
+                      {queryCategory ? (categories.find((c) => c.slug === queryCategory)?.category_name || "Category") : "Category"}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1 shrink-0">
+                    {queryCategory && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          selectCategory("");
+                        }}
+                        aria-label="Clear category"
+                        className="relative z-10 rounded-full p-0.5 text-blue-600 hover:bg-blue-200/60 transition"
+                      >
+                        <X size={12} />
+                      </button>
+                    )}
+                    <ChevronDown size={13} className={`pointer-events-none transition-transform group-hover:translate-y-0.5 ${queryCategory ? "text-blue-600" : "text-slate-400"}`} />
+                  </div>
+                  <select
+                    value={queryCategory}
+                    onChange={(e) => selectCategory(e.target.value)}
+                    aria-label="Category"
+                    className="absolute inset-0 h-full w-full opacity-0 cursor-pointer"
+                  >
+                    <option value="">All Categories</option>
+                    {categories.map((cat) => (
+                      <option key={cat.id} value={cat.slug}>
+                        {cat.category_name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               )}
-            </button>
-          </div>
 
-          {/* Filter Dropdowns Grid */}
-          <div className="mt-3.5 grid grid-cols-1 gap-2.5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-            {/* 1. Budget */}
-            <div
-              className={`group relative min-w-0 flex items-center justify-between rounded-xl border px-3 py-2.5 text-xs sm:text-sm transition-all shadow-2xs ${
-                selectedBudget
-                  ? "border-blue-400 bg-blue-50/70 text-blue-900 font-bold ring-1 ring-blue-400/25 shadow-xs"
-                  : "border-slate-200/90 bg-slate-50/70 text-slate-700 font-semibold hover:border-slate-300 hover:bg-slate-100/70"
-              }`}
-            >
-              <div className="flex items-center gap-2 min-w-0 pr-6">
-                <Banknote size={15} className={`shrink-0 ${selectedBudget ? "text-blue-600" : "text-slate-400 group-hover:text-slate-600"}`} />
-                <span className="truncate">
-                  {selectedBudget ? (displayBudgetOptions.find((b) => b.value === selectedBudget)?.label || selectedBudget) : "Budget"}
-                </span>
-              </div>
-              <div className="flex items-center gap-1 shrink-0">
-                {selectedBudget && (
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      handleBudgetChange("");
-                    }}
-                    aria-label="Clear budget"
-                    className="relative z-10 rounded-full p-0.5 text-blue-600 hover:bg-blue-100 transition"
-                  >
-                    <X size={12} />
-                  </button>
-                )}
-                <ChevronDown size={14} className={`pointer-events-none transition-transform group-hover:translate-y-0.5 ${selectedBudget ? "text-blue-600" : "text-slate-400"}`} />
-              </div>
-              <select
-                value={selectedBudget}
-                onChange={(e) => handleBudgetChange(e.target.value)}
-                aria-label="Budget"
-                className="absolute inset-0 h-full w-full opacity-0 cursor-pointer text-slate-900"
-              >
-                <option value="">All Budgets</option>
-                {displayBudgetOptions.map((opt) => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
-                ))}
-              </select>
-            </div>
-
-            {/* 2. Duration */}
-            <div
-              className={`group relative min-w-0 flex items-center justify-between rounded-xl border px-3 py-2.5 text-xs sm:text-sm transition-all shadow-2xs ${
-                selectedDuration
-                  ? "border-blue-400 bg-blue-50/70 text-blue-900 font-bold ring-1 ring-blue-400/25 shadow-xs"
-                  : "border-slate-200/90 bg-slate-50/70 text-slate-700 font-semibold hover:border-slate-300 hover:bg-slate-100/70"
-              }`}
-            >
-              <div className="flex items-center gap-2 min-w-0 pr-6">
-                <Clock size={15} className={`shrink-0 ${selectedDuration ? "text-blue-600" : "text-slate-400 group-hover:text-slate-600"}`} />
-                <span className="truncate">
-                  {selectedDuration ? `${selectedDuration} Days` : "Duration"}
-                </span>
-              </div>
-              <div className="flex items-center gap-1 shrink-0">
-                {selectedDuration && (
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      handleDurationChange("");
-                    }}
-                    aria-label="Clear duration"
-                    className="relative z-10 rounded-full p-0.5 text-blue-600 hover:bg-blue-100 transition"
-                  >
-                    <X size={12} />
-                  </button>
-                )}
-                <ChevronDown size={14} className={`pointer-events-none transition-transform group-hover:translate-y-0.5 ${selectedDuration ? "text-blue-600" : "text-slate-400"}`} />
-              </div>
-              <select
-                value={selectedDuration}
-                onChange={(e) => handleDurationChange(e.target.value)}
-                aria-label="Duration"
-                className="absolute inset-0 h-full w-full opacity-0 cursor-pointer text-slate-900"
-              >
-                <option value="">Any Duration</option>
-                <option value="1">1 Day</option>
-                <option value="2-6">2–6 Days</option>
-                <option value="7-10">7–10 Days</option>
-                <option value="11-14">11–14 Days</option>
-                <option value="15+">15+ Days</option>
-                <option value="1-3">1–3 Days</option>
-                <option value="4-7">4–7 Days</option>
-                <option value="8+">8+ Days</option>
-              </select>
-            </div>
-
-            {/* 3. Category (shown when categories exist) */}
-            {categories.length > 0 && (
-              <div
-                className={`group relative min-w-0 flex items-center justify-between rounded-xl border px-3 py-2.5 text-xs sm:text-sm transition-all shadow-2xs ${
-                  queryCategory
-                    ? "border-blue-400 bg-blue-50/70 text-blue-900 font-bold ring-1 ring-blue-400/25 shadow-xs"
-                    : "border-slate-200/90 bg-slate-50/70 text-slate-700 font-semibold hover:border-slate-300 hover:bg-slate-100/70"
+              {/* 5. Interactive "More Filters" / "Filters" Button */}
+              <button
+                type="button"
+                onClick={() => setShowMoreFilters((prev) => !prev)}
+                aria-expanded={showMoreFilters}
+                className={`inline-flex h-11 shrink-0 items-center gap-2 rounded-xl px-3.5 text-xs sm:text-sm font-bold transition-all active:scale-[0.98] ${
+                  showMoreFilters || secondaryFiltersCount > 0
+                    ? "border border-blue-400 bg-blue-50 text-blue-800 shadow-2xs hover:bg-blue-100"
+                    : "border border-slate-200/80 bg-slate-50 text-slate-700 shadow-2xs hover:border-slate-300 hover:bg-slate-100"
                 }`}
               >
-                <div className="flex items-center gap-2 min-w-0 pr-6">
-                  <Compass size={15} className={`shrink-0 ${queryCategory ? "text-blue-600" : "text-slate-400 group-hover:text-slate-600"}`} />
-                  <span className="truncate">
-                    {queryCategory ? (categories.find((c) => c.slug === queryCategory)?.category_name || "Category") : "Category"}
+                <Sliders size={15} className={showMoreFilters || secondaryFiltersCount > 0 ? "text-blue-600" : "text-slate-500"} />
+                <span>Filters</span>
+                {activeFiltersCount > 0 && (
+                  <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-blue-600 px-1.5 text-[10px] font-black text-white tabular-nums">
+                    {activeFiltersCount}
                   </span>
-                </div>
-                <div className="flex items-center gap-1 shrink-0">
-                  {queryCategory && (
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        selectCategory("");
-                      }}
-                      aria-label="Clear category"
-                      className="relative z-10 rounded-full p-0.5 text-blue-600 hover:bg-blue-100 transition"
-                    >
-                      <X size={12} />
-                    </button>
-                  )}
-                  <ChevronDown size={14} className={`pointer-events-none transition-transform group-hover:translate-y-0.5 ${queryCategory ? "text-blue-600" : "text-slate-400"}`} />
-                </div>
-                <select
-                  value={queryCategory}
-                  onChange={(e) => selectCategory(e.target.value)}
-                  aria-label="Category"
-                  className="absolute inset-0 h-full w-full opacity-0 cursor-pointer text-slate-900"
-                >
-                  <option value="">All Categories</option>
-                  {categories.map((cat) => (
-                    <option key={cat.id} value={cat.slug}>
-                      {cat.category_name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-
-            {/* 4. Subcategory (shown when subcategories exist) */}
-            {subcategories.length > 0 && (
-              <div
-                className={`group relative min-w-0 flex items-center justify-between rounded-xl border px-3 py-2.5 text-xs sm:text-sm transition-all shadow-2xs ${
-                  selectedSubcategory
-                    ? "border-blue-400 bg-blue-50/70 text-blue-900 font-bold ring-1 ring-blue-400/25 shadow-xs"
-                    : "border-slate-200/90 bg-slate-50/70 text-slate-700 font-semibold hover:border-slate-300 hover:bg-slate-100/70"
-                }`}
-              >
-                <div className="flex items-center gap-2 min-w-0 pr-6">
-                  <Layers size={15} className={`shrink-0 ${selectedSubcategory ? "text-blue-600" : "text-slate-400 group-hover:text-slate-600"}`} />
-                  <span className="truncate">
-                    {selectedSubcategory ? (subcategories.find((s) => s.slug === selectedSubcategory)?.subcategory_name || "Subcategory") : "Subcategory"}
-                  </span>
-                </div>
-                <div className="flex items-center gap-1 shrink-0">
-                  {selectedSubcategory && (
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        handleSubcategoryChange("");
-                      }}
-                      aria-label="Clear subcategory"
-                      className="relative z-10 rounded-full p-0.5 text-blue-600 hover:bg-blue-100 transition"
-                    >
-                      <X size={12} />
-                    </button>
-                  )}
-                  <ChevronDown size={14} className={`pointer-events-none transition-transform group-hover:translate-y-0.5 ${selectedSubcategory ? "text-blue-600" : "text-slate-400"}`} />
-                </div>
-                <select
-                  value={selectedSubcategory}
-                  onChange={(e) => handleSubcategoryChange(e.target.value)}
-                  aria-label="Subcategory"
-                  className="absolute inset-0 h-full w-full opacity-0 cursor-pointer text-slate-900"
-                >
-                  <option value="">All Subcategories</option>
-                  {subcategories.map((sub) => (
-                    <option key={sub.id} value={sub.slug}>
-                      {sub.subcategory_name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-
-            {/* 5. Destination */}
-            <div
-              className={`group relative min-w-0 flex items-center justify-between rounded-xl border px-3 py-2.5 text-xs sm:text-sm transition-all shadow-2xs ${
-                selectedDestination
-                  ? "border-blue-400 bg-blue-50/70 text-blue-900 font-bold ring-1 ring-blue-400/25 shadow-xs"
-                  : "border-slate-200/90 bg-slate-50/70 text-slate-700 font-semibold hover:border-slate-300 hover:bg-slate-100/70"
-              }`}
-            >
-              <div className="flex items-center gap-2 min-w-0 pr-6">
-                <MapPin size={15} className={`shrink-0 ${selectedDestination ? "text-blue-600" : "text-slate-400 group-hover:text-slate-600"}`} />
-                <span className="truncate">
-                  {selectedDestination || "Destination"}
-                </span>
-              </div>
-              <div className="flex items-center gap-1 shrink-0">
-                {selectedDestination && (
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      handleDestinationChange("");
-                    }}
-                    aria-label="Clear destination"
-                    className="relative z-10 rounded-full p-0.5 text-blue-600 hover:bg-blue-100 transition"
-                  >
-                    <X size={12} />
-                  </button>
                 )}
-                <ChevronDown size={14} className={`pointer-events-none transition-transform group-hover:translate-y-0.5 ${selectedDestination ? "text-blue-600" : "text-slate-400"}`} />
-              </div>
-              <select
-                value={selectedDestination}
-                onChange={(e) => handleDestinationChange(e.target.value)}
-                aria-label="Destination"
-                className="absolute inset-0 h-full w-full opacity-0 cursor-pointer text-slate-900"
-              >
-                <option value="">All Destinations</option>
-                {availableDestinations.map((dest) => (
-                  <option key={dest} value={dest}>
-                    {dest}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* 6. Rating */}
-            <div
-              className={`group relative min-w-0 flex items-center justify-between rounded-xl border px-3 py-2.5 text-xs sm:text-sm transition-all shadow-2xs ${
-                selectedRating
-                  ? "border-blue-400 bg-blue-50/70 text-blue-900 font-bold ring-1 ring-blue-400/25 shadow-xs"
-                  : "border-slate-200/90 bg-slate-50/70 text-slate-700 font-semibold hover:border-slate-300 hover:bg-slate-100/70"
-              }`}
-            >
-              <div className="flex items-center gap-2 min-w-0 pr-6">
-                <Star size={15} className={`shrink-0 ${selectedRating ? "fill-amber-400 text-amber-400" : "text-slate-400 group-hover:text-slate-600"}`} />
-                <span className="truncate">
-                  {selectedRating ? `${selectedRating}+ Stars` : "Rating"}
-                </span>
-              </div>
-              <div className="flex items-center gap-1 shrink-0">
-                {selectedRating && (
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      handleRatingChange("");
-                    }}
-                    aria-label="Clear rating"
-                    className="relative z-10 rounded-full p-0.5 text-blue-600 hover:bg-blue-100 transition"
-                  >
-                    <X size={12} />
-                  </button>
-                )}
-                <ChevronDown size={14} className={`pointer-events-none transition-transform group-hover:translate-y-0.5 ${selectedRating ? "text-blue-600" : "text-slate-400"}`} />
-              </div>
-              <select
-                value={selectedRating}
-                onChange={(e) => handleRatingChange(e.target.value)}
-                aria-label="Rating"
-                className="absolute inset-0 h-full w-full opacity-0 cursor-pointer text-slate-900"
-              >
-                <option value="">Any Rating</option>
-                <option value="4.5">4.5+ Stars</option>
-                <option value="4.0">4.0+ Stars</option>
-                <option value="3.5">3.5+ Stars</option>
-              </select>
-            </div>
-
-            {/* 7. Departure Month */}
-            <div
-              className={`group relative min-w-0 flex items-center justify-between rounded-xl border px-3 py-2.5 text-xs sm:text-sm transition-all shadow-2xs ${
-                selectedDepartureMonth
-                  ? "border-blue-400 bg-blue-50/70 text-blue-900 font-bold ring-1 ring-blue-400/25 shadow-xs"
-                  : "border-slate-200/90 bg-slate-50/70 text-slate-700 font-semibold hover:border-slate-300 hover:bg-slate-100/70"
-              }`}
-            >
-              <div className="flex items-center gap-2 min-w-0 pr-6">
-                <CalendarDays size={15} className={`shrink-0 ${selectedDepartureMonth ? "text-blue-600" : "text-slate-400 group-hover:text-slate-600"}`} />
-                <span className="truncate">
-                  {selectedDepartureMonth ? (departureMonthOptions.find((opt) => opt.value === selectedDepartureMonth)?.label || selectedDepartureMonth) : "Departure Month"}
-                </span>
-              </div>
-              <div className="flex items-center gap-1 shrink-0">
-                {selectedDepartureMonth && (
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      handleDepartureMonthChange("");
-                    }}
-                    aria-label="Clear departure month"
-                    className="relative z-10 rounded-full p-0.5 text-blue-600 hover:bg-blue-100 transition"
-                  >
-                    <X size={12} />
-                  </button>
-                )}
-                <ChevronDown size={14} className={`pointer-events-none transition-transform group-hover:translate-y-0.5 ${selectedDepartureMonth ? "text-blue-600" : "text-slate-400"}`} />
-              </div>
-              <select
-                value={selectedDepartureMonth}
-                onChange={(e) => handleDepartureMonthChange(e.target.value)}
-                aria-label="Departure month"
-                className="absolute inset-0 h-full w-full opacity-0 cursor-pointer text-slate-900"
-              >
-                <option value="">Any Month</option>
-                {departureMonthOptions.map((opt) => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
-                ))}
-              </select>
-            </div>
-
-            {/* 8. Sort */}
-            <div
-              className={`group relative min-w-0 flex items-center justify-between rounded-xl border px-3 py-2.5 text-xs sm:text-sm transition-all shadow-2xs ${
-                sortOrder !== "newest"
-                  ? "border-blue-400 bg-blue-50/70 text-blue-900 font-bold ring-1 ring-blue-400/25 shadow-xs"
-                  : "border-slate-200/90 bg-slate-50/70 text-slate-700 font-semibold hover:border-slate-300 hover:bg-slate-100/70"
-              }`}
-            >
-              <div className="flex items-center gap-2 min-w-0 pr-6">
-                <ArrowUpDown size={15} className={`shrink-0 ${sortOrder !== "newest" ? "text-blue-600" : "text-slate-400 group-hover:text-slate-600"}`} />
-                <span className="truncate">
-                  {sortOrder === "newest"
-                    ? "Sort: Newest"
-                    : sortOrder === "price_asc"
-                    ? "Price: Low to High"
-                    : sortOrder === "price_desc"
-                    ? "Price: High to Low"
-                    : "Duration: Shortest"}
-                </span>
-              </div>
-              <div className="flex items-center gap-1 shrink-0">
-                {sortOrder !== "newest" && (
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      handleSortChange("newest");
-                    }}
-                    aria-label="Reset sort"
-                    className="relative z-10 rounded-full p-0.5 text-blue-600 hover:bg-blue-100 transition"
-                  >
-                    <X size={12} />
-                  </button>
-                )}
-                <ChevronDown size={14} className={`pointer-events-none transition-transform group-hover:translate-y-0.5 ${sortOrder !== "newest" ? "text-blue-600" : "text-slate-400"}`} />
-              </div>
-              <select
-                value={sortOrder}
-                onChange={(e) => handleSortChange(e.target.value as typeof sortOrder)}
-                aria-label="Sort tours"
-                className="absolute inset-0 h-full w-full opacity-0 cursor-pointer text-slate-900"
-              >
-                <option value="newest">Sort: Newest</option>
-                <option value="price_asc">Price: Low to High</option>
-                <option value="price_desc">Price: High to Low</option>
-                <option value="duration_asc">Duration: Shortest First</option>
-              </select>
+                <ChevronDown size={13} className={`text-slate-400 transition-transform duration-200 ${showMoreFilters ? "rotate-180 text-blue-600" : ""}`} />
+              </button>
             </div>
           </div>
+
+          {/* Expandable Secondary Filters Tray */}
+          {showMoreFilters && (
+            <div className="mt-3.5 rounded-2xl border border-slate-100 bg-slate-50/80 p-3.5 sm:p-4.5 transition-all animate-in fade-in slide-in-from-top-2 duration-200">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-200/60 mb-3">
+                <span className="text-xs font-black uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                  <Sparkles size={13} className="text-blue-600" />
+                  Additional Preferences
+                </span>
+                {secondaryFiltersCount > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedDestination("");
+                      setSelectedRating("");
+                      setSelectedDepartureMonth("");
+                      setSelectedSubcategory("");
+                      updateQueryParam({ destination: null, rating: null, departure_month: null, subcategory: null });
+                    }}
+                    className="text-xs font-bold text-slate-500 hover:text-red-600 transition"
+                  >
+                    Clear preferences
+                  </button>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                {/* City / Region (only shown when availableDestinations exist) */}
+                {availableDestinations.length > 0 && (
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[11px] font-bold text-slate-600">
+                      {hasSpecificCountry ? "City / Region" : "Destination"}
+                    </label>
+                    <div
+                      className={`group relative flex h-10.5 items-center justify-between rounded-xl border px-3 text-xs sm:text-sm transition-all ${
+                        selectedDestination
+                          ? "border-blue-500 bg-white text-blue-900 font-bold ring-1 ring-blue-500/20"
+                          : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 min-w-0 pr-4">
+                        <MapPin size={14} className={selectedDestination ? "text-blue-600" : "text-slate-400"} />
+                        <span className="truncate">{selectedDestination || (hasSpecificCountry ? "All Cities & Regions" : "All Destinations")}</span>
+                      </div>
+                      <ChevronDown size={13} className="text-slate-400 shrink-0 pointer-events-none" />
+                      <select
+                        value={selectedDestination}
+                        onChange={(e) => handleDestinationChange(e.target.value)}
+                        aria-label="City or destination"
+                        className="absolute inset-0 h-full w-full opacity-0 cursor-pointer"
+                      >
+                        <option value="">{hasSpecificCountry ? "All Cities & Regions" : "All Destinations"}</option>
+                        {availableDestinations.map((dest) => (
+                          <option key={dest} value={dest}>{dest}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                )}
+
+                {/* Subcategory / Travel Style (only when subcategories exist) */}
+                {subcategories.length > 0 && (
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[11px] font-bold text-slate-600">
+                      Travel Style
+                    </label>
+                    <div
+                      className={`group relative flex h-10.5 items-center justify-between rounded-xl border px-3 text-xs sm:text-sm transition-all ${
+                        selectedSubcategory
+                          ? "border-blue-500 bg-white text-blue-900 font-bold ring-1 ring-blue-500/20"
+                          : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 min-w-0 pr-4">
+                        <Layers size={14} className={selectedSubcategory ? "text-blue-600" : "text-slate-400"} />
+                        <span className="truncate">
+                          {selectedSubcategory ? (subcategories.find((s) => s.slug === selectedSubcategory)?.subcategory_name || selectedSubcategory) : "All Styles"}
+                        </span>
+                      </div>
+                      <ChevronDown size={13} className="text-slate-400 shrink-0 pointer-events-none" />
+                      <select
+                        value={selectedSubcategory}
+                        onChange={(e) => handleSubcategoryChange(e.target.value)}
+                        aria-label="Travel style"
+                        className="absolute inset-0 h-full w-full opacity-0 cursor-pointer"
+                      >
+                        <option value="">All Styles</option>
+                        {subcategories.map((sub) => (
+                          <option key={sub.id} value={sub.slug}>{sub.subcategory_name}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                )}
+
+                {/* Departure Month */}
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[11px] font-bold text-slate-600">
+                    Departure Month
+                  </label>
+                  <div
+                    className={`group relative flex h-10.5 items-center justify-between rounded-xl border px-3 text-xs sm:text-sm transition-all ${
+                      selectedDepartureMonth
+                        ? "border-blue-500 bg-white text-blue-900 font-bold ring-1 ring-blue-500/20"
+                        : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 min-w-0 pr-4">
+                      <CalendarDays size={14} className={selectedDepartureMonth ? "text-blue-600" : "text-slate-400"} />
+                      <span className="truncate">
+                        {selectedDepartureMonth ? (departureMonthOptions.find((opt) => opt.value === selectedDepartureMonth)?.label || selectedDepartureMonth) : "Any Month"}
+                      </span>
+                    </div>
+                    <ChevronDown size={13} className="text-slate-400 shrink-0 pointer-events-none" />
+                    <select
+                      value={selectedDepartureMonth}
+                      onChange={(e) => handleDepartureMonthChange(e.target.value)}
+                      aria-label="Departure month"
+                      className="absolute inset-0 h-full w-full opacity-0 cursor-pointer"
+                    >
+                      <option value="">Any Month</option>
+                      {departureMonthOptions.map((opt) => (
+                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Minimum Rating */}
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[11px] font-bold text-slate-600">
+                    Guest Rating
+                  </label>
+                  <div
+                    className={`group relative flex h-10.5 items-center justify-between rounded-xl border px-3 text-xs sm:text-sm transition-all ${
+                      selectedRating
+                        ? "border-blue-500 bg-white text-blue-900 font-bold ring-1 ring-blue-500/20"
+                        : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 min-w-0 pr-4">
+                      <Star size={14} className={selectedRating ? "fill-amber-400 text-amber-400" : "text-slate-400"} />
+                      <span className="truncate">
+                        {selectedRating ? `${selectedRating}+ Stars` : "Any Rating"}
+                      </span>
+                    </div>
+                    <ChevronDown size={13} className="text-slate-400 shrink-0 pointer-events-none" />
+                    <select
+                      value={selectedRating}
+                      onChange={(e) => handleRatingChange(e.target.value)}
+                      aria-label="Rating"
+                      className="absolute inset-0 h-full w-full opacity-0 cursor-pointer"
+                    >
+                      <option value="">Any Rating</option>
+                      <option value="4.5">4.5+ Stars (Top Rated)</option>
+                      <option value="4.0">4.0+ Stars (Very Good)</option>
+                      <option value="3.5">3.5+ Stars (Good)</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Active Filter Chips Tray */}
           {activeFiltersCount > 0 && (
-            <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3.5">
+            <div className="mt-3.5 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3">
               <span className="text-[11px] font-black uppercase tracking-wider text-slate-400 mr-1 flex items-center gap-1">
-                <Sliders size={11} /> Active:
+                <Sliders size={11} /> Active Filters:
               </span>
 
               {querySearch && (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 border border-blue-200/90 px-3 py-1 text-xs font-bold text-blue-800 shadow-2xs">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 border border-blue-200 px-3 py-1 text-xs font-bold text-blue-800 shadow-2xs">
                   <span>Search: &ldquo;{querySearch}&rdquo;</span>
                   <button
                     type="button"
@@ -1320,7 +1295,7 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
               )}
 
               {selectedBudget && (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 border border-emerald-200/90 px-3 py-1 text-xs font-bold text-emerald-800 shadow-2xs">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 border border-emerald-200 px-3 py-1 text-xs font-bold text-emerald-800 shadow-2xs">
                   <span>Budget: {displayBudgetOptions.find((b) => b.value === selectedBudget)?.label || selectedBudget}</span>
                   <button
                     type="button"
@@ -1334,7 +1309,7 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
               )}
 
               {selectedDuration && (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 border border-amber-200/90 px-3 py-1 text-xs font-bold text-amber-800 shadow-2xs">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 border border-amber-200 px-3 py-1 text-xs font-bold text-amber-800 shadow-2xs">
                   <span>Duration: {selectedDuration} Days</span>
                   <button
                     type="button"
@@ -1348,7 +1323,7 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
               )}
 
               {queryCategory && (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-50 border border-indigo-200/90 px-3 py-1 text-xs font-bold text-indigo-800 shadow-2xs">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-50 border border-indigo-200 px-3 py-1 text-xs font-bold text-indigo-800 shadow-2xs">
                   <span>Category: {categories.find((c) => c.slug === queryCategory)?.category_name || queryCategory}</span>
                   <button
                     type="button"
@@ -1361,14 +1336,14 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
                 </span>
               )}
 
-              {selectedSubcategory && (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-purple-50 border border-purple-200/90 px-3 py-1 text-xs font-bold text-purple-800 shadow-2xs">
-                  <span>Type: {subcategories.find((s) => s.slug === selectedSubcategory)?.subcategory_name || selectedSubcategory}</span>
+              {availableOnly && (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 border border-blue-200 px-3 py-1 text-xs font-bold text-blue-800 shadow-2xs">
+                  <span>Available Departures Only</span>
                   <button
                     type="button"
-                    onClick={() => handleSubcategoryChange("")}
-                    aria-label="Clear subcategory filter"
-                    className="rounded-full p-0.5 hover:bg-purple-200/60 transition"
+                    onClick={handleAvailableOnlyToggle}
+                    aria-label="Clear available only filter"
+                    className="rounded-full p-0.5 hover:bg-blue-200/60 transition"
                   >
                     <X size={11} />
                   </button>
@@ -1376,8 +1351,8 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
               )}
 
               {selectedDestination && (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-rose-50 border border-rose-200/90 px-3 py-1 text-xs font-bold text-rose-800 shadow-2xs">
-                  <span>Destination: {selectedDestination}</span>
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-rose-50 border border-rose-200 px-3 py-1 text-xs font-bold text-rose-800 shadow-2xs">
+                  <span>{hasSpecificCountry ? "City" : "Destination"}: {selectedDestination}</span>
                   <button
                     type="button"
                     onClick={() => handleDestinationChange("")}
@@ -1389,14 +1364,14 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
                 </span>
               )}
 
-              {selectedRating && (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 border border-amber-200/90 px-3 py-1 text-xs font-bold text-amber-800 shadow-2xs">
-                  <span>Rating: {selectedRating}+ Stars</span>
+              {selectedSubcategory && (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-purple-50 border border-purple-200 px-3 py-1 text-xs font-bold text-purple-800 shadow-2xs">
+                  <span>Style: {subcategories.find((s) => s.slug === selectedSubcategory)?.subcategory_name || selectedSubcategory}</span>
                   <button
                     type="button"
-                    onClick={() => handleRatingChange("")}
-                    aria-label="Clear rating filter"
-                    className="rounded-full p-0.5 hover:bg-amber-200/60 transition"
+                    onClick={() => handleSubcategoryChange("")}
+                    aria-label="Clear subcategory filter"
+                    className="rounded-full p-0.5 hover:bg-purple-200/60 transition"
                   >
                     <X size={11} />
                   </button>
@@ -1404,7 +1379,7 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
               )}
 
               {selectedDepartureMonth && (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-sky-50 border border-sky-200/90 px-3 py-1 text-xs font-bold text-sky-800 shadow-2xs">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-sky-50 border border-sky-200 px-3 py-1 text-xs font-bold text-sky-800 shadow-2xs">
                   <span>Month: {departureMonthOptions.find((opt) => opt.value === selectedDepartureMonth)?.label || selectedDepartureMonth}</span>
                   <button
                     type="button"
@@ -1417,14 +1392,14 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
                 </span>
               )}
 
-              {availableOnly && (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 border border-emerald-200/90 px-3 py-1 text-xs font-bold text-emerald-800 shadow-2xs">
-                  <span>Available Departures Only</span>
+              {selectedRating && (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 border border-amber-200 px-3 py-1 text-xs font-bold text-amber-800 shadow-2xs">
+                  <span>Rating: {selectedRating}+ Stars</span>
                   <button
                     type="button"
-                    onClick={handleAvailableOnlyToggle}
-                    aria-label="Clear available only filter"
-                    className="rounded-full p-0.5 hover:bg-emerald-200/60 transition"
+                    onClick={() => handleRatingChange("")}
+                    aria-label="Clear rating filter"
+                    className="rounded-full p-0.5 hover:bg-amber-200/60 transition"
                   >
                     <X size={11} />
                   </button>
@@ -1434,10 +1409,10 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
               <button
                 type="button"
                 onClick={clearAllFilters}
-                className="ml-auto inline-flex items-center gap-1.5 text-xs font-bold text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100/80 px-3 py-1 rounded-full border border-red-200/80 transition"
+                className="ml-auto inline-flex items-center gap-1 text-xs font-bold text-rose-600 hover:text-rose-700 hover:underline transition"
               >
                 <RotateCcw size={11} />
-                <span>Reset All ({activeFiltersCount})</span>
+                <span>Reset all ({activeFiltersCount})</span>
               </button>
             </div>
           )}

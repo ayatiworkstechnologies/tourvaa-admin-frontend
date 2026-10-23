@@ -13,7 +13,7 @@ export class ChatbotRateLimitError extends Error {
 }
 
 export type ChatActionData = {
-  tours?: { id: number; title: string; duration_days?: number; price?: number | null; currency: string; cover_image?: string | null; slug: string }[];
+  tours?: { id: number; title: string; duration_days?: number; price?: number | null; currency: string; cover_image?: string | null; slug: string; url?: string }[];
   tour_id?: number;
   available_dates?: { date: string; slots: number }[];
   tour_title?: string;
@@ -80,6 +80,6 @@ export async function streamChat(
   }
 }
 
-export async function submitChatFeedback(messageId: number, rating: 1 | -1, comment?: string) {
-  await api.post("/chatbot/feedback", { message_id: messageId, rating, comment });
+export async function submitChatFeedback(messageId: number, sessionKey: string, rating: 1 | -1, comment?: string) {
+  await api.post("/chatbot/feedback", { message_id: messageId, session_key: sessionKey, rating, comment });
 }

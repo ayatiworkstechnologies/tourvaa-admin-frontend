@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { LuCircleAlert as AlertCircle, LuCircleDollarSign as Banknote, LuRefreshCw as RefreshCw } from "react-icons/lu";
 import api from "@/lib/api/client";
@@ -40,7 +40,7 @@ export default function AgentPayoutsPage() {
   const [total, setTotal] = useState(0);
   const limit = 20;
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
@@ -54,9 +54,9 @@ export default function AgentPayoutsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [page]);
 
-  useEffect(() => { void load(); }, [page]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { void load(); }, [load]);
 
   const columns: DataTableColumn<LedgerEntry>[] = [
     { key: "tour", header: "Tour", className: "font-bold text-dash-text", render: (entry) => entry.tour_name || "Tour booking" },

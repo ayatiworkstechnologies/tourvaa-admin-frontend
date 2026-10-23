@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { fetchContentBlock } from "@/lib/api/publicClient";
 
 /**
@@ -9,17 +9,23 @@ import { fetchContentBlock } from "@/lib/api/publicClient";
  */
 export function useContentBlock<T extends Record<string, unknown>>(key: string, def: T): T {
   const [data, setData] = useState<T>(def);
+  // Callers commonly provide object literals as fallbacks. Keep the mount-time
+  // fallback stable so loading does not re-run solely because its identity
+  // changes on a render. CMS defaults are static module values by contract.
+  const fallbackRef = useRef(def);
+
   useEffect(() => {
     let active = true;
+    const fallback = fallbackRef.current;
+    setData(fallback);
     fetchContentBlock<T>(key)
       .then((res) => {
-        if (active && res?.data && Object.keys(res.data).length) setData({ ...def, ...res.data });
+        if (active && res?.data && Object.keys(res.data).length) setData({ ...fallback, ...res.data });
       })
       .catch(() => {});
     return () => {
       active = false;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key]);
   return data;
 }

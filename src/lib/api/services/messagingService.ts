@@ -88,7 +88,7 @@ export async function deleteOwnMessage(messageId: number) {
   return response.data?.data as ChatMessage;
 }
 
-// --- Booking-scoped, role-isolated messaging with Tourvaa Admin -----------
+// --- Booking-scoped direct messaging: initiator <-> supplier --------------
 
 export type BookingSenderRole = "admin" | "customer" | "agent" | "supplier";
 
@@ -146,8 +146,7 @@ export async function replyToAdminBookingConversation(conversationId: number, bo
   return response.data?.data as BookingMessage;
 }
 
-/** For the customer/agent side: fetches (and lazily creates) their private
- * booking-specific thread with Tourvaa Admin. */
+/** For the customer/agent side: fetches the direct supplier conversation. */
 export async function getBookingConversation(bookingId: number) {
   const response = await api.get(`/bookings/${bookingId}/conversation`);
   return response.data?.data as BookingConversationThread;
@@ -158,8 +157,7 @@ export async function sendBookingConversationMessage(bookingId: number, body: st
   return response.data?.data as BookingMessage;
 }
 
-/** For the supplier side: their unified inbox of private Tourvaa Admin
- * threads across assigned bookings. */
+/** For the supplier side: their unified inbox of direct booking conversations. */
 export async function listSupplierBookingConversations(page = 1, limit = 30) {
   const response = await api.get("/supplier/booking-messages", { params: { page, limit } });
   return response.data as { items: BookingConversation[]; total: number; page: number; limit: number };
@@ -170,8 +168,8 @@ export async function getSupplierBookingConversationThread(conversationId: numbe
   return response.data?.data as BookingConversationThread;
 }
 
-/** Fetches the Supplier <-> Tourvaa Admin thread for one booking, creating
- * its container when the supplier is the first person to write. */
+/** Fetches the Supplier <-> initiator thread for one booking, creating its
+ * container when the supplier is the first person to write. */
 export async function getSupplierBookingConversationForBooking(bookingId: number | string) {
   const response = await api.get(`/supplier/booking-messages/booking/${bookingId}`);
   return response.data?.data as BookingConversationThread;
@@ -187,7 +185,7 @@ export async function getSupplierBookingUnreadCount() {
   return (response.data?.data?.unread as number) ?? 0;
 }
 
-/** Deletes a message the caller sent in a booking-specific Admin channel. */
+/** Deletes a message the caller sent in a direct booking conversation. */
 export async function deleteOwnBookingMessage(messageId: number) {
   const response = await api.delete(`/messages/booking/${messageId}`);
   return response.data?.data as BookingMessage;
