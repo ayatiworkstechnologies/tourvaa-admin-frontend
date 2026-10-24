@@ -182,10 +182,16 @@ const defaultStyle: StatusStyle = {
   dot: "bg-blue-500",
 };
 
-export default function BookingStatusBadge({ value, portal = "admin" }: { value?: string | null; portal?: BookingPortal }) {
+export default function BookingStatusBadge({ value, portal = "admin", cancellationSource }: { value?: string | null; portal?: BookingPortal; cancellationSource?: string | null }) {
   const normKey = (value || "").toLowerCase().trim();
   const conf = statusStyles[normKey] || defaultStyle;
-  const label = conf.label || bookingStatusLabel(normKey, portal);
+  // Customer and Agent portals intentionally expose the shared six-status
+  // vocabulary.  Internal style labels such as "Pending Supplier" are for
+  // Operations only and must never override that portal-safe wording.
+  const isCancellationOutcome = ["cancelled", "declined", "refunded", "partially_refunded"].includes(normKey);
+  const label = portal === "customer" || portal === "agent" || isCancellationOutcome
+    ? bookingStatusLabel(normKey, portal, cancellationSource)
+    : conf.label || bookingStatusLabel(normKey, portal, cancellationSource);
 
   return (
     <span

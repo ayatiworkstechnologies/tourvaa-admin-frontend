@@ -100,7 +100,7 @@ const DEFAULT_SECTIONS: LegalSection[] = [
     ),
   },
   {
-    id: "cancellations-changes-refunds",
+    id: "cancellation-terms",
     number: 5,
     label: "Cancellations, Changes and Refunds",
     body: (
@@ -380,7 +380,11 @@ export default function TermsPage() {
 
   const sections: LegalSection[] = sectionsBlock.items?.length
     ? sectionsBlock.items.map((it, i) => ({
-        id: `${slugify(it.title || `section-${i + 1}`)}-${i}`,
+        // Checkout links use this stable anchor. Preserve it even if CMS
+        // editors revise the clause title or its ordering.
+        id: /cancell?ation/i.test(it.title || "")
+          ? "cancellation-terms"
+          : `${slugify(it.title || `section-${i + 1}`)}-${i}`,
         number: i + 1,
         label: it.title || "",
         body: (it.body || "").split("\n").filter(Boolean).map((line, li) => <p key={li}>{line}</p>),

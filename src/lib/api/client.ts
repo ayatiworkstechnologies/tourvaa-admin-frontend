@@ -112,14 +112,14 @@ function rejectQueue(error: unknown) {
   refreshQueue = [];
 }
 
-function hardLogout() {
+function hardLogout(message = "Your session has expired. Please log in again.") {
   clearSession();
   if (typeof window !== "undefined" && !isPublicPagePath(window.location.pathname)) {
     window.dispatchEvent(
       new CustomEvent("tourvaa:toast", {
         detail: {
           type: "warning",
-          message: "Your session has expired. Please log in again.",
+          message,
         },
       })
     );
@@ -220,7 +220,12 @@ api.interceptors.response.use(
       } catch (refreshError) {
         rejectQueue(refreshError);
         isRefreshing = false;
-        hardLogout();
+        const detail = String((refreshError as { response?: { data?: { detail?: unknown } } })?.response?.data?.detail || "").toLowerCase();
+        hardLogout(
+          detail.includes("session") || detail.includes("token")
+            ? "You have been signed out because this account was used on another device."
+            : undefined,
+        );
         return Promise.reject(error);
       }
     }

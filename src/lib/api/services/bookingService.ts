@@ -184,6 +184,7 @@ export type BookingFilters = {
   booking_status?: string;
   payment_status?: string;
   supplier_acceptance_status?: string;
+  cancellation_source?: string;
   country_id?: number;
   supplier_id?: number;
   agent_id?: number;

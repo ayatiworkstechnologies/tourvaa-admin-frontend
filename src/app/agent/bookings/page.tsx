@@ -7,6 +7,7 @@ import api from "@/lib/api/client";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
 import { AgentMetric, AgentPageHeader, AgentPageShell, AgentSection } from "@/components/agent/AgentPage";
 import { useCurrency } from "@/hooks/useCurrency";
+import { bookingStatusLabel } from "@/lib/constants/bookingStatus";
 
 type Booking = {
   id: number;
@@ -15,6 +16,7 @@ type Booking = {
   tour_name?: string;
   tour_date?: string | null;
   booking_status: string;
+  cancellation_source?: string | null;
   payment_status: string;
   payment_due_date?: string | null;
   payment_type?: string;
@@ -30,14 +32,13 @@ type Booking = {
 // supplier-allocation states are operational detail and do not belong in the
 // Agent's booking filter.
 const AGENT_BOOKING_FILTERS = [
-  { value: "", label: "All Booking Statuses" },
-  { value: "pending_payment", label: "Pending Payment" },
-  { value: "pending_supplier_assignment,payment_authorized,pending_supplier_acceptance,supplier_accepted,supplier_reassignment_required", label: "Booking Request Received" },
-  { value: "confirmed", label: "Booking Confirmed" },
-  { value: "ongoing", label: "Ongoing" },
-  { value: "completed", label: "Completed" },
-  { value: "cancelled", label: "Cancelled" },
-  { value: "declined", label: "Declined" },
+  { value: "", cancellationSource: "", label: "All Booking Statuses" },
+  { value: "pending_payment,pending_supplier_assignment,payment_authorized,pending_supplier_acceptance,supplier_accepted,supplier_reassignment_required,cancellation_requested", cancellationSource: "", label: "Booking Request Received" },
+  { value: "confirmed,ready_to_travel,upcoming,postponed", cancellationSource: "", label: "Booking Confirmed" },
+  { value: "ongoing", cancellationSource: "", label: "Ongoing" },
+  { value: "completed", cancellationSource: "", label: "Completed" },
+  { value: "cancelled", cancellationSource: "customer_request", label: "Cancelled by Customer" },
+  { value: "cancelled,declined,refunded", cancellationSource: "admin,tourvaa_admin,system_expiry,agent_request,supplier_request,supplier_reassignment", label: "Cancelled by Tourvaa" },
 ];
 
 const AGENT_PAYMENT_FILTERS = [
@@ -54,17 +55,8 @@ const AGENT_PAYMENT_FILTERS = [
   { value: "voided", label: "Voided" },
 ];
 
-function agentBookingStatusLabel(status?: string) {
-  const value = (status || "").toLowerCase();
-  if (value === "pending_payment") return "Pending Payment";
-  if (value === "supplier_accepted") return "Booking Accepted — Awaiting Tourvaa Confirmation";
-  if (["pending_supplier_assignment", "payment_authorized", "pending_supplier_acceptance", "supplier_reassignment_required"].includes(value)) return "Booking Request Received";
-  if (["confirmed", "ready_to_travel", "upcoming", "postponed"].includes(value)) return "Booking Confirmed";
-  if (value === "ongoing") return "Ongoing";
-  if (value === "completed") return "Completed";
-  if (value === "cancelled") return "Cancelled";
-  if (value === "declined") return "Declined";
-  return value ? value.replaceAll("_", " ") : "-";
+function agentBookingStatusLabel(status?: string, cancellationSource?: string | null) {
+  return bookingStatusLabel(status, "agent", cancellationSource);
 }
 
 function agentPaymentStatusLabel(status?: string) {
@@ -141,6 +133,7 @@ export default function AgentBookingsPage() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState("");
+  const [cancellationSourceFilter, setCancellationSourceFilter] = useState("");
   const [paymentFilter, setPaymentFilter] = useState("");
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
@@ -157,6 +150,7 @@ export default function AgentBookingsPage() {
       try {
         const params: Record<string, unknown> = { limit, page };
         if (statusFilter) params.booking_status = statusFilter;
+        if (cancellationSourceFilter) params.cancellation_source = cancellationSourceFilter;
         if (paymentFilter) params.payment_status = paymentFilter;
         const res = await api.get("/bookings", { params });
         if (!active) return;
@@ -174,12 +168,14 @@ export default function AgentBookingsPage() {
     }
     load();
     return () => { active = false; };
-  }, [page, statusFilter, paymentFilter, retryKey]);
+  }, [page, statusFilter, cancellationSourceFilter, paymentFilter, retryKey]);
 
   const totalPages = Math.ceil(total / limit) || 1;
 
-  function handleStatus(s: string) {
-    setStatusFilter(s);
+  function handleStatus(value: string) {
+    const selected = AGENT_BOOKING_FILTERS.find((filter) => filter.value === value) || AGENT_BOOKING_FILTERS[0];
+    setStatusFilter(selected.value);
+    setCancellationSourceFilter(selected.cancellationSource);
     setPage(1);
   }
 
@@ -207,7 +203,7 @@ export default function AgentBookingsPage() {
     { key: "customer", header: "Customer", render: (b) => b.customer_name ?? "-", className: "hidden text-dash-muted sm:table-cell" },
     { key: "tour", header: "Tour", render: (b) => b.tour_name ?? "-", className: "hidden max-w-[180px] truncate text-dash-muted md:table-cell" },
     { key: "date", header: "Date", render: (b) => dateText(b.tour_date), className: "hidden text-dash-muted lg:table-cell" },
-    { key: "status", header: "Booking Status", render: (b) => <Pill status={b.booking_status}>{agentBookingStatusLabel(b.booking_status)}</Pill> },
+    { key: "status", header: "Booking Status", render: (b) => <Pill status={b.booking_status}>{agentBookingStatusLabel(b.booking_status, b.cancellation_source)}</Pill> },
     { key: "payment", header: "Payment Status", render: (b) => <Pill status={b.payment_status}>{agentPaymentStatusLabel(b.payment_status)}</Pill>, className: "hidden xl:table-cell" },
     { key: "payment_method", header: "Payment Plan", render: (b) => agentBookingMethodLabel(b), className: "hidden whitespace-nowrap text-dash-muted xl:table-cell" },
     { key: "paid", header: "Paid", render: (b) => money(b.amount_paid, b.currency), className: "hidden text-right text-dash-muted xl:table-cell" },
@@ -225,7 +221,7 @@ export default function AgentBookingsPage() {
     <AgentPageShell>
       <AgentPageHeader
         title="Bookings"
-        description="Track every customer booking from payment through supplier acceptance and travel completion."
+        description="Track every customer booking from payment through Tourvaa confirmation and travel completion."
         icon={CalendarCheck}
         eyebrow="Booking Operations"
       />

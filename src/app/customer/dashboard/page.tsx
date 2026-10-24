@@ -51,6 +51,7 @@ type Booking = {
   tour_name?: string;
   tour_date?: string | null;
   booking_status: string;
+  cancellation_source?: string | null;
   final_amount?: string | number;
   amount_paid?: string | number;
   amount_pending?: string | number;
@@ -67,9 +68,9 @@ function formatDate(value?: string | null) {
   return date.toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" });
 }
 
-function formatStatus(status: string) {
+function formatStatus(status: string, cancellationSource?: string | null) {
   const s = status.toLowerCase();
-  const label = bookingStatusLabel(status, "customer");
+  const label = bookingStatusLabel(status, "customer", cancellationSource);
   if (["confirmed", "ready_to_travel", "upcoming", "postponed"].includes(s)) {
     return <span className="inline-flex rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-bold text-emerald-600">{label}</span>;
   }
@@ -450,7 +451,7 @@ export default function CustomerDashboardPage() {
                               <CalendarDays size={14} className="text-blue-500" /> {formatDate(b.tour_date)}
                             </p>
                           </div>
-                          {formatStatus(b.booking_status)}
+                          {formatStatus(b.booking_status, b.cancellation_source)}
                         </div>
                       </div>
 

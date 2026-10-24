@@ -138,7 +138,7 @@ export default function BookingTable({
       key: "booking_status",
       header: "Booking Status",
       className: "whitespace-nowrap",
-      render: (booking) => <BookingStatusBadge value={booking.booking_status} />,
+      render: (booking) => <BookingStatusBadge value={booking.booking_status} cancellationSource={booking.cancellation_source} />,
     },
     {
       key: "supplier_acceptance_status",

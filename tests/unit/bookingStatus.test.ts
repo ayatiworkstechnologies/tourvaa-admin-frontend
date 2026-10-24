@@ -5,12 +5,16 @@ import {
   canTransitionBookingStatus,
 } from "@/lib/constants/bookingStatus";
 
-describe("portal-aware booking status labels", () => {
-  it("keeps a received request distinct from supplier confirmation", () => {
-    expect(bookingStatusLabel("pending_supplier_acceptance", "customer")).toBe("Booking Successful - Awaiting Tourvaa Confirmation");
-    expect(bookingStatusLabel("pending_supplier_acceptance", "supplier")).toBe("Awaiting Your Decision");
-    expect(bookingStatusLabel("pending_supplier_acceptance", "admin")).toBe("Awaiting Supplier Acceptance");
+describe("booking status labels", () => {
+  it("uses the agreed booking vocabulary across every portal", () => {
+    expect(bookingStatusLabel("pending_supplier_acceptance", "customer")).toBe("Booking Request Received");
+    expect(bookingStatusLabel("pending_supplier_acceptance", "supplier")).toBe("Booking Request Received");
+    expect(bookingStatusLabel("pending_supplier_acceptance", "admin")).toBe("Booking Request Received");
     expect(bookingStatusLabel("confirmed", "customer")).toBe("Booking Confirmed");
+    expect(bookingStatusLabel("ongoing", "customer")).toBe("Ongoing");
+    expect(bookingStatusLabel("completed", "customer")).toBe("Completed");
+    expect(bookingStatusLabel("cancelled", "customer", "customer_request")).toBe("Cancelled by Customer");
+    expect(bookingStatusLabel("cancelled", "customer", "admin")).toBe("Cancelled by Tourvaa");
   });
 
   it("covers every persisted booking lifecycle state with professional copy", () => {

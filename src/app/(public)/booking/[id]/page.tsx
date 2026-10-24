@@ -2,9 +2,8 @@
 
 /* eslint-disable @next/next/no-img-element */
 
-// MoM 2026-08-27, item 8: hide the accommodation/"hotel booking" step
-// (room-type choice, pre/post-tour nights, accommodation add-ons) from the
-// Accommodation add-ons are now an active, per-person booking option.
+// Accommodation selection is available only for overnight tours. Day tours
+// (number_of_nights = 0) must never display or submit a stay-related option.
 const SHOW_ACCOMMODATION_BOOKING = true;
 // Customer records for agent bookings are now resolved automatically from
 // the lead traveller entered in Step 2. Keep the legacy selector code during
@@ -34,7 +33,6 @@ import {
   LuMail as Mail,
   LuMapPin as MapPin,
   LuMinus as Minus,
-  LuPhone as Phone,
   LuPlane as Plane,
   LuPlus as Plus,
   LuShield as Shield,
@@ -49,6 +47,7 @@ import {
 import api from "@/lib/api/client";
 import { StripeBadge, PayPalLogo, VisaBadge, MastercardBadge, AmexBadge } from "@/components/common/PaymentLogos";
 import DatePicker from "@/components/ui/DatePicker";
+import CountryPhoneInput from "@/components/ui/CountryPhoneInput";
 import { fetchPublicTourDetail, PublicTourDetail } from "@/lib/api/publicClient";
 import publicApi from "@/lib/api/publicClient";
 import { mediaUrl } from "@/lib/utils/mediaUrl";
@@ -56,6 +55,7 @@ import { publicTourUrl } from "@/lib/utils/tourUrl";
 import Loader from "@/components/ui/Loader";
 import { getApiErrorMessage } from "@/lib/utils/errorHandler";
 import { combinePhone } from "@/lib/utils/validators";
+import { dialCodeForIso, isoForDialCode } from "@/lib/utils/phoneCountries";
 import { useCurrency } from "@/hooks/useCurrency";
 import { useAuthContext } from "@/providers/AuthProvider";
 
@@ -102,19 +102,6 @@ type PriceLineItem = {
   unit_price: string;
   total_price: string;
 };
-
-const COUNTRIES_LIST = [
-  { code: "+91", label: "India (+91)", flag: "🇮🇳" },
-  { code: "+1", label: "United States (+1)", flag: "🇺🇸" },
-  { code: "+44", label: "United Kingdom (+44)", flag: "🇬🇧" },
-  { code: "+61", label: "Australia (+61)", flag: "🇦🇺" },
-  { code: "+64", label: "New Zealand (+64)", flag: "🇳🇿" },
-  { code: "+1", label: "Canada (+1)", flag: "🇨🇦" },
-  { code: "+49", label: "Germany (+49)", flag: "🇩🇪" },
-  { code: "+33", label: "France (+33)", flag: "🇫🇷" },
-  { code: "+971", label: "United Arab Emirates (+971)", flag: "🇦🇪" },
-  { code: "+65", label: "Singapore (+65)", flag: "🇸🇬" },
-];
 
 function emptyPassenger(type: PassengerType): PassengerData {
   return {
@@ -431,6 +418,11 @@ export default function DynamicTourBookingPage() {
   const [selectedAccommodationExtraIds, setSelectedAccommodationExtraIds] = useState<number[]>([]);
   const appliedPreselectedAddOnRef = useRef<string | null>(null);
 
+  // A missing value is left compatible with older tours. Only an explicit
+  // zero-night tour is a day tour and has no accommodation component.
+  const isDayTour = tour?.number_of_nights != null && Number(tour.number_of_nights) === 0;
+  const accommodationBookingEnabled = SHOW_ACCOMMODATION_BOOKING && !isDayTour;
+
   const [passengers, setPassengers] = useState<PassengerData[]>([]);
   // Per-passenger, per-field inline validation errors shown beneath each input
   const [passengerErrors, setPassengerErrors] = useState<Record<number, Partial<Record<keyof PassengerData, string>>>>({});
@@ -632,13 +624,14 @@ export default function DynamicTourBookingPage() {
   );
 
   const extensionsPayload = useMemo(() => {
+    if (!accommodationBookingEnabled) return [];
     const list: { id: number; quantity: number }[] = [];
     if (selectedRoomUpgradeId) list.push({ id: selectedRoomUpgradeId, quantity: adultCount });
     Object.entries(nightAddonQty).forEach(([id, qty]) => {
       if (qty > 0) list.push({ id: Number(id), quantity: qty });
     });
     return list;
-  }, [selectedRoomUpgradeId, nightAddonQty, adultCount]);
+  }, [accommodationBookingEnabled, selectedRoomUpgradeId, nightAddonQty, adultCount]);
 
   const availableActivities = useMemo(() => tour?.optional_activities || [], [tour]);
 
@@ -655,7 +648,20 @@ export default function DynamicTourBookingPage() {
   // separate addon bucket from the tour.extensions room_upgrade/
   // additional_night pair above -- both are real, independently priced and
   // independently submitted (accommodations vs extensions) per the backend.
-  const availableAccommodationExtras = useMemo(() => tour?.accommodations || [], [tour]);
+  const availableAccommodationExtras = useMemo(
+    () => accommodationBookingEnabled ? tour?.accommodations || [] : [],
+    [accommodationBookingEnabled, tour]
+  );
+
+  // Clear any stale URL-preselected or previously selected stay options when
+  // a day tour is loaded. This also prevents a day-tour request from carrying
+  // accommodation IDs through checkout after navigation.
+  useEffect(() => {
+    if (accommodationBookingEnabled) return;
+    setSelectedRoomUpgradeId(null);
+    setNightAddonQty({});
+    setSelectedAccommodationExtraIds([]);
+  }, [accommodationBookingEnabled]);
 
   // An enhancement picked on the tour page arrives here ready-selected. The
   // catalogue remains the source of truth: ignore stale or forged IDs rather
@@ -666,23 +672,23 @@ export default function DynamicTourBookingPage() {
     if (appliedPreselectedAddOnRef.current === key) return;
     preselectedAddOns.forEach((addOn) => {
       if (addOn.kind === "activity" && (tour.optional_activities || []).some((item) => item.id === addOn.id)) setSelectedActivityIds((current) => current.includes(addOn.id) ? current : [...current, addOn.id]);
-      if (addOn.kind === "accommodation" && (tour.accommodations || []).some((item) => item.id === addOn.id)) setSelectedAccommodationExtraIds((current) => current.includes(addOn.id) ? current : [...current, addOn.id]);
-      if (addOn.kind === "extension") {
+      if (accommodationBookingEnabled && addOn.kind === "accommodation" && (tour.accommodations || []).some((item) => item.id === addOn.id)) setSelectedAccommodationExtraIds((current) => current.includes(addOn.id) ? current : [...current, addOn.id]);
+      if (accommodationBookingEnabled && addOn.kind === "extension") {
         const extension = (tour.extensions || []).find((item) => item.id === addOn.id);
         if (extension?.category === "room_upgrade") setSelectedRoomUpgradeId(extension.id);
         if (extension?.category === "additional_night") setNightAddonQty((current) => ({ ...current, [extension.id]: Math.max(1, current[extension.id] || 0) }));
       }
     });
     appliedPreselectedAddOnRef.current = key;
-  }, [tour, preselectedAddOns]);
+  }, [tour, preselectedAddOns, accommodationBookingEnabled]);
 
   const toggleAccommodationExtra = (id: number) => {
     setSelectedAccommodationExtraIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   };
 
   const accommodationsPayload = useMemo(
-    () => selectedAccommodationExtraIds.map((id) => ({ id, quantity: adultCount + childCount })),
-    [selectedAccommodationExtraIds, adultCount, childCount]
+    () => accommodationBookingEnabled ? selectedAccommodationExtraIds.map((id) => ({ id, quantity: adultCount + childCount })) : [],
+    [accommodationBookingEnabled, selectedAccommodationExtraIds, adultCount, childCount]
   );
 
   // Start (or resume) a real checkout session once the tour has resolved.
@@ -800,7 +806,7 @@ export default function DynamicTourBookingPage() {
           currency: tour.currency || "USD",
           extensions: extensionsPayload,
           optional_activities: optionalActivitiesPayload,
-          accommodations: accommodationsPayload,
+          ...(accommodationBookingEnabled ? { accommodations: accommodationsPayload } : {}),
           promo_code: !isAgent && promoApplied ? promoCode.trim() : undefined,
         })
         .then((res) => {
@@ -824,7 +830,7 @@ export default function DynamicTourBookingPage() {
       active = false;
       clearTimeout(timer);
     };
-  }, [tour, canBook, selectedCalendar, adultCount, childCount, extensionsPayload, optionalActivitiesPayload, accommodationsPayload, promoApplied, promoCode, user, isAgent, agentCustomerId]);
+  }, [tour, canBook, selectedCalendar, adultCount, childCount, extensionsPayload, optionalActivitiesPayload, accommodationsPayload, accommodationBookingEnabled, promoApplied, promoCode, user, isAgent, agentCustomerId]);
 
   const handlePassengerChange = (index: number, field: keyof PassengerData, value: string) => {
     setPassengers((prev) => {
@@ -985,7 +991,7 @@ export default function DynamicTourBookingPage() {
             children: childCount,
             extensions: extensionsPayload,
             optional_activities: optionalActivitiesPayload,
-            accommodations: accommodationsPayload,
+            ...(accommodationBookingEnabled ? { accommodations: accommodationsPayload } : {}),
           },
         });
       } catch (err) {
@@ -1139,7 +1145,7 @@ export default function DynamicTourBookingPage() {
     ? [
         ...(priceEstimate.line_items?.extensions || []).map((item) => ({ ...item, category: "Extension" })),
         ...(priceEstimate.line_items?.optional_activities || []).map((item) => ({ ...item, category: "Experience" })),
-        ...(priceEstimate.line_items?.accommodations || []).map((item) => ({ ...item, category: "Accommodation" })),
+        ...(accommodationBookingEnabled ? priceEstimate.line_items?.accommodations || [] : []).map((item) => ({ ...item, category: "Accommodation" })),
       ]
     : [];
   const customerDepositToday = Number.isFinite(estimateTotal) ? computeCustomerDepositAmount(String(estimateTotal)) : undefined;
@@ -1241,7 +1247,7 @@ export default function DynamicTourBookingPage() {
           payment_type: "full",
           travellers: buildTravellersPayload(),
           optional_activities: optionalActivitiesPayload,
-          accommodations: accommodationsPayload,
+          ...(accommodationBookingEnabled ? { accommodations: accommodationsPayload } : {}),
           extensions: extensionsPayload,
           promo_code: !isAgent && promoApplied ? promoCode.trim() : undefined,
           ...(isAgent ? {
@@ -1501,7 +1507,7 @@ export default function DynamicTourBookingPage() {
               Payment Received
             </span>
             <h1 className="mt-2 text-2xl sm:text-3xl font-black text-slate-900">
-              Booking Successful - Awaiting Tourvaa Confirmation
+              Booking Request Received
             </h1>
             <p className="mt-2 text-sm text-slate-500 max-w-md mx-auto">
               Your booking and payment for <b>{tourTitle}</b> have been successfully submitted. Please wait for
@@ -1707,7 +1713,7 @@ export default function DynamicTourBookingPage() {
                   </div>
 
                   {/* Accommodation */}
-                  {SHOW_ACCOMMODATION_BOOKING && (
+                  {accommodationBookingEnabled && (
                   <div className="mt-8 pt-6 border-t border-slate-100">
                     <h3 className="text-sm font-bold text-slate-900">Tour Accommodation</h3>
                     <p className="mt-0.5 text-xs text-slate-500">
@@ -1779,7 +1785,7 @@ export default function DynamicTourBookingPage() {
                   )}
 
                   {/* Pre/Post Tour Add-ons -- only rendered when the tour actually has real add-ons configured */}
-                  {SHOW_ACCOMMODATION_BOOKING && nightAddonExtensions.length > 0 && (
+                  {accommodationBookingEnabled && nightAddonExtensions.length > 0 && (
                     <div className="mt-8 pt-6 border-t border-slate-100">
                       <h3 className="text-sm font-bold text-slate-900">Pre and Post Tour Accommodation</h3>
                       <p className="mt-0.5 text-xs text-slate-500 leading-relaxed max-w-2xl">
@@ -1898,7 +1904,7 @@ export default function DynamicTourBookingPage() {
                   )}
 
                   {/* Accommodation Add-ons */}
-                  {SHOW_ACCOMMODATION_BOOKING && availableAccommodationExtras.length > 0 && (
+                  {accommodationBookingEnabled && availableAccommodationExtras.length > 0 && (
                     <div className="mt-8 pt-6 border-t border-slate-100">
                       <h3 className="text-sm font-bold text-slate-900">Accommodation Add-ons</h3>
                       <p className="mt-0.5 text-xs text-slate-500 leading-relaxed max-w-2xl">
@@ -2174,53 +2180,24 @@ export default function DynamicTourBookingPage() {
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-2 border-t border-slate-100">
                               {/* Mobile Number */}
                               <div>
-                                <label className="block text-xs font-semibold text-slate-700 mb-1.5 flex items-center gap-1.5">
-                                  <Phone size={13} className="text-slate-400" />
-                                  <span>Mobile number <span className="text-rose-500">*</span></span>
-                                </label>
-                                <div className="flex gap-2">
-                                  <div className="relative w-36 sm:w-40 shrink-0">
-                                    <select
-                                      value={passenger.phoneCountry}
-                                      onChange={(e) => handlePassengerChange(idx, "phoneCountry", e.target.value)}
-                                      className="w-full appearance-none rounded-xl border border-slate-200 bg-slate-50/50 py-2.5 pl-3 pr-7 text-xs font-semibold text-slate-700 outline-none transition focus:border-pub-primary focus:bg-white"
-                                    >
-                                      {COUNTRIES_LIST.map((c) => (
-                                        <option key={c.label} value={c.code}>
-                                          {`${c.flag} ${c.label}`}
-                                        </option>
-                                      ))}
-                                    </select>
-                                    <ChevronDown
-                                      size={12}
-                                      className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400"
-                                    />
-                                  </div>
-                                  <input
-                                    type="tel"
-                                    required
-                                    value={passenger.phone}
-                                    onChange={(e) => {
-                                      handlePassengerChange(idx, "phone", e.target.value);
-                                      clearPassengerFieldError(idx, "phone");
-                                    }}
-                                    placeholder="e.g. 98765 43210"
-                                    maxLength={15}
-                                    className={`flex-1 rounded-xl border bg-slate-50/50 focus:bg-white px-3.5 py-2.5 text-xs sm:text-sm text-slate-800 placeholder:text-slate-400 outline-none transition focus:ring-2 ${
-                                      passengerErrors[idx]?.phone
-                                        ? "border-rose-400 focus:border-rose-500 focus:ring-rose-100"
-                                        : "border-slate-200 focus:border-pub-primary focus:ring-pub-primary/10"
-                                    }`}
-                                  />
-                                </div>
-                                {passengerErrors[idx]?.phone ? (
-                                  <p className="mt-1 flex items-center gap-1 text-[11px] font-medium text-rose-600">
-                                    <CircleAlert size={11} className="shrink-0" />
-                                    {passengerErrors[idx].phone}
-                                  </p>
-                                ) : (
-                                  <p className="mt-1 text-[10px] text-slate-400">Digits only, 7–15 characters (country code selected above)</p>
-                                )}
+                                <CountryPhoneInput
+                                  countryIso={isoForDialCode(passenger.phoneCountry)}
+                                  number={passenger.phone}
+                                  onCountryChange={(iso) => {
+                                    handlePassengerChange(idx, "phoneCountry", dialCodeForIso(iso));
+                                    clearPassengerFieldError(idx, "phone");
+                                  }}
+                                  onNumberChange={(number) => {
+                                    handlePassengerChange(idx, "phone", number);
+                                    clearPassengerFieldError(idx, "phone");
+                                  }}
+                                  label="Mobile number *"
+                                  countryLabel="Phone country and calling code"
+                                  required
+                                  errorMessage={passengerErrors[idx]?.phone}
+                                  helpText="Search by country, ISO code, or calling code, then enter the local mobile number."
+                                  placeholder="e.g. 98765 43210"
+                                />
                               </div>
 
                               {/* Email Address */}
@@ -2617,7 +2594,7 @@ export default function DynamicTourBookingPage() {
                       {gateway === "stripe" && (
                         <p className="text-xs leading-relaxed text-slate-500">
                           By providing your card information at secure checkout, you authorize payment of the amount shown for this booking, subject to Tourvaa&apos;s{" "}
-                          <Link href="/terms" target="_blank" rel="noopener noreferrer" className="font-semibold text-blue-600 underline hover:text-blue-700">Terms &amp; Conditions</Link>.
+                          Terms &amp; Conditions.
                         </p>
                       )}
 
@@ -2652,7 +2629,10 @@ export default function DynamicTourBookingPage() {
                         <Link href="/terms" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline font-semibold hover:text-blue-700">
                           Terms &amp; Conditions
                         </Link>{" "}
-                        and tour cancellation policies
+                        and{" "}
+                        <Link href="/terms#cancellation-terms" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline font-semibold hover:text-blue-700">
+                          tour cancellation policies
+                        </Link>
                       </span>
                     </label>
 

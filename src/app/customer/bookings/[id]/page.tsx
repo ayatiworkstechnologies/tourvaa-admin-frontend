@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { LuCircleAlert as AlertCircle, LuArrowLeft as ArrowLeft, LuCalendarCheck as CalendarCheck, LuCircleCheckBig as CheckCircle2, LuClock as Clock, LuCreditCard as CreditCard, LuReceiptText as FileText, LuHistory as History, LuLoaderCircle as Loader2, LuMapPinned as MapPinned, LuReceipt as Receipt, LuStar as Star, LuUsers as Users, LuX as X, LuCircleX as XCircle } from "react-icons/lu";
+import { LuCircleAlert as AlertCircle, LuArrowLeft as ArrowLeft, LuCalendarCheck as CalendarCheck, LuCircleCheckBig as CheckCircle2, LuClock as Clock, LuCreditCard as CreditCard, LuReceiptText as FileText, LuHistory as History, LuLoaderCircle as Loader2, LuMapPinned as MapPinned, LuReceipt as Receipt, LuStar as Star, LuUsers as Users, LuX as X, LuCircleX as XCircle, LuDownload as Download } from "react-icons/lu";
 import axios from "axios";
 import api from "@/lib/api/client";
 import { CustomerPageShell } from "@/components/customer/CustomerPage";
@@ -12,8 +12,9 @@ import { useCurrency } from "@/hooks/useCurrency";
 import { formatCurrency } from "@/lib/utils/currency";
 import { CardNetworkBadges, StripeBadge, PayPalLogo } from "@/components/common/PaymentLogos";
 import { publicTourUrl } from "@/lib/utils/tourUrl";
-import { bookingStatusLabel, BOOKING_AWAITING_CONFIRMATION_MESSAGE, BOOKING_PAYMENT_REQUIRED_MESSAGE } from "@/lib/constants/bookingStatus";
+import { bookingStatusLabel, BOOKING_AWAITING_CONFIRMATION_MESSAGE, BOOKING_PAYMENT_AUTHORIZED_MESSAGE, BOOKING_PAYMENT_REQUIRED_MESSAGE } from "@/lib/constants/bookingStatus";
 import Loader from "@/components/ui/Loader";
+import { downloadBookingConfirmationReceipt } from "@/lib/api/services/invoiceService";
 
 type Traveller = {
   id: number;
@@ -55,6 +56,7 @@ type Booking = {
   country?: string;
   supplier_id?: number | null;
   booking_status: string;
+  cancellation_source?: string | null;
   payment_status?: string;
   payment_type?: "partial" | "full";
   final_amount?: string | number;
@@ -93,8 +95,8 @@ function StatusIcon({ status }: { status: string }) {
   return <Clock size={14} className="text-amber-500" />;
 }
 
-function customerBookingStatus(status?: string): string {
-  return bookingStatusLabel(status, "customer");
+function customerBookingStatus(status?: string, cancellationSource?: string | null): string {
+  return bookingStatusLabel(status, "customer", cancellationSource);
 }
 
 function bookingDate(value?: string) {
@@ -425,7 +427,7 @@ export default function CustomerBookingDetailPage() {
         session_id: sessionId || undefined,
       })
         .then(() => {
-          setPaymentBanner({ type: "success", msg: "Payment authorized. It will be charged only after supplier acceptance; otherwise the hold is released within four days." });
+          setPaymentBanner({ type: "success", msg: BOOKING_PAYMENT_AUTHORIZED_MESSAGE });
           void load();
         })
         .catch(() => {
@@ -453,7 +455,7 @@ export default function CustomerBookingDetailPage() {
         api.post("/payments/paypal/capture", { order_id: token, payment_id: parseInt(savedPid) })
           .then(() => {
             sessionStorage.removeItem(pidKey);
-            setPaymentBanner({ type: "success", msg: "Payment authorized. It will be charged only after supplier acceptance; otherwise the hold is released within four days." });
+            setPaymentBanner({ type: "success", msg: BOOKING_PAYMENT_AUTHORIZED_MESSAGE });
             void load();
           })
           .catch(() => {
@@ -531,7 +533,7 @@ export default function CustomerBookingDetailPage() {
   const nextStep = canPay
     ? `Complete the outstanding balance of ${format(payableAmount, booking?.currency)} to keep this booking moving.`
     : paymentCoveredByAuthorization
-      ? "Your payment authorization covers this booking. Tourvaa will capture it only after the booking is accepted."
+      ? BOOKING_PAYMENT_AUTHORIZED_MESSAGE
     : isBookingRequestReceived
       ? "Your payment is recorded. Tourvaa will send the next booking update here and by email."
       : booking?.booking_status === "confirmed"
@@ -642,17 +644,10 @@ export default function CustomerBookingDetailPage() {
                 <div className="mt-3 flex flex-wrap items-center gap-2">
                   <span className="flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-bold text-slate-700">
                     <StatusIcon status={booking.booking_status} />
-                    {paymentCoveredByAuthorization
-                      ? `Payment Authorized - ${format(authorizedAmount, booking.currency)} held securely`
-                      : isUnpaidBooking
+                    {isUnpaidBooking
                       ? "Payment Required"
-                      : customerBookingStatus(booking.booking_status)}
+                      : customerBookingStatus(booking.booking_status, booking.cancellation_source)}
                   </span>
-                  {booking.payment_status && (
-                    <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-blue-600">
-                      {booking.payment_status.replaceAll("_", " ")}
-                    </span>
-                  )}
                 </div>
                 <div className="mt-5 grid max-w-2xl gap-3 border-t border-blue-100 pt-4 sm:grid-cols-2">
                   <div className="flex items-center gap-2 text-sm text-slate-700">
@@ -757,12 +752,12 @@ export default function CustomerBookingDetailPage() {
               <div>
                 <p className="font-bold">
                   {paymentCoveredByAuthorization
-                    ? "Payment Authorized - Awaiting Tourvaa Confirmation"
-                    : "Booking Successful - Awaiting Tourvaa Confirmation"}
+                    ? "Booking Request Received"
+                    : "Booking Request Received"}
                 </p>
                 <p className="mt-1 text-sm leading-6">
                   {paymentCoveredByAuthorization
-                    ? `${format(authorizedAmount, booking.currency)} is held securely. Tourvaa will capture it only after the supplier accepts your booking.`
+                    ? BOOKING_PAYMENT_AUTHORIZED_MESSAGE
                     : BOOKING_AWAITING_CONFIRMATION_MESSAGE}
                 </p>
               </div>
@@ -824,6 +819,11 @@ export default function CustomerBookingDetailPage() {
                 <a href={`/api/customer/bookings/${booking.id}/itinerary`} className="mt-1 flex w-full items-center justify-center gap-2 rounded-xl border border-dash-border px-3 py-2 text-xs font-bold text-dash-body hover:bg-[#F3F8FC]">
                   <FileText size={13} /> Download Itinerary
                 </a>
+                {booking.booking_status === "confirmed" && (
+                  <button type="button" onClick={() => void downloadBookingConfirmationReceipt(booking.id).catch(() => setError("The booking confirmation receipt could not be downloaded."))} className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl border border-dash-border px-3 py-2 text-xs font-bold text-dash-body hover:bg-[#F3F8FC]">
+                    <Download size={13} /> Download Confirmation Receipt
+                  </button>
+                )}
               </div>
             </Panel>
 

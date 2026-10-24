@@ -18,6 +18,8 @@ type Notification = {
   message: string;
   is_read: boolean;
   created_at: string;
+  entity_type?: string | null;
+  entity_id?: number | null;
   metadata?: { action_url?: string | null; action_label?: string | null; booking_id?: number | null; entity_type?: string | null; entity_id?: number | null } | null;
 };
 
@@ -41,6 +43,41 @@ function notificationReference(notification: Notification) {
   return references.length
     ? `${references.join(' · ')}${metadata.action_url ? ` · ${metadata.action_label || 'View details'}` : ''}`
     : null;
+}
+
+function notificationPath(notification: Notification): string | null {
+  const metadata = notification.metadata;
+  const actionUrl = metadata?.action_url;
+  if (actionUrl?.startsWith('/') && !actionUrl.startsWith('//')) return actionUrl;
+
+  // Existing rows may predate action_url, or contain the old absolute
+  // FRONTEND_URL value. On the Admin portal, use only the stored entity data
+  // to reconstruct a known internal destination.
+  if (typeof window === 'undefined' || !window.location.pathname.startsWith('/admin')) return null;
+  const entityType = metadata?.entity_type ?? notification.entity_type;
+  const entityId = metadata?.entity_id ?? notification.entity_id;
+  const bookingId = metadata?.booking_id ?? (entityType === 'booking' ? entityId : null);
+  if (bookingId) return `/admin/bookings/${bookingId}`;
+  if (!entityType) return null;
+
+  const detailRoutes: Record<string, string> = {
+    supplier: 'suppliers',
+    agent: 'agents',
+    affiliate: 'affiliates',
+  };
+  if (entityId && detailRoutes[entityType]) return `/admin/${detailRoutes[entityType]}/${entityId}`;
+
+  const listRoutes: Record<string, string> = {
+    tour: '/admin/tours',
+    tour_version: '/admin/tours',
+    invoice: '/admin/invoices',
+    conversation: '/admin/messages',
+    supplier_payout: '/admin/supplier-payouts',
+    agent_payout: '/admin/agent-payouts',
+    affiliate_payout: '/admin/affiliates/payouts',
+    payout: '/admin/affiliates/payouts',
+  };
+  return listRoutes[entityType] ?? null;
 }
 
 const inboxCache = new Map<number, Notification[]>();
@@ -198,9 +235,9 @@ export default function NotificationInbox() {
 
   function openNotification(notification: Notification) {
     if (!notification.is_read) void markRead(notification.id);
-    const url = notification.metadata?.action_url;
-    // The API supplies only internal, role-scoped URLs. Keep the UI equally
-    // strict if an old or manually-created notification contains bad metadata.
+    const url = notificationPath(notification);
+    // Only internal role-scoped routes are used, including safe fallbacks for
+    // legacy notifications that were created before action_url was populated.
     if (url && url.startsWith('/') && !url.startsWith('//')) router.push(url);
   }
 

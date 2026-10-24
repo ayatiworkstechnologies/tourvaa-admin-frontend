@@ -44,6 +44,7 @@ type Booking = {
   tour_name?: string;
   tour_date?: string | null;
   booking_status: string;
+  cancellation_source?: string | null;
   payment_status: string;
   supplier_acceptance_status?: string;
   // Never sent to the agent portal (see services.bookings.serialize_booking's
@@ -261,7 +262,7 @@ export default function AgentBookingDetailPage({ params }: { params: Promise<{ i
         } else {
           return;
         }
-        setPaymentBanner({ type: "success", message: "Payment authorized - it will be charged only after supplier acceptance. The hold is released within four days if the supplier does not accept." });
+        setPaymentBanner({ type: "success", message: "Payment authorized - Tourvaa will complete the confirmation process. The hold is released within four days if the booking is not confirmed." });
         setRefreshKey((value) => value + 1);
       } catch {
         setPaymentBanner({ type: "error", message: "Payment return could not be confirmed. Please retry or contact support before paying again." });
@@ -344,7 +345,7 @@ export default function AgentBookingDetailPage({ params }: { params: Promise<{ i
   const pendingAmount = Number(booking.amount_pending ?? 0);
   const authorizedAmount = Number(booking.authorized_amount ?? 0);
   const payableAmount = Math.max(0, pendingAmount - authorizedAmount);
-  const bookingDisplayStatus = agentBookingStatusLabel(booking.booking_status);
+  const bookingDisplayStatus = agentBookingStatusLabel(booking.booking_status, booking.cancellation_source);
   const isBookingRequestReceived = bookingDisplayStatus === BOOKING_AWAITING_CONFIRMATION_LABEL;
   const canRequestCancellation = Number(booking.amount_paid ?? 0) > 0 && !["cancelled", "completed", "refunded", "declined", "cancellation_requested"].includes(booking.booking_status);
   const canRemoveUnpaidBooking = Number(booking.amount_paid ?? 0) <= 0

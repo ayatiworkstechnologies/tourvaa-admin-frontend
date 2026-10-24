@@ -137,6 +137,21 @@ export async function downloadInvoicePdf(invoiceId: number | string, filename?: 
   window.setTimeout(() => window.URL.revokeObjectURL(url), 1_000);
 }
 
+export async function downloadBookingConfirmationReceipt(bookingId: number | string, filename?: string) {
+  const response = await api.get(`/customer/bookings/${bookingId}/confirmation-receipt`, { responseType: "blob" });
+  const blob = response.data instanceof Blob ? response.data : new Blob([response.data], { type: "application/pdf" });
+  const signature = new TextDecoder("ascii").decode((await blob.slice(0, 5).arrayBuffer()));
+  if (signature !== "%PDF-") throw new Error("The server did not return a valid booking confirmation PDF.");
+  const url = window.URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename || `booking-confirmation-${bookingId}.pdf`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => window.URL.revokeObjectURL(url), 1_000);
+}
+
 export async function downloadSupplierInvoicePdf(invoiceId: number | string, filename?: string) {
   const endpoint = `/supplier/invoices/${invoiceId}/download`;
   const response = await api.get(endpoint, { responseType: "blob" });

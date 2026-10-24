@@ -54,21 +54,24 @@ const SUPPLIER_STATUS_OPTIONS: SupplierStatusOption[] = [
   { value: "confirmed", label: "Confirmed", booking_status: "confirmed" },
   { value: "ongoing", label: "Ongoing", booking_status: "ongoing" },
   { value: "completed", label: "Completed", booking_status: "completed" },
-  { value: "cancelled_by_supplier", label: "Cancelled by Supplier", booking_status: "cancelled", cancellation_source: "supplier" },
-  { value: "cancelled_by_tourvaa", label: "Cancelled by Tourvaa", booking_status: "cancelled", cancellation_source: "admin" },
+  { value: "cancelled_by_supplier", label: "Cancelled by Supplier", booking_status: "supplier_reassignment_required", cancellation_source: "supplier_reassignment" },
+  { value: "cancelled_by_tourvaa", label: "Cancelled by Tourvaa", booking_status: "cancelled", cancellation_source: "tourvaa_admin,system_expiry" },
   { value: "declined", label: "Declined", booking_status: "declined" },
 ];
 
 function supplierBookingStatus(booking: Booking) {
   if (booking.supplier_acceptance_status === "pending") return "Awaiting My Decision";
+  if (booking.booking_status === "supplier_reassignment_required" && booking.cancellation_source === "supplier_reassignment") {
+    return "Cancelled by Supplier";
+  }
   if (booking.booking_status === "cancelled") {
-    return booking.cancellation_source === "supplier" ? "Cancelled by Supplier" : "Cancelled by Tourvaa";
+    return booking.cancellation_source === "supplier_request" ? "Cancelled by Supplier" : "Cancelled by Tourvaa";
   }
   const status = (booking.booking_status || "").toLowerCase();
   if (["confirmed", "ready_to_travel", "upcoming", "postponed", "supplier_accepted"].includes(status)) return "Confirmed";
   if (status === "ongoing") return "Ongoing";
   if (status === "completed") return "Completed";
-  if (status === "declined") return "Declined";
+  if (status === "declined") return "Cancelled by Tourvaa";
   return status ? status.replaceAll("_", " ") : "-";
 }
 

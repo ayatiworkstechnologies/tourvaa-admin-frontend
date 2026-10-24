@@ -273,6 +273,12 @@ export default function SupplierPortalLandingPage() {
   const expectationsBlock = useContentBlock<ExpectationsBlock>("supplier_portal_expectations", {});
   const faqsBlock = useContentBlock<FaqsBlock>("supplier_portal_faqs", {});
   const cta = useContentBlock<CtaBlock>("supplier_portal_cta", DEFAULT_CTA);
+  // Older CMS content used a dashboard label even though this CTA correctly
+  // opens the supplier sign-in page. Render the clear action label until the
+  // content record is next edited in CMS.
+  const secondaryCtaText = hero.secondary_cta_text === "View Supplier Dashboard"
+    ? "Supplier Sign In"
+    : hero.secondary_cta_text || DEFAULT_HERO.secondary_cta_text;
   // The estimator's baseline amounts are USD, matching its fixed slider
   // ranges.  Display them through the shared currency hook so the calculator
   // always follows the currency selected in the public header.
@@ -362,7 +368,7 @@ export default function SupplierPortalLandingPage() {
                 href="/supplier-portal/login"
                 className="inline-flex items-center justify-center rounded-xl border border-white/30 bg-black/25 hover:bg-black/40 px-6 sm:px-7 py-3 text-xs sm:text-sm font-semibold text-white backdrop-blur-xs transition active:scale-95"
               >
-                {hero.secondary_cta_text || DEFAULT_HERO.secondary_cta_text}
+                {secondaryCtaText}
               </Link>
             </div>
           </div>

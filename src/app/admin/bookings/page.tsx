@@ -22,6 +22,7 @@ export default function BookingsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [bookingStatus, setBookingStatus] = useState("");
   const [paymentStatus, setPaymentStatus] = useState("");
+  const [cancellationSource, setCancellationSource] = useState("");
   const [totalBookings, setTotalBookings] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
@@ -46,6 +47,7 @@ export default function BookingsPage() {
         search: debouncedSearch,
         booking_status: bookingStatus,
         payment_status: paymentStatus,
+        cancellation_source: cancellationSource,
         supplier_id: supplierId ? Number(supplierId) : undefined,
         _ts: Date.now(),
       });
@@ -62,7 +64,7 @@ export default function BookingsPage() {
         setIsRefreshing(false);
       }
     }
-  }, [currentPage, debouncedSearch, bookingStatus, paymentStatus, supplierId]);
+  }, [currentPage, debouncedSearch, bookingStatus, paymentStatus, cancellationSource, supplierId]);
 
   const fetchStats = useCallback(async () => {
     try {
@@ -94,7 +96,7 @@ export default function BookingsPage() {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [debouncedSearch, bookingStatus, paymentStatus]);
+  }, [debouncedSearch, bookingStatus, paymentStatus, cancellationSource]);
 
   useEffect(() => {
     const interval = window.setInterval(() => {
@@ -134,6 +136,7 @@ export default function BookingsPage() {
     setSearchTerm("");
     setBookingStatus("");
     setPaymentStatus("");
+    setCancellationSource("");
   }
 
   async function confirmBooking(bookingId: number) {
@@ -247,9 +250,11 @@ export default function BookingsPage() {
           search={searchTerm}
           bookingStatus={bookingStatus}
           paymentStatus={paymentStatus}
+          cancellationSource={cancellationSource}
           onSearchChange={(value) => resetToFirstPage(value, setSearchTerm)}
           onBookingStatusChange={(value) => resetToFirstPage(value, setBookingStatus)}
           onPaymentStatusChange={(value) => resetToFirstPage(value, setPaymentStatus)}
+          onCancellationSourceChange={(value) => resetToFirstPage(value, setCancellationSource)}
           onClear={clearFilters}
         />
 

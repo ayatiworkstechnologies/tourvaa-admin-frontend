@@ -232,6 +232,7 @@ check("admin notifications no longer poll on a timer", !notificationAdmin.includ
 check("notification refresh is driven by explicit app and push events", [notificationInbox, notificationAdmin].every((source) => source.includes("NOTIFICATION_REFRESH_EVENT") && source.includes("isNotificationPushMessage")));
 check("push worker tells open pages when a notification arrives", notificationWorker.includes("client.postMessage") && notificationWorker.includes("tourvaa:notification-received"));
 check("notifications retain entity ids and safe direct actions", notificationInbox.includes("ENTITY_LABELS") && notificationInbox.includes("booking_id") && notificationInbox.includes("Booking #") && notificationWorker.includes("view_details") && notificationWorker.includes("entityType") && notificationWorker.includes("bookingId"));
+check("admin notification clicks recover safe entity routes", notificationInbox.includes("function notificationPath") && notificationInbox.includes("window.location.pathname.startsWith('/admin')") && notificationInbox.includes("/admin/bookings/") && notificationInbox.includes("detailRoutes"));
 check("booking messages recover drafts and queue only explicit offline sends", bookingMessageThread.includes("booking-message-draft") && bookingMessageThread.includes("booking-message-queue") && bookingMessageThread.includes('window.addEventListener("online"') && bookingMessageThread.includes("flushQueuedMessages") && bookingMessageThread.includes("crypto.randomUUID"));
 
 console.log(`\nOverall flow: ${passed} passed, ${failed} failed`);

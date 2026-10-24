@@ -6,26 +6,50 @@ export type BookingFilterValues = {
   search: string;
   bookingStatus: string;
   paymentStatus: string;
+  cancellationSource: string;
 };
 
 type BookingFiltersProps = BookingFilterValues & {
   onSearchChange: (value: string) => void;
   onBookingStatusChange: (value: string) => void;
   onPaymentStatusChange: (value: string) => void;
+  onCancellationSourceChange: (value: string) => void;
   onClear: () => void;
 };
 
-const bookingStatusOptions = [
-  { label: "All bookings", value: "" },
-  { label: "Draft", value: "draft" },
-  { label: "Pending payment", value: "pending_payment" },
-  { label: "Payment authorized", value: "payment_authorized" },
-  { label: "Pending supplier", value: "pending_supplier_acceptance" },
-  { label: "Confirmed", value: "confirmed" },
-  { label: "Completed", value: "completed" },
-  { label: "Declined", value: "declined" },
-  { label: "Postponed", value: "postponed" },
-  { label: "Cancelled", value: "cancelled" },
+const bookingStatusGroups = [
+  {
+    label: "Action required",
+    options: [
+      { label: "Draft", value: "draft" },
+      { label: "Pending payment", value: "pending_payment" },
+      { label: "Pending supplier assignment", value: "pending_supplier_assignment" },
+      { label: "Payment authorized", value: "payment_authorized" },
+      { label: "Pending supplier acceptance", value: "pending_supplier_acceptance" },
+      { label: "Supplier accepted - awaiting Tourvaa", value: "supplier_accepted" },
+      { label: "Supplier reassignment required", value: "supplier_reassignment_required" },
+      { label: "Cancellation requested", value: "cancellation_requested" },
+    ],
+  },
+  {
+    label: "Active tours",
+    options: [
+      { label: "Confirmed", value: "confirmed" },
+      { label: "Ready to travel", value: "ready_to_travel" },
+      { label: "Upcoming (legacy)", value: "upcoming" },
+      { label: "Ongoing", value: "ongoing" },
+      { label: "Postponed", value: "postponed" },
+    ],
+  },
+  {
+    label: "Closed",
+    options: [
+      { label: "Completed", value: "completed" },
+      { label: "Cancelled", value: "cancelled" },
+      { label: "Declined", value: "declined" },
+      { label: "Refunded", value: "refunded" },
+    ],
+  },
 ];
 
 const paymentStatusOptions = [
@@ -44,16 +68,18 @@ export default function BookingFilters({
   search,
   bookingStatus,
   paymentStatus,
+  cancellationSource,
   onSearchChange,
   onBookingStatusChange,
   onPaymentStatusChange,
+  onCancellationSourceChange,
   onClear,
 }: BookingFiltersProps) {
-  const hasActiveFilters = Boolean(search || bookingStatus || paymentStatus);
+  const hasActiveFilters = Boolean(search || bookingStatus || paymentStatus || cancellationSource);
 
   return (
     <div className="rounded-2xl border border-slate-200/90 bg-white p-4 shadow-[0_1px_3px_0_rgba(15,23,42,0.04)]">
-      <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-[minmax(240px,1fr)_220px_220px_auto] items-end">
+      <div className="grid gap-3.5 sm:grid-cols-2 xl:grid-cols-[minmax(220px,1fr)_200px_190px_190px_auto] items-end">
         {/* Search */}
         <label className="block">
           <span className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-slate-500">
@@ -73,6 +99,22 @@ export default function BookingFilters({
           </div>
         </label>
 
+        {/* Cancellation attribution */}
+        <label className="block">
+          <span className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-slate-500">
+            Cancellation Origin
+          </span>
+          <select
+            className={selectClass}
+            value={cancellationSource}
+            onChange={(event) => onCancellationSourceChange(event.target.value)}
+          >
+            <option value="">All cancellations</option>
+            <option value="customer_request,customer_unpaid_removed">Cancelled by Customer</option>
+            <option value="tourvaa_admin,system_expiry">Cancelled by Tourvaa</option>
+          </select>
+        </label>
+
         {/* Booking Status */}
         <label className="block">
           <span className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-slate-500">
@@ -83,10 +125,13 @@ export default function BookingFilters({
             value={bookingStatus}
             onChange={(event) => onBookingStatusChange(event.target.value)}
           >
-            {bookingStatusOptions.map((option) => (
-              <option key={option.value || "all-bookings"} value={option.value}>
-                {option.label}
-              </option>
+            <option value="">All bookings</option>
+            {bookingStatusGroups.map((group) => (
+              <optgroup key={group.label} label={group.label}>
+                {group.options.map((option) => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+              </optgroup>
             ))}
           </select>
         </label>

@@ -242,15 +242,15 @@ export default function BookingMessageThread({ bookingId, compact = false }: { b
     <div className={`flex flex-col rounded-xl border border-dash-border bg-white shadow-sm ${compact ? "min-h-64" : "h-[480px]"}`}>
       <div className="border-b border-dash-border-soft px-5 py-3">
         <div className="flex items-center justify-between gap-3">
-          <p className="font-bold text-dash-text">Message your supplier</p>
+          <p className="font-bold text-dash-text">Message Tourvaa</p>
           <div className="flex items-center gap-2">
             {!isOnline && <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-1 text-[11px] font-bold text-amber-800"><WifiOff size={13} />Device offline</span>}
-            <PresenceBadge online={thread?.supplier_online ?? false} subject={thread?.supplier_name || "Supplier"} />
+            <PresenceBadge online={thread?.supplier_online ?? false} subject="Tourvaa" />
           </div>
         </div>
-        <p className="mt-0.5 text-xs text-dash-subtle">Messages go directly to your supplier. Drafts are saved on this device.</p>
+        <p className="mt-0.5 text-xs text-dash-subtle">Messages are handled by Tourvaa. Drafts are saved on this device.</p>
         {!isOnline && <p className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-2 text-xs text-amber-900">Messages written now are saved on this device and queued until you reconnect.</p>}
-        {supplierTyping && <p className="mt-1 text-xs font-medium text-dash-brand">{thread?.supplier_name || "Supplier"} is typing…</p>}
+        {supplierTyping && <p className="mt-1 text-xs font-medium text-dash-brand">Tourvaa is typing…</p>}
       </div>
 
       <div className={`flex-1 space-y-3 overflow-y-auto px-5 py-4 ${compact ? "max-h-80 min-h-32" : ""}`}>
@@ -292,7 +292,7 @@ export default function BookingMessageThread({ bookingId, compact = false }: { b
                           </span>
                         )}
                         {isOwnMessage && !msg.is_deleted && (
-                          <span className="inline-flex items-center gap-0.5" title={msg.read_at ? "Read by supplier" : "Sent to supplier"}>
+                          <span className="inline-flex items-center gap-0.5" title={msg.read_at ? "Read by Tourvaa" : "Sent to Tourvaa"}>
                             <CheckCheck size={11} /> {msg.read_at ? "Read" : "Sent"}
                           </span>
                         )}

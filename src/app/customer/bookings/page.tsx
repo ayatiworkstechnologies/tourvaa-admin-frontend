@@ -48,6 +48,7 @@ type ApiBooking = {
   no_of_adults?: number;
   no_of_children?: number;
   booking_status?: string;
+  cancellation_source?: string | null;
   final_amount?: string | number;
   currency?: string;
   payment_due_date?: string | null;
@@ -97,7 +98,7 @@ function statusBadge(status: string) {
   if (s.includes("cancel") || s.includes("declin")) {
     return (
       <span className="inline-flex rounded-full bg-red-50 px-3 py-1 text-[11px] font-bold text-red-500">
-        Cancelled
+        {status}
       </span>
     );
   }
@@ -108,8 +109,8 @@ function statusBadge(status: string) {
   );
 }
 
-function customerBookingStatus(status?: string): string {
-  return bookingStatusLabel(status, "customer");
+function customerBookingStatus(status?: string, cancellationSource?: string | null): string {
+  return bookingStatusLabel(status, "customer", cancellationSource);
 }
 
 export default function CustomerBookingsPage() {
@@ -155,7 +156,7 @@ export default function CustomerBookingsPage() {
                 : "Unavailable",
               travel_dates: dateStr,
               guests: guestsStr,
-              status: customerBookingStatus(b.booking_status),
+              status: customerBookingStatus(b.booking_status, b.cancellation_source),
               total_amount: b.final_amount ?? 0,
               image: b.tour_image ? mediaUrl(b.tour_image) : "/images/compare-nz.jpg",
               tour_href: b.tour_slug
@@ -258,8 +259,8 @@ export default function CustomerBookingsPage() {
                 <option value="Booking Confirmed">Booking Confirmed</option>
                 <option value="Ongoing">Ongoing</option>
                 <option value="Completed">Completed</option>
-                <option value="Cancellation Requested">Cancellation Requested</option>
-                <option value="Cancelled">Cancelled</option>
+                <option value="Cancelled by Customer">Cancelled by Customer</option>
+                <option value="Cancelled by Tourvaa">Cancelled by Tourvaa</option>
               </select>
             </div>
 

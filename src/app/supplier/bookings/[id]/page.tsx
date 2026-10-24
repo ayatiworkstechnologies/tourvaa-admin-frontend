@@ -417,7 +417,7 @@ function StatusHistory({ history }: { history: StatusHistory[] }) {
     if (!entry.old_status) return [{ ...entry, label: "Booking Created", displayStatus: "pending" }];
     const labels: Record<string, { label: string; displayStatus: string }> = {
       supplier_accepted: { label: "Booking Accepted", displayStatus: "supplier_accepted" },
-      declined: { label: "Booking Declined", displayStatus: "declined" },
+      declined: { label: "Cancelled by Tourvaa", displayStatus: "declined" },
       ongoing: { label: "Ongoing", displayStatus: "ongoing" },
       completed: { label: "Completed", displayStatus: "completed" },
     };
@@ -736,7 +736,6 @@ export default function SupplierBookingDetailPage() {
           <InfoRow label="Adults" value={booking.adults_count} />
           <InfoRow label="Booking Status" value={bookingStatusLabel(booking.booking_status, "supplier")} />
           <InfoRow label="Supplier Decision" value={(booking.supplier_acceptance_status ?? "-").replace(/_/g, " ")} />
-          {booking.payment_status && <InfoRow label="Payment Status" value={booking.payment_status} />}
           <InfoRow label="Booked On" value={dateStr(booking.created_at)} />
         </div>
 

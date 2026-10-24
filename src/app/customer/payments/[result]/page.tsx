@@ -126,7 +126,7 @@ export default function CustomerPaymentResultPage() {
             <div className="mx-auto mt-6 max-w-md space-y-3 text-left">
               <div className="flex items-start gap-3 rounded-2xl border border-emerald-100 bg-white/80 p-4">
                 <Clock3 size={19} className="mt-0.5 shrink-0 text-[#009A68]" />
-                <div><p className="text-sm font-bold text-[#164B3A]">Awaiting supplier acceptance</p><p className="mt-0.5 text-xs leading-5 text-[#548070]">Your card or PayPal account is authorized, not charged. Tourvaa captures payment only after the supplier accepts your tour.</p></div>
+                <div><p className="text-sm font-bold text-[#164B3A]">Booking Request Received</p><p className="mt-0.5 text-xs leading-5 text-[#548070]">{BOOKING_PAYMENT_AUTHORIZED_MESSAGE}</p></div>
               </div>
               <div className="overflow-hidden rounded-2xl border border-[#D9E9E3] bg-white/90">
                 <div className="flex items-center justify-between border-b border-[#E7F1EC] px-4 py-3"><span className="text-xs font-black uppercase tracking-[.13em] text-[#507260]">Payment receipt</span><span className="rounded-full bg-[#EEF9F3] px-2.5 py-1 text-[11px] font-bold text-[#008A5B]">Authorized</span></div>

@@ -12,7 +12,7 @@ import CustomerAvatar from "@/components/customer/CustomerAvatar";
 import DatePicker from "@/components/ui/DatePicker";
 import CountryPhoneInput from "@/components/ui/CountryPhoneInput";
 import { combinePhone, passwordHelp, validateEmail, validateMobile, validatePassword } from "@/lib/utils/validators";
-import { dialCodeForIso, isoForDialCode, validatePhoneForCountry } from "@/lib/utils/phoneCountries";
+import { PHONE_COUNTRIES, dialCodeForIso, isoForDialCode, validatePhoneForCountry } from "@/lib/utils/phoneCountries";
 import type { CountryCode } from "libphonenumber-js/min";
 
 const AIRLINES = [
@@ -29,7 +29,9 @@ const AIRLINES = [
   "United Airlines",
 ];
 
-const NATIONALITIES = [
+// Keep legacy nationality values already stored on customer profiles (for
+// example, "Indian") while offering every country in the shared catalogue.
+const LEGACY_NATIONALITIES = [
   "American",
   "Indian",
   "British",
@@ -45,6 +47,26 @@ const NATIONALITIES = [
   "Italian",
   "Spanish",
 ];
+const NATIONALITIES = Array.from(
+  new Set([...LEGACY_NATIONALITIES, ...PHONE_COUNTRIES.map((country) => country.name)])
+).sort((a, b) => a.localeCompare(b));
+const COUNTRIES = PHONE_COUNTRIES.map((country) => country.name);
+const LEGACY_NATIONALITY_COUNTRIES: Record<string, string> = {
+  American: "United States",
+  Indian: "India",
+  British: "United Kingdom",
+  Australian: "Australia",
+  Canadian: "Canada",
+  German: "Germany",
+  French: "France",
+  Japanese: "Japan",
+  Singaporean: "Singapore",
+  Emirati: "United Arab Emirates",
+  "New Zealander": "New Zealand",
+  Swiss: "Switzerland",
+  Italian: "Italy",
+  Spanish: "Spain",
+};
 
 const GENDERS = ["Female", "Male", "Other", "Prefer not to say"];
 const todayIso = new Date().toISOString().slice(0, 10);
@@ -77,9 +99,14 @@ export default function CustomerProfilePage() {
   const [phoneCountryIso, setPhoneCountryIso] = useState<CountryCode>(() => splitStoredPhone(user?.phone).countryIso);
   const [phoneNumber, setPhoneNumber] = useState(() => splitStoredPhone(user?.phone).number);
   const [dob, setDob] = useState("");
+  const [country, setCountry] = useState("");
   const [nationality, setNationality] = useState("");
   const [gender, setGender] = useState("");
-  const [address, setAddress] = useState("");
+  const [addressLine1, setAddressLine1] = useState("");
+  const [addressLine2, setAddressLine2] = useState("");
+  const [state, setState] = useState("");
+  const [city, setCity] = useState("");
+  const [postalCode, setPostalCode] = useState("");
 
   // Passport & Travel Documents
   const [passportNumber, setPassportNumber] = useState("");
@@ -132,10 +159,15 @@ export default function CustomerProfilePage() {
             setPhoneNumber(parsedPhone.number);
           }
           if (d.profile_image) setProfileImage(d.profile_image);
-          if (d.address || d.address_line_1)
-            setAddress(d.address || d.address_line_1);
-          if (d.country_name || d.country)
-            setNationality(d.country_name || d.country);
+          setAddressLine1(d.address_line_1 || d.address || "");
+          setAddressLine2(d.address_line_2 || "");
+          setState(d.state_name || d.state || "");
+          setCity(d.city_name || d.city || "");
+          setPostalCode(d.postal_code || d.pincode || "");
+          const savedNationality = d.nationality || "";
+          const savedCountry = d.country_name || d.country || LEGACY_NATIONALITY_COUNTRIES[savedNationality] || "";
+          setNationality(savedNationality);
+          setCountry(savedCountry);
           if (d.date_of_birth || d.dob) setDob(d.date_of_birth || d.dob);
           if (d.gender) setGender(d.gender);
           if (d.passport_number) setPassportNumber(d.passport_number);
@@ -229,8 +261,15 @@ export default function CustomerProfilePage() {
         full_name: fullName,
         phone,
         profile_image: profileImage,
-        address,
-        address_line_1: address,
+        // `address` remains populated for existing portal/API consumers.
+        address: addressLine1,
+        address_line_1: addressLine1,
+        address_line_2: addressLine2,
+        country,
+        state,
+        city,
+        postal_code: postalCode,
+        pincode: postalCode,
         nationality,
         passport_number: passportNumber,
         passport_expiry: passportExpiry,
@@ -390,8 +429,25 @@ export default function CustomerProfilePage() {
                   />
                 </div>
 
-                {/* Nationality & Gender */}
+                {/* Country, nationality & gender */}
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div>
+                    <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                      Country
+                    </label>
+                    <select
+                      value={country}
+                      onChange={(e) => setCountry(e.target.value)}
+                      className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs font-semibold text-slate-800 outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-100"
+                    >
+                      <option value="">Select country</option>
+                      {COUNTRIES.map((option) => (
+                        <option key={option} value={option}>
+                          {option}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                   <div>
                     <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-400">
                       Nationality
@@ -401,6 +457,7 @@ export default function CustomerProfilePage() {
                       onChange={(e) => setNationality(e.target.value)}
                       className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs font-semibold text-slate-800 outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-100"
                     >
+                      <option value="">Select nationality</option>
                       {NATIONALITIES.map((n) => (
                         <option key={n} value={n}>
                           {n}
@@ -408,6 +465,8 @@ export default function CustomerProfilePage() {
                       ))}
                     </select>
                   </div>
+                </div>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div>
                     <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-400">
                       Gender
@@ -426,18 +485,45 @@ export default function CustomerProfilePage() {
                   </div>
                 </div>
 
-                {/* Home Address */}
+                {/* Manual home address. A future Places selection can populate
+                    these same fields without replacing manual entry. */}
                 <div>
                   <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                    Home Address
+                    Address Line 1
                   </label>
                   <input
                     type="text"
-                    value={address}
-                    onChange={(e) => setAddress(e.target.value)}
-                    placeholder="e.g. 58 Sunset Blvd, Los Angeles, CA 90028"
+                    value={addressLine1}
+                    onChange={(e) => setAddressLine1(e.target.value)}
+                    placeholder="Street address, building or house number"
                     className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-800 outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-100"
                   />
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                    Address Line 2 <span className="normal-case tracking-normal text-slate-300">(optional)</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={addressLine2}
+                    onChange={(e) => setAddressLine2(e.target.value)}
+                    placeholder="Apartment, suite, floor or landmark"
+                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-800 outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-100"
+                  />
+                </div>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                  <div>
+                    <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-400">City</label>
+                    <input type="text" value={city} onChange={(e) => setCity(e.target.value)} placeholder="City" className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-800 outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-100" />
+                  </div>
+                  <div>
+                    <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-400">State / Region</label>
+                    <input type="text" value={state} onChange={(e) => setState(e.target.value)} placeholder="State or region" className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-800 outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-100" />
+                  </div>
+                  <div>
+                    <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-400">Postal Code</label>
+                    <input type="text" value={postalCode} onChange={(e) => setPostalCode(e.target.value)} placeholder="Postal code" className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-800 outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-100" />
+                  </div>
                 </div>
               </div>
             </div>

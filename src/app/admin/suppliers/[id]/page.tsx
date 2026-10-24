@@ -205,7 +205,7 @@ export default function SupplierDetailPage() {
   const approvalStatus = String(record?.approval_status || "").toLowerCase();
   const accountStatus = String(record?.status || "").toLowerCase();
   const isApproved = ["approved", "approved_live"].includes(approvalStatus);
-  const isRejected = approvalStatus === "more_information_required";
+  const isRejected = approvalStatus === "rejected";
   const isBlocked =
     ["inactive", "blocked", "suspended"].includes(accountStatus) ||
     ["blocked", "suspended"].includes(approvalStatus);

@@ -691,7 +691,7 @@ export default function BookingDetailPage() {
                       <h1 className="text-2xl md:text-3xl font-black tracking-tight text-dash-text">
                         {booking.booking_code}
                       </h1>
-                      <BookingStatusBadge value={booking.booking_status} />
+                      <BookingStatusBadge value={booking.booking_status} cancellationSource={booking.cancellation_source} />
                       <BookingStatusBadge value={booking.payment_status} />
                       {booking.booking_source && (
                         <span className="rounded-full bg-dash-bg px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wider text-dash-muted border border-dash-border-soft">
@@ -753,7 +753,7 @@ export default function BookingDetailPage() {
                         <XCircle size={14} /> Decline Request
                       </button>
                     </>
-                  ) : (BOOKING_STATUS_TRANSITIONS[booking.booking_status] ?? []).length > 0 && (
+                  ) : ["supplier_reassignment_required", "declined"].includes(booking.booking_status) && (BOOKING_STATUS_TRANSITIONS[booking.booking_status] ?? []).length > 0 && (
                     <button
                       type="button"
                       onClick={() => setShowStatusModal(true)}
@@ -1166,7 +1166,7 @@ export default function BookingDetailPage() {
                     <div>
                       <p className="text-xs font-bold uppercase tracking-wider text-dash-subtle">Booking Status</p>
                       <div className="mt-1">
-                        <BookingStatusBadge value={booking.booking_status} />
+                        <BookingStatusBadge value={booking.booking_status} cancellationSource={booking.cancellation_source} />
                       </div>
                     </div>
                     <DetailField label="Supplier Status" value={booking.supplier_acceptance_status?.replaceAll("_", " ")} />

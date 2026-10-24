@@ -91,7 +91,12 @@ export default function CustomerPortalHeader({ quickLinks, profileHref = "/custo
           ))}
           {showNotifications && <NotificationInbox />}
           <div className="flex items-center">
-            <LanguageCurrencySelector />
+            {/* Customer dashboard must use the same active-country selector as
+                the public site. Currency-only mode does not load countries,
+                so customers could neither see nor correct their detected
+                browsing country and the available currencies collapsed to
+                the USD fallback. */}
+            <LanguageCurrencySelector showCountry />
           </div>
           <div ref={profileRef} className="relative">
             <button

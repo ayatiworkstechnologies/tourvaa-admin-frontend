@@ -201,7 +201,7 @@ const DEFAULT_HERO = {
   subtitle:
     "Join an exclusive network of travel advisors, earn up to 15% commission on multi-day tours, and access 10,000+ verified itineraries across 80+ countries.",
   primary_cta_text: "Become an Agent Partner",
-  secondary_cta_text: "Sign In",
+  secondary_cta_text: "Agent Sign In",
 };
 
 const DEFAULT_METRICS = [
@@ -243,6 +243,11 @@ export default function AgentPortalLandingPage() {
   const expectationsBlock = useContentBlock<ExpectationsBlock>("agent_portal_expectations", {});
   const faqsBlock = useContentBlock<FaqsBlock>("agent_portal_faqs", {});
   const cta = useContentBlock<CtaBlock>("agent_portal_cta", DEFAULT_CTA);
+  // Older CMS content used a browse-tours label even though this CTA opens
+  // the agent sign-in page. Keep valid future CMS wording unchanged.
+  const secondaryCtaText = hero.secondary_cta_text === "Explore Wholesale Tours"
+    ? "Agent Sign In"
+    : hero.secondary_cta_text || DEFAULT_HERO.secondary_cta_text;
   const { code: displayCurrency, format: formatCurrency } = useCurrency();
 
   // Interactive Commission Calculator State
@@ -324,7 +329,7 @@ export default function AgentPortalLandingPage() {
                 href="/agent-portal/login"
                 className="inline-flex items-center justify-center rounded-xl border border-white/30 bg-black/25 hover:bg-black/40 px-6 sm:px-7 py-3 text-xs sm:text-sm font-semibold text-white backdrop-blur-xs transition active:scale-95"
               >
-                {hero.secondary_cta_text || DEFAULT_HERO.secondary_cta_text}
+                {secondaryCtaText}
               </Link>
             </div>
           </div>
