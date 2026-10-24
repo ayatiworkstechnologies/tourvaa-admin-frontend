@@ -42,7 +42,7 @@ const detailExperience = read("src/components/public/TourDetailExperience.tsx");
 const portalAuth = read("src/components/public/portal/PortalAuthPage.tsx");
 const customerRegister = read("src/app/(public)/register/page.tsx");
 const customerProfile = read("src/app/customer/profile/page.tsx");
-check("customer profile uses Country instead of an editable nationality field", customerProfile.includes("Select country") && !customerProfile.includes("Select nationality") && !customerProfile.includes("setNationality"));
+check("customer profile uses a balanced Country and Gender row instead of an editable nationality field", customerProfile.includes("{/* Country & gender */}") && customerProfile.includes("Select country") && !customerProfile.includes("Select nationality") && !customerProfile.includes("setNationality"));
 const cookieConsent = read("src/components/public/CookieConsentBanner.tsx");
 check(
   "supplier, agent, affiliate, and customer registration policy links open safely in a new tab",
