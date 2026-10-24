@@ -418,9 +418,12 @@ export default function DynamicTourBookingPage() {
   const [selectedAccommodationExtraIds, setSelectedAccommodationExtraIds] = useState<number[]>([]);
   const appliedPreselectedAddOnRef = useRef<string | null>(null);
 
-  // A missing value is left compatible with older tours. Only an explicit
-  // zero-night tour is a day tour and has no accommodation component.
-  const isDayTour = tour?.number_of_nights != null && Number(tour.number_of_nights) === 0;
+  // Day tours do not have an overnight accommodation component. Older tours
+  // may not have number_of_nights populated, so a one-day tour without that
+  // legacy value is also treated as a day tour.
+  const isDayTour = tour?.number_of_nights != null
+    ? Number(tour.number_of_nights) === 0
+    : Number(tour?.number_of_days) === 1;
   const accommodationBookingEnabled = SHOW_ACCOMMODATION_BOOKING && !isDayTour;
 
   const [passengers, setPassengers] = useState<PassengerData[]>([]);

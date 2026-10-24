@@ -297,6 +297,12 @@ check(
 );
 check("adult and child ages are validated", publicBooking.includes("age < 12 || age > 120") && publicBooking.includes("age < 3 || age > 11"));
 check("optional activities selection feeds price and checkout data", publicBooking.includes("optionalActivitiesPayload") && publicBooking.includes("optional_activities: optionalActivitiesPayload"));
+check(
+  "day tours never offer accommodation, including legacy one-day tours without nights",
+  publicBooking.includes("const isDayTour = tour?.number_of_nights != null") &&
+    publicBooking.includes("Number(tour?.number_of_days) === 1") &&
+    publicBooking.includes("const accommodationBookingEnabled = SHOW_ACCOMMODATION_BOOKING && !isDayTour"),
+);
 
 const customerBooking = read("src/app/customer/bookings/[id]/page.tsx");
 check("new booking opens payment UI", customerBooking.includes('searchParams.get("pay") === "1"'));
