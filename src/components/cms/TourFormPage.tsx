@@ -1179,7 +1179,7 @@ export default function TourFormPage({
       if (!form.country_id) {
         newErrors.country_id = "Please select a destination country.";
       }
-      if (!form.category_id) {
+      if (!isSupplier && !form.category_id) {
         newErrors.category_id = "Please select a tour category.";
       }
     }
@@ -1305,8 +1305,12 @@ export default function TourFormPage({
 
     if (showLocation || isEditingExistingTour) {
       payload.supplier_id = form.supplier_id ? Number(form.supplier_id) : null;
-      payload.category_id = form.category_id ? Number(form.category_id) : null;
-      payload.subcategory_ids = selectedSubcategoryIds;
+      // Taxonomy is managed by Tourvaa.  Do not include it in a supplier
+      // update: the API preserves the tour's existing classification.
+      if (!isSupplier) {
+        payload.category_id = form.category_id ? Number(form.category_id) : null;
+        payload.subcategory_ids = selectedSubcategoryIds;
+      }
       payload.country_id = form.country_id ? Number(form.country_id) : null;
       const resolvedStateId = selectedStateId || form.state_id;
       payload.state_id = resolvedStateId ? Number(resolvedStateId) : null;
@@ -1964,6 +1968,8 @@ export default function TourFormPage({
 
           {showLocation && (
           <>
+          {!isSupplier && (
+          <>
           <FormSection
             role={role}
             icon={AlignLeft}
@@ -2321,6 +2327,8 @@ export default function TourFormPage({
               )}
             </div>
           </FormSection>
+          </>
+          )}
           </>
           )}
 

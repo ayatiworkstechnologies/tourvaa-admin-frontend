@@ -24,7 +24,11 @@ type Tour = Record<string, unknown>;
  * are ever backend-hard-required (enforced at the Basic Information step
  * itself); everything else here is a UI recommendation, never a submit
  * blocker. */
-export function useStepCompletion(tourId: string | undefined, tour: Tour | null) {
+export function useStepCompletion(
+  tourId: string | undefined,
+  tour: Tour | null,
+  { isSupplier = false }: { isSupplier?: boolean } = {},
+) {
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(false);
 
@@ -71,7 +75,7 @@ export function useStepCompletion(tourId: string | undefined, tour: Tour | null)
   // 9 deposit/cancellation/settings, 10 seo (11 review has no entry).
   const statuses: Record<number, StepStatus> = {
     0: title && numberOfDays >= 1 ? "complete" : "missing",
-    1: tour?.country_id && tour?.category_id && String(tour?.short_description ?? "").trim() ? "complete" : "missing",
+    1: tour?.country_id && (isSupplier || tour?.category_id) && String(tour?.short_description ?? "").trim() ? "complete" : "missing",
     2: (counts.itineraries ?? 0) > 0 ? "complete" : "missing",
     3: (counts.pricing ?? 0) > 0 ? "complete" : "missing",
     4: (counts.calendar ?? 0) > 0 ? "complete" : "missing",

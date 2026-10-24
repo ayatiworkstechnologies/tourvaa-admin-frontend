@@ -8,6 +8,7 @@ import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
 import { AgentMetric, AgentPageHeader, AgentPageShell, AgentSection } from "@/components/agent/AgentPage";
 import { useCurrency } from "@/hooks/useCurrency";
 import { bookingStatusLabel } from "@/lib/constants/bookingStatus";
+import { API_DATA_UPDATED_EVENT } from "@/lib/api/events";
 
 type Booking = {
   id: number;
@@ -169,6 +170,14 @@ export default function AgentBookingsPage() {
     load();
     return () => { active = false; };
   }, [page, statusFilter, cancellationSourceFilter, paymentFilter, retryKey]);
+
+  // Supplier decisions arrive as Agent notifications. Refresh an open list
+  // in place when the shared portal listener receives that event.
+  useEffect(() => {
+    const refreshBookings = () => setRetryKey((value) => value + 1);
+    window.addEventListener(API_DATA_UPDATED_EVENT, refreshBookings);
+    return () => window.removeEventListener(API_DATA_UPDATED_EVENT, refreshBookings);
+  }, []);
 
   const totalPages = Math.ceil(total / limit) || 1;
 

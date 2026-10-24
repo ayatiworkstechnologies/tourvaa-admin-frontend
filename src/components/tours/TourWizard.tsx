@@ -250,7 +250,7 @@ export default function TourWizard({ tourId, role }: { tourId?: string; role: "a
     void fetchComments();
   }, [fetchTour, fetchComments]);
 
-  const { statuses, counts, refresh: refreshCompletion } = useStepCompletion(tourId, tour);
+  const { statuses, counts, refresh: refreshCompletion } = useStepCompletion(tourId, tour, { isSupplier });
 
   const getApiErrorMessage = (error: unknown, fallback: string) => {
     const response = (error as { response?: { data?: { detail?: string; message?: string } } })?.response;

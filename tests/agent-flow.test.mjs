@@ -90,6 +90,7 @@ check("new pending supplier statuses are represented", bookings.includes("pendin
 check("booking list keeps authorization, payment-plan, voided balances, and converted display amounts distinct", ["Payment Plan", "Covered by authorization", "paymentStatus === \"voided\"", "Recorded settlement amount", "Amounts shown in {displayCurrency}"].every((text) => bookings.includes(text)) && !bookings.includes('if (["full", "full_payment"].includes((booking.payment_type || "").toLowerCase())) return "Fully Paid"'));
 check("booking summary cards use server-wide status counts", bookings.includes("status_counts") && bookings.includes("statusCounts.confirmed"));
 check("booking list failures can be retried", bookings.includes("setRetryKey") && bookings.includes("Retry"));
+check("open booking list refreshes when a supplier decision notification arrives", bookings.includes("API_DATA_UPDATED_EVENT") && bookings.includes("window.addEventListener(API_DATA_UPDATED_EVENT, refreshBookings)"));
 
 const dashboard = read("src/app/agent/dashboard/page.tsx");
 check("dashboard sends all visible filters to the summary API", dashboard.includes("booking_status: filters.status") && dashboard.includes("start_date: filters.start_date"));

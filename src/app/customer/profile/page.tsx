@@ -29,28 +29,9 @@ const AIRLINES = [
   "United Airlines",
 ];
 
-// Keep legacy nationality values already stored on customer profiles (for
-// example, "Indian") while offering every country in the shared catalogue.
-const LEGACY_NATIONALITIES = [
-  "American",
-  "Indian",
-  "British",
-  "Australian",
-  "Canadian",
-  "German",
-  "French",
-  "Japanese",
-  "Singaporean",
-  "Emirati",
-  "New Zealander",
-  "Swiss",
-  "Italian",
-  "Spanish",
-];
-const NATIONALITIES = Array.from(
-  new Set([...LEGACY_NATIONALITIES, ...PHONE_COUNTRIES.map((country) => country.name)])
-).sort((a, b) => a.localeCompare(b));
 const COUNTRIES = PHONE_COUNTRIES.map((country) => country.name);
+// Existing profiles may only have a legacy nationality value. Use it to
+// prefill the replacement Country field without modifying stored history.
 const LEGACY_NATIONALITY_COUNTRIES: Record<string, string> = {
   American: "United States",
   Indian: "India",
@@ -100,7 +81,6 @@ export default function CustomerProfilePage() {
   const [phoneNumber, setPhoneNumber] = useState(() => splitStoredPhone(user?.phone).number);
   const [dob, setDob] = useState("");
   const [country, setCountry] = useState("");
-  const [nationality, setNationality] = useState("");
   const [gender, setGender] = useState("");
   const [addressLine1, setAddressLine1] = useState("");
   const [addressLine2, setAddressLine2] = useState("");
@@ -166,7 +146,6 @@ export default function CustomerProfilePage() {
           setPostalCode(d.postal_code || d.pincode || "");
           const savedNationality = d.nationality || "";
           const savedCountry = d.country_name || d.country || LEGACY_NATIONALITY_COUNTRIES[savedNationality] || "";
-          setNationality(savedNationality);
           setCountry(savedCountry);
           if (d.date_of_birth || d.dob) setDob(d.date_of_birth || d.dob);
           if (d.gender) setGender(d.gender);
@@ -270,7 +249,6 @@ export default function CustomerProfilePage() {
         city,
         postal_code: postalCode,
         pincode: postalCode,
-        nationality,
         passport_number: passportNumber,
         passport_expiry: passportExpiry,
         date_of_birth: dob,
@@ -429,7 +407,7 @@ export default function CustomerProfilePage() {
                   />
                 </div>
 
-                {/* Country, nationality & gender */}
+                {/* Country & gender */}
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div>
                     <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-400">
@@ -444,23 +422,6 @@ export default function CustomerProfilePage() {
                       {COUNTRIES.map((option) => (
                         <option key={option} value={option}>
                           {option}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                      Nationality
-                    </label>
-                    <select
-                      value={nationality}
-                      onChange={(e) => setNationality(e.target.value)}
-                      className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs font-semibold text-slate-800 outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-100"
-                    >
-                      <option value="">Select nationality</option>
-                      {NATIONALITIES.map((n) => (
-                        <option key={n} value={n}>
-                          {n}
                         </option>
                       ))}
                     </select>
