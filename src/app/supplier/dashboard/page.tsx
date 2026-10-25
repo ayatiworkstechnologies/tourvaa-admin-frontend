@@ -351,7 +351,10 @@ function ApprovedSupplierDashboard() {
   );
   const activeTrips = (statusCounts.confirmed ?? 0) + (statusCounts.upcoming ?? 0) + (statusCounts.ongoing ?? 0);
   const firstName = user?.name?.trim().split(/\s+/)[0] || "Partner";
-  const approvalStatus = summary.profile_approval_status || "pending";
+  // The dashboard API historically returned upper-case supplier approval
+  // values while newer profile endpoints use lower-case. Normalize once so
+  // an approved supplier never renders as an amber "APPROVED profile" state.
+  const approvalStatus = String(summary.profile_approval_status || "pending").toLowerCase();
 
   const stats = [
     {

@@ -189,7 +189,7 @@ function ApprovedAffiliateDashboard() {
           <div>
             <p className="text-xs font-black uppercase tracking-[.16em] text-purple-700">Affiliate workspace</p>
             <h1 className="mt-2 text-2xl font-black text-dash-text">Grow every referral into earnings</h1>
-            <p className="mt-1 max-w-2xl text-sm text-dash-muted">See link performance, conversion progress, and the commission that is ready for your next payout.</p>
+            <p className="mt-1 max-w-2xl text-sm text-dash-muted">A booking becomes a conversion after its first successful payment. Commission remains pending until the completed booking becomes payout-eligible.</p>
           </div>
           <Link href="/affiliate/referral-links" className="inline-flex items-center justify-center gap-2 rounded-xl bg-purple-700 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-purple-800">
             <Plus size={16} /> Create referral link

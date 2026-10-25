@@ -51,14 +51,29 @@ function notificationPath(notification: Notification): string | null {
   if (actionUrl?.startsWith('/') && !actionUrl.startsWith('//')) return actionUrl;
 
   // Existing rows may predate action_url, or contain the old absolute
-  // FRONTEND_URL value. On the Admin portal, use only the stored entity data
-  // to reconstruct a known internal destination.
-  if (typeof window === 'undefined' || !window.location.pathname.startsWith('/admin')) return null;
+  // FRONTEND_URL value. Reconstruct only known, role-scoped internal routes.
+  if (typeof window === 'undefined') return null;
   const entityType = metadata?.entity_type ?? notification.entity_type;
   const entityId = metadata?.entity_id ?? notification.entity_id;
   const bookingId = metadata?.booking_id ?? (entityType === 'booking' ? entityId : null);
-  if (bookingId) return `/admin/bookings/${bookingId}`;
+  const pathname = window.location.pathname;
+  const portal = pathname.startsWith('/admin') ? 'admin'
+    : pathname.startsWith('/supplier') ? 'supplier'
+    : pathname.startsWith('/agent') ? 'agent'
+    : pathname.startsWith('/affiliate') ? 'affiliate'
+    : pathname.startsWith('/customer') ? 'customer'
+    : null;
+  if (!portal) return null;
+  if (bookingId && portal !== 'affiliate') return `/${portal}/bookings/${bookingId}`;
   if (!entityType) return null;
+
+  const portalListRoutes: Record<string, Record<string, string>> = {
+    supplier: { conversation: '/supplier/messages', supplier_payout: '/supplier/payouts', payout: '/supplier/payouts', invoice: '/supplier/invoices' },
+    agent: { conversation: '/agent/messages', agent_payout: '/agent/payouts', payout: '/agent/payouts', invoice: '/agent/invoices', payment: '/agent/bookings' },
+    affiliate: { affiliate_conversion: '/affiliate/conversions', affiliate_commission: '/affiliate/commissions', affiliate_link: '/affiliate/referral-links', affiliate_payout: '/affiliate/payouts', payout: '/affiliate/payouts' },
+    customer: { invoice: '/customer/invoices', payment: '/customer/payments', conversation: '/customer/support' },
+  };
+  if (portal !== 'admin') return portalListRoutes[portal]?.[entityType] ?? null;
 
   const detailRoutes: Record<string, string> = {
     supplier: 'suppliers',

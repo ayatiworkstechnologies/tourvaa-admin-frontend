@@ -129,6 +129,12 @@ export default function LegalPageLayout({
       const id = window.location.hash.slice(1);
       if (!id || !sectionRefs.current[id]) return;
       setActiveId(id);
+      // Client rendering can finish after the browser's native hash jump.
+      // Re-apply it once the section refs exist so checkout links reliably
+      // land on the requested legal clause.
+      window.requestAnimationFrame(() => {
+        sectionRefs.current[id]?.scrollIntoView({ block: "start" });
+      });
     };
     activateHash();
     window.addEventListener("hashchange", activateHash);

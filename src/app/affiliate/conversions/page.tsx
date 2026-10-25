@@ -71,7 +71,7 @@ export default function ConversionsPage() {
     <div className="p-6 md:p-8">
       <div className="mb-6">
         <h1 className="text-2xl font-black text-dash-text">Conversions</h1>
-        <p className="mt-1 text-sm text-dash-muted">Bookings made through your referral links.</p>
+        <p className="mt-1 text-sm text-dash-muted">Attributed bookings appear after their first successful payment. They remain pending until completion and payout eligibility.</p>
       </div>
 
       {!loading && conversions.length > 0 && (

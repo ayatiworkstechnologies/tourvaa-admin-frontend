@@ -56,6 +56,7 @@ import Loader from "@/components/ui/Loader";
 import { getApiErrorMessage } from "@/lib/utils/errorHandler";
 import { combinePhone } from "@/lib/utils/validators";
 import { dialCodeForIso, isoForDialCode } from "@/lib/utils/phoneCountries";
+import { getActiveReferralCode } from "@/lib/utils/affiliateReferral";
 import { useCurrency } from "@/hooks/useCurrency";
 import { useAuthContext } from "@/providers/AuthProvider";
 
@@ -1291,6 +1292,7 @@ export default function DynamicTourBookingPage() {
     try {
       const res = await api.post(`/checkout/session/${sessionKey}/confirm`, {
         promo_code: !isAgent && promoApplied ? promoCode.trim() : undefined,
+        affiliate_ref_code: getActiveReferralCode() || undefined,
         agreed_terms: acceptTerms,
         agreed_cancellation_policy: acceptTerms,
         payment_type: customerPaymentMethod === "deposit" ? "partial" : "full",

@@ -504,7 +504,7 @@ export default function DestinationsPage() {
         href: it.href || "/tours",
         icon: STYLE_ICONS[i % STYLE_ICONS.length],
       }))
-    : [];
+    : TRAVEL_STYLES;
   const seasons = seasonItems.length
     ? seasonItems.map((it, i) => ({
         season: it.season || "",

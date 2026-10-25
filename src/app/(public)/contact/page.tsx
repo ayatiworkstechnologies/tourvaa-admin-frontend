@@ -241,19 +241,19 @@ export default function ContactPage({ audience }: { audience?: "supplier" | "age
   // visitor's portal. The previous customer route (`/profile/bookings`) did
   // not exist, and the agent contact page incorrectly sent users there too.
   const bookingSupportHref = isSupplierInquiry
-    ? "/supplier/bookings"
+    ? "/supplier-portal/login"
     : isAgentInquiry
-      ? "/agent/bookings"
+      ? "/agent-portal/login"
       : "/customer/bookings";
   const messageSupportHref = isSupplierInquiry
-    ? "/supplier/messages"
+    ? "/supplier-portal/login"
     : isAgentInquiry
-      ? "/agent/messages"
+      ? "/agent-portal/login"
       : "/customer/support";
   const accountSupportHref = isSupplierInquiry
-    ? "/supplier/profile"
+    ? "/supplier-portal/login?tab=register"
     : isAgentInquiry
-      ? "/agent/profile"
+      ? "/agent-portal/login?tab=register"
       : "/help-centre";
   const faqs: FaqItem[] = faqHeading.items?.length
     ? faqHeading.items.map((it, i) => ({ id: `faq-${i}`, category: it.category || "", question: it.question || "", answer: it.answer || "" }))
@@ -462,7 +462,7 @@ export default function ContactPage({ audience }: { audience?: "supplier" | "age
               href={!isSupplierInquiry && !isAgentInquiry && displaySupportCards[0].button_url ? displaySupportCards[0].button_url : bookingSupportHref}
               className="mt-8 inline-flex items-center justify-center gap-2 rounded-xl bg-[#0B1F3A] hover:bg-slate-800 text-white text-xs font-bold px-5 py-3 w-fit shadow-xs transition"
             >
-              <span>{isSupplierInquiry ? "Review Booking Requests" : isAgentInquiry ? "Manage Agent Bookings" : displaySupportCards[0].button_label || "Manage My Bookings"}</span>
+              <span>{isSupplierInquiry ? "Supplier Sign-in" : isAgentInquiry ? "Agent Sign-in" : displaySupportCards[0].button_label || "Manage My Bookings"}</span>
               <ArrowRight size={14} />
             </Link>
           </div>
@@ -487,7 +487,7 @@ export default function ContactPage({ audience }: { audience?: "supplier" | "age
               href={messageSupportHref}
               className="mt-8 inline-flex items-center justify-center gap-2 rounded-xl bg-[#0B1F3A] hover:bg-slate-800 text-white text-xs font-bold px-5 py-3 w-fit shadow-xs transition"
             >
-              <span>Message Tourvaa Support</span>
+              <span>{isSupplierInquiry ? "Supplier Sign-in" : "Agent Sign-in"}</span>
               <ArrowRight size={14} />
             </Link> : displaySupportCards[1].button_url ? <Link
               href={displaySupportCards[1].button_url}
@@ -522,7 +522,7 @@ export default function ContactPage({ audience }: { audience?: "supplier" | "age
               href={!isSupplierInquiry && !isAgentInquiry && displaySupportCards[2].button_url ? displaySupportCards[2].button_url : accountSupportHref}
               className="mt-8 inline-flex items-center justify-center gap-2 rounded-xl bg-[#0B1F3A] hover:bg-slate-800 text-white text-xs font-bold px-5 py-3 w-fit shadow-xs transition"
             >
-              <span>{isSupplierInquiry ? "Open Supplier Profile" : isAgentInquiry ? "Open Agent Profile" : displaySupportCards[2].button_label || "Browse Knowledge Base"}</span>
+              <span>{isSupplierInquiry ? "Create Supplier Account" : isAgentInquiry ? "Create Agent Account" : displaySupportCards[2].button_label || "Browse Knowledge Base"}</span>
               <ArrowRight size={14} />
             </Link>
           </div>

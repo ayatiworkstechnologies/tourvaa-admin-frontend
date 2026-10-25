@@ -326,7 +326,7 @@ export default function CustomerDashboardPage() {
 
             <div>
               <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                NATIONALITY
+                COUNTRY
               </label>
               <div className="relative">
                 <input
