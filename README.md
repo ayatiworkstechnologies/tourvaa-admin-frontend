@@ -1,8 +1,8 @@
-# Tourvaa Frontend
+# Project Name: Tourvaa Frontend
 
-Next.js frontend for the Tourvaa public travel site and role-based portals.
+**Tourvaa** is a travel-booking platform. This repository contains its Next.js public site and role-based portals.
 
-## Core responsibilities
+## Project Core
 
 - Public tour discovery, destination search, availability, booking, checkout, and booking receipt access.
 - Customer portal for bookings, travellers, payments, invoices, cancellation requests, and support.
@@ -11,7 +11,7 @@ Next.js frontend for the Tourvaa public travel site and role-based portals.
 - Affiliate portal for referral links, clicks, conversions, commissions, and payout requests.
 - Admin portal for platform operations, users, tours, bookings, payments, CMS, notifications, reports, and settings.
 
-## Run locally
+## How to Run
 
 ### 1. Install dependencies
 
