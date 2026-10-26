@@ -53,3 +53,9 @@ For a TypeScript-only check:
 ```
 
 Use the local backend and test accounts for portal-flow testing. Do not perform real payments or email real users during development.
+
+## Licence
+
+Copyright © 2026 Tourvaa. Developed by Ayatiworks — Rubankumar Sankar.
+
+All rights reserved. This software is proprietary and may not be copied, modified, distributed, or used without prior written permission from Tourvaa.
