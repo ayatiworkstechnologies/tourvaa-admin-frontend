@@ -539,7 +539,10 @@ export default function ChatWidget() {
     <>
       {/* ── Chat Dialog Modal Window ── */}
       {open && (
-        <div className="fixed bottom-22 sm:bottom-24 right-3 sm:right-6 z-50 flex max-h-[min(680px,calc(100vh-6.5rem))] w-[calc(100vw-1.5rem)] max-w-[390px] flex-col overflow-hidden rounded-[28px] border border-slate-200/90 bg-white shadow-[0_20px_60px_-15px_rgba(11,31,58,0.3)] animate-in fade-in slide-in-from-bottom-5 duration-200 md:right-6">
+        <div
+          data-chat-widget="true"
+          className="fixed bottom-22 sm:bottom-24 right-3 sm:right-6 z-50 flex max-h-[min(680px,calc(100vh-6.5rem))] w-[calc(100vw-1.5rem)] max-w-[390px] flex-col overflow-hidden rounded-[28px] border border-slate-200/90 bg-white shadow-[0_20px_60px_-15px_rgba(11,31,58,0.3)] animate-in fade-in slide-in-from-bottom-5 duration-200 md:right-6"
+        >
           {/* Header */}
           <div className="flex items-center gap-3 bg-gradient-to-r from-[#0B1F3A] via-[#102A4E] to-[#0B1F3A] px-5 py-4 text-white shadow-xs">
             <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-tr from-[#146EF5] via-[#1056c7] to-sky-400 text-white shadow-sm ring-2 ring-white/20">
@@ -790,6 +793,7 @@ export default function ChatWidget() {
 
       {/* ── Elevated Floating Launcher Button ── */}
       <div
+        data-chat-launcher="true"
         className={`fixed bottom-4 right-4 z-50 flex items-center gap-3 transition-all duration-300 sm:bottom-6 sm:right-6 ${
           open || launcherVisible
             ? "translate-y-0 opacity-100"

@@ -57,14 +57,14 @@ function notificationPath(notification: Notification): string | null {
   const entityId = metadata?.entity_id ?? notification.entity_id;
   const bookingId = metadata?.booking_id ?? (entityType === 'booking' ? entityId : null);
   const pathname = window.location.pathname;
-  const portal = pathname.startsWith('/admin') ? 'admin'
+  const portal = window.location.pathname.startsWith('/admin') ? 'admin'
     : pathname.startsWith('/supplier') ? 'supplier'
     : pathname.startsWith('/agent') ? 'agent'
     : pathname.startsWith('/affiliate') ? 'affiliate'
     : pathname.startsWith('/customer') ? 'customer'
     : null;
   if (!portal) return null;
-  if (bookingId && portal !== 'affiliate') return `/${portal}/bookings/${bookingId}`;
+  if (bookingId && portal !== 'affiliate') return portal === 'admin' ? `/admin/bookings/${bookingId}` : `/${portal}/bookings/${bookingId}`;
   if (!entityType) return null;
 
   const portalListRoutes: Record<string, Record<string, string>> = {

@@ -35,6 +35,7 @@ export default function AffiliatePayoutsPage() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [amount, setAmount] = useState("");
+  const [currency, setCurrency] = useState("");
   const [methodId, setMethodId] = useState<number | "">("");
   const [saving, setSaving] = useState(false);
   const [page, setPage] = useState(1);
@@ -70,16 +71,19 @@ export default function AffiliatePayoutsPage() {
     if (submitLock.current) return;
     if (!methodId) { toast.error("Select a payout method."); return; }
     const requested = Number(amount);
-    const available = Number(summary?.available_balance ?? 0);
+    const selectedBalance = summary?.available_balances?.find((balance) => balance.currency === currency);
+    const available = Number(selectedBalance?.amount ?? 0);
     if (!Number.isFinite(requested) || requested <= 0) { toast.error("Enter a valid amount."); return; }
+    if (!currency || !selectedBalance) { toast.error("Select a payout currency."); return; }
     if (requested > available) { toast.error(`Requested amount exceeds your available balance (${money(available)}).`); return; }
     submitLock.current = true;
     setSaving(true);
     try {
-      await requestPayout({ amount, payout_method_id: methodId as number });
+      await requestPayout({ amount, currency, payout_method_id: methodId as number });
       toast.success("Payout requested. Admin will review it shortly.");
       setShowForm(false);
       setAmount("");
+      setCurrency("");
       await load();
     } catch (e) {
       toast.error(getApiErrorMessage(e) || "Could not request payout.");
@@ -129,7 +133,11 @@ export default function AffiliatePayoutsPage() {
 
       <div className="mb-6 rounded-xl border border-purple-100 bg-purple-50 px-5 py-4">
         <p className="text-xs font-bold uppercase text-purple-700">Available Balance</p>
-        <p className="mt-1 text-2xl font-black text-purple-900">{loading ? "…" : money(summary?.available_balance ?? "0")}</p>
+        <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1">
+          {loading ? <p className="text-2xl font-black text-purple-900">Loading...</p> : (summary?.available_balances ?? []).length > 0 ? (
+            summary?.available_balances?.map((balance) => <span key={balance.currency} className="text-2xl font-black text-purple-900">{money(balance.amount, balance.currency)}</span>)
+          ) : <p className="text-2xl font-black text-purple-900">{money("0")}</p>}
+        </div>
       </div>
 
       {showForm && (
@@ -139,10 +147,23 @@ export default function AffiliatePayoutsPage() {
           </div>
         ) : (
           <form onSubmit={submitRequest} className="mb-6 rounded-xl border border-purple-100 bg-purple-50 p-5">
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-4 sm:grid-cols-3">
+              <div>
+                <label className="mb-1 block text-xs font-bold text-dash-body">Currency</label>
+                <select required value={currency} onChange={(e) => {
+                  const nextCurrency = e.target.value;
+                  setCurrency(nextCurrency);
+                  const balance = summary?.available_balances?.find((item) => item.currency === nextCurrency);
+                  setAmount(balance?.amount ?? "");
+                }}
+                  className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-100">
+                  <option value="">Select currency</option>
+                  {(summary?.available_balances ?? []).map((balance) => <option key={balance.currency} value={balance.currency}>{balance.currency} - {money(balance.amount, balance.currency)}</option>)}
+                </select>
+              </div>
               <div>
                 <label className="mb-1 block text-xs font-bold text-dash-body">Amount</label>
-                <input required value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="e.g. 100"
+                <input required readOnly value={amount} placeholder="Select a currency"
                   className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-100" />
               </div>
               <div>

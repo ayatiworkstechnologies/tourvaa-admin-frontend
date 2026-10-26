@@ -134,6 +134,7 @@ const tracker = read("src/components/public/AffiliateReferralTracker.tsx");
 check("public pages capture affiliate referral codes", tracker.includes('get("ref")'));
 check("affiliate clicks use the backend public tracking endpoint", tracker.includes("/api/affiliates/track/${encodeURIComponent(refCode)}"));
 check("duplicate referral clicks are suppressed per browser session", tracker.includes("sessionStorage"));
+check("server-tracked short links retain referral attribution without a duplicate click", tracker.includes('get("affiliate_redirect") === "1"') && tracker.includes("window.history.replaceState"));
 
 for (const route of ["forgot-password", "reset-password"]) {
   const layout = read(`src/app/${route}/layout.tsx`);
@@ -182,6 +183,7 @@ check("profile does not fall back to the unrelated user id", !companyInfoTab.inc
 const payoutsSource = read("src/app/affiliate/payouts/page.tsx");
 check("payouts uses session-scoped self-service endpoints", payoutsSource.includes("getAffiliatePayouts") && payoutsSource.includes("getPayoutMethods") && payoutsSource.includes("getWalletSummary"));
 check("payouts does not fall back to the unrelated user id", !payoutsSource.includes("dashboard?.user?.id"));
+check("affiliate payout requests select one available settlement currency", payoutsSource.includes("available_balances") && payoutsSource.includes("Select a payout currency") && payoutsSource.includes("readOnly value={amount}"));
 
 // Profile self-edit is now a self-service PATCH /affiliates/me (see
 // CompanyInfoTab.tsx above) - there is no separate approval-permission gate

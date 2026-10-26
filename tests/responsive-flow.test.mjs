@@ -33,6 +33,30 @@ const publicHeader = read("src/components/public/PublicHeader.tsx");
 check("public marketing navigation waits for desktop width", publicHeader.includes("lg:flex"));
 check("public header preserves a shrinkable flex row", publicHeader.includes("max-w-[1440px] min-w-0"));
 check("desktop header exposes account and trip tools navigation", publicHeader.includes('aria-label="Account and trip tools"'));
+check(
+  "mobile public header pins the logo left and utility controls to the real right edge",
+  publicHeader.includes("justify-between gap-6 px-4 sm:pl-8 sm:pr-[148px]") &&
+    publicHeader.includes('className="flex items-center gap-3 lg:hidden"'),
+);
+check(
+  "mobile trust highlights begin with a complete first item and loop continuously while desktop remains static",
+  publicHeader.includes("mobile-trust-marquee") &&
+    publicHeader.includes("sm:hidden flex h-11 w-full items-center justify-start") &&
+    publicHeader.includes("flex shrink-0 items-center gap-4 px-4") &&
+    globals.includes("@keyframes mobileTrustMarquee") &&
+    globals.includes("@media (prefers-reduced-motion: reduce)"),
+);
+check(
+  "mobile navigation uses smart-sticky scrolling (reveals on scroll up, hides on scroll down)",
+  publicHeader.includes("diff > 0") &&
+    publicHeader.includes("setVisible(false)") &&
+    publicHeader.includes("setVisible(true)"),
+);
+check(
+  "mobile navigation hides the floating translator until its drawer closes",
+  publicHeader.includes('document.body.classList.toggle("mobile-nav-open", open)') &&
+    globals.includes("body.mobile-nav-open [class*="),
+);
 
 const supplierPortal = read("src/app/supplier-portal/page.tsx");
 const agentPortal = read("src/app/agent-portal/page.tsx");

@@ -69,6 +69,7 @@ export type AffiliateConversion = {
   approved_at: string | null;
   available_at: string | null;
   converted_at: string;
+  created_at?: string;
 };
 
 export type AffiliateCommissionSummary = {
@@ -140,6 +141,7 @@ export type AffiliateWalletSummary = {
   paid_lifetime: string;
   lifetime_earnings: string;
   ledger_balance: string;
+  available_balances?: Array<{ currency: string; amount: string }>;
 };
 
 export type AffiliateWalletTransaction = {
@@ -369,7 +371,7 @@ export async function getWalletTransactions(params: { page?: number; limit?: num
   return res.data;
 }
 
-export async function requestPayout(payload: { amount: string | number; payout_method_id: number; notes?: string }) {
+export async function requestPayout(payload: { amount: string | number; payout_method_id: number; currency?: string; notes?: string }) {
   const res = await api.post<{ data: AffiliatePayout }>("/affiliate/payout-requests", payload);
   return res.data.data;
 }

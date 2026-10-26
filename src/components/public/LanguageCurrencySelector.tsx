@@ -17,11 +17,14 @@ type LanguageCurrencySelectorProps = {
   inverse?: boolean;
   plain?: boolean;
   showCountry?: boolean;
+  /** Anchor a public-header mobile menu to the viewport-width header instead
+   * of the narrow icon trigger, keeping the list inside the screen. */
+  mobileViewportMenu?: boolean;
 };
 
 const COUNTRY_ORDER = new Map<string, number>(PUBLIC_HEADER_COUNTRY_CODES.map((code, index) => [code, index]));
 
-export default function LanguageCurrencySelector({ inverse = false, showCountry = false }: LanguageCurrencySelectorProps) {
+export default function LanguageCurrencySelector({ inverse = false, showCountry = false, mobileViewportMenu = false }: LanguageCurrencySelectorProps) {
   const { code, symbol, currencies, setCode, countryCode, setCountry, forced, isStale } = useCurrency();
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
@@ -71,13 +74,13 @@ export default function LanguageCurrencySelector({ inverse = false, showCountry 
   };
 
   return (
-    <div ref={ref} className="relative">
+    <div ref={ref} className={mobileViewportMenu ? "static sm:relative" : "relative"}>
       <button type="button" onClick={() => setOpen((current) => !current)} aria-expanded={open} aria-haspopup="dialog" title={showCountry ? "Location and currency" : "Currency"} className={`group flex flex-col items-center gap-1 text-[10px] font-semibold transition-colors focus:outline-none ${inverse ? "text-white hover:text-white/80" : "text-pub-primary hover:text-pub-secondary"}`}>
         {showCountry && selectedCountry ? <span className="flex h-[18px] w-[18px] items-center justify-center overflow-hidden rounded-full ring-1 ring-slate-200"><FlagIcon countryCode={selectedCountry.country_code} className="text-[18px] leading-none" /></span> : <Globe size={18} className={`stroke-[1.8] ${inverse ? "" : "text-pub-primary"}`} />}
         <span className="flex items-center gap-0.5"><span>{code}{symbol && symbol !== code ? ` ${symbol}` : ""}</span><ChevronDown size={10} className={`${open ? "rotate-180 text-pub-accent" : inverse ? "" : "text-pub-primary"} transition-transform`} /></span>
       </button>
 
-      {open && <div role="dialog" aria-label={showCountry ? "Location and currency" : "Choose currency"} className="absolute right-0 top-[calc(100%+10px)] z-[100] w-[360px] max-w-[calc(100vw-2rem)] overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_20px_50px_rgba(15,23,42,0.22)] ring-1 ring-slate-900/5">
+      {open && <div role="dialog" aria-label={showCountry ? "Location and currency" : "Choose currency"} className={`absolute right-0 top-[calc(100%+10px)] z-[100] w-[360px] max-w-[calc(100vw-2rem)] overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_20px_50px_rgba(15,23,42,0.22)] ring-1 ring-slate-900/5 ${mobileViewportMenu ? "max-sm:inset-x-2 max-sm:top-full max-sm:w-auto max-sm:max-w-none" : ""}`}>
         <div className="p-4">
           <div className="relative mb-2"><Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" /><input type="text" value={search} onChange={(event) => setSearch(event.target.value)} placeholder={showCountry ? "Search country or currency..." : "Search currency..."} className="w-full rounded-xl border border-slate-200 bg-slate-50/70 py-2.5 pl-9 pr-8 text-sm font-semibold text-slate-800 placeholder:text-slate-400 outline-none transition focus:border-pub-accent focus:bg-white focus:ring-2 focus:ring-pub-accent/15" />{search && <button type="button" onClick={() => setSearch("")} className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1 text-slate-400 hover:text-slate-700" aria-label="Clear search"><X size={12} /></button>}</div>
           {showCountry ? <div className="no-scrollbar max-h-72 space-y-0.5 overflow-y-auto pr-0.5">{countryList.length ? countryList.map((country) => {

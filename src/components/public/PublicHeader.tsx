@@ -76,6 +76,43 @@ export default function PublicHeader() {
         : roleSlug === "supplier"
           ? "/supplier/bookings"
           : null;
+  const trustHighlights = customTrust.length ? (
+    customTrust.map((t, i) => {
+      const { Icon, color } = TRUST_ICONS[i % TRUST_ICONS.length];
+      return (
+        <React.Fragment key={i}>
+          {i > 0 && <span className="h-4 w-px shrink-0 bg-white/25" aria-hidden="true" />}
+          <span className="flex shrink-0 items-center gap-2">
+            <Icon size={15} className={color} />
+            <RichText value={t} strongClassName="font-black" />
+          </span>
+        </React.Fragment>
+      );
+    })
+  ) : (
+    <>
+      <span className="flex shrink-0 items-center gap-2">
+        <Globe size={15} className="text-sky-400" />
+        Shop 2,500+ handpicked operators
+      </span>
+      <span className="h-4 w-px shrink-0 bg-white/25" aria-hidden="true" />
+      <span className="flex shrink-0 items-center gap-2">
+        <Star size={15} className="text-emerald-400" />
+        4.8 stars on <span className="font-black text-emerald-400">Trustpilot</span>
+        <span className="text-white/70">(15,000+ reviews)</span>
+      </span>
+      <span className="h-4 w-px shrink-0 bg-white/25" aria-hidden="true" />
+      <span className="flex shrink-0 items-center gap-2">
+        <MessageSquare size={15} className="text-pub-accent" />
+        24/7 customer support
+      </span>
+      <span className="h-4 w-px shrink-0 bg-white/25" aria-hidden="true" />
+      <span className="flex shrink-0 items-center gap-2">
+        <HeartHandshake size={15} className="text-sky-400" />
+        500k+ experiences shared by travelers
+      </span>
+    </>
+  );
 
   useEffect(() => {
     const handleScroll = () => {
@@ -124,6 +161,13 @@ export default function PublicHeader() {
   }, [open, profileOpen]);
 
   useEffect(() => {
+    // The third-party translator is fixed above the page. It must not cover
+    // the mobile drawer's close control or its first navigation actions.
+    document.body.classList.toggle("mobile-nav-open", open);
+    return () => document.body.classList.remove("mobile-nav-open");
+  }, [open]);
+
+  useEffect(() => {
     setOpen(false);
     setProfileOpen(false);
   }, [pathname]);
@@ -158,66 +202,27 @@ export default function PublicHeader() {
           Hidden site-wide by the Top Bar switch in CMS > Home Page. */}
       {showTopBar && (
       <div className="w-full bg-pub-primary text-white border-b border-white/10 overflow-hidden">
-        <div className="mx-auto flex h-11 sm:h-12 w-full max-w-[1440px] min-w-0 items-center justify-start lg:justify-center gap-4 sm:gap-6 md:gap-8 px-4 sm:px-8 lg:px-12 text-xs sm:text-[12.5px] font-semibold overflow-x-auto no-scrollbar whitespace-nowrap py-2 sm:py-2.5">
-          {customTrust.length ? (
-            customTrust.map((t, i) => {
-              const { Icon, color } = TRUST_ICONS[i % TRUST_ICONS.length];
-              return (
-                <React.Fragment key={i}>
-                  {i > 0 && (
-                    <span
-                      className="h-4 w-px bg-white/25 shrink-0"
-                      aria-hidden="true"
-                    />
-                  )}
-                  <span className="flex items-center gap-2 shrink-0">
-                    <Icon size={15} className={color} />
-                    <RichText value={t} strongClassName="font-black" />
-                  </span>
-                </React.Fragment>
-              );
-            })
-          ) : (
-            <>
-              <span className="flex items-center gap-2 shrink-0">
-                <Globe size={15} className="text-sky-400" />
-                Shop 2,500+ handpicked operators
-              </span>
-              <span
-                className="h-4 w-px bg-white/25 shrink-0"
-                aria-hidden="true"
-              />
-              <span className="flex items-center gap-2 shrink-0">
-                <Star size={15} className="text-emerald-400" />
-                4.8 stars on{" "}
-                <span className="font-black text-emerald-400">Trustpilot</span>
-                <span className="text-white/70">(15,000+ reviews)</span>
-              </span>
-              <span
-                className="h-4 w-px bg-white/25 shrink-0"
-                aria-hidden="true"
-              />
-              <span className="flex items-center gap-2 shrink-0">
-                <MessageSquare size={15} className="text-pub-accent" />
-                24/7 customer support
-              </span>
-              <span
-                className="h-4 w-px bg-white/25 shrink-0"
-                aria-hidden="true"
-              />
-              <span className="flex items-center gap-2 shrink-0">
-                <HeartHandshake size={15} className="text-sky-400" />
-                500k+ experiences shared by travelers
-              </span>
-            </>
-          )}
+        <div className="sm:hidden flex h-11 w-full items-center justify-start overflow-hidden text-xs font-semibold whitespace-nowrap">
+          <div className="mobile-trust-marquee flex w-max shrink-0 items-center">
+            <div className="flex shrink-0 items-center gap-4 px-4">
+              {trustHighlights}
+              <span className="h-4 w-px shrink-0 bg-white/25" aria-hidden="true" />
+            </div>
+            <div className="flex shrink-0 items-center gap-4 px-4" aria-hidden="true">
+              {trustHighlights}
+              <span className="h-4 w-px shrink-0 bg-white/25" aria-hidden="true" />
+            </div>
+          </div>
+        </div>
+        <div className="mx-auto hidden h-12 w-full max-w-[1440px] min-w-0 items-center justify-center gap-6 overflow-x-auto px-8 py-2.5 text-[12.5px] font-semibold whitespace-nowrap no-scrollbar sm:flex lg:gap-8 lg:px-12">
+          {trustHighlights}
         </div>
       </div>
       )}
 
-      {/* Reserve a fixed top-right lane for the external language widget so
-          it never overlays the signed-in account trigger. */}
-      <div className="mx-auto flex h-20 max-w-[1440px] min-w-0 items-center justify-between gap-6 pl-4 pr-[132px] sm:pl-8 sm:pr-[148px] lg:pl-12 lg:pr-[164px]">
+      {/* On phones, keep the logo at the left and the two controls at the
+          real right edge. The external language-widget lane is desktop-only. */}
+      <div className="mx-auto flex h-20 max-w-[1440px] min-w-0 items-center justify-between gap-6 px-4 sm:pl-8 sm:pr-[148px] lg:pl-12 lg:pr-[164px]">
         <Link
           href="/"
           className="flex shrink-0 items-center text-2xl font-black tracking-tight text-pub-primary transition hover:opacity-90 sm:text-3xl"
@@ -270,7 +275,7 @@ export default function PublicHeader() {
               </span>
             )}
           </Link>}
-          <LanguageCurrencySelector showCountry />
+          <LanguageCurrencySelector showCountry mobileViewportMenu />
           <div ref={profileRef} className="relative">
             <button
               type="button"
@@ -322,7 +327,7 @@ export default function PublicHeader() {
           </div>
         </nav>
         <div className="flex items-center gap-3 lg:hidden">
-          <LanguageCurrencySelector showCountry />
+          <LanguageCurrencySelector showCountry mobileViewportMenu />
           <button
             onClick={() => setOpen(!open)}
             aria-label="Toggle navigation"
@@ -343,24 +348,28 @@ export default function PublicHeader() {
         </div>
       </div>
       {open && (
-        <div className="border-t border-slate-100 bg-white px-5 py-5 shadow-lg lg:hidden">
+        <div className="border-t border-slate-100 bg-white px-5 py-5 pb-32 shadow-lg lg:hidden max-h-[calc(100dvh-7.5rem)] overflow-y-auto overscroll-contain">
           <HeaderTourSearch compact onSearch={() => setOpen(false)} />
-          {!isAdminRole && <Link
-            href="/wishlist"
-            onClick={() => setOpen(false)}
-            className="mt-4 flex items-center justify-center gap-2 rounded-lg bg-pub-secondary/10 px-3 py-3 text-xs font-bold text-pub-secondary"
-          >
-            <Heart size={15} />
-            Wishlist {wishlistCount > 0 && `(${wishlistCount})`}
-          </Link>}
-          {!isAdminRole && <Link
-            href="/compare"
-            onClick={() => setOpen(false)}
-            className="mt-2 flex items-center justify-center gap-2 rounded-lg bg-pub-secondary/10 px-3 py-3 text-xs font-bold text-pub-secondary"
-          >
-            <Scale size={15} />
-            Compare {compareCount > 0 && `(${compareCount})`}
-          </Link>}
+          {!isAdminRole && (
+            <div className="mt-3 grid grid-cols-2 gap-2.5">
+              <Link
+                href="/wishlist"
+                onClick={() => setOpen(false)}
+                className="flex items-center justify-center gap-2 rounded-xl bg-pub-secondary/10 hover:bg-pub-secondary/15 px-3 py-2.5 text-xs font-bold text-pub-secondary transition-all active:scale-[0.98]"
+              >
+                <Heart size={15} />
+                Wishlist {wishlistCount > 0 && `(${wishlistCount})`}
+              </Link>
+              <Link
+                href="/compare"
+                onClick={() => setOpen(false)}
+                className="flex items-center justify-center gap-2 rounded-xl bg-pub-secondary/10 hover:bg-pub-secondary/15 px-3 py-2.5 text-xs font-bold text-pub-secondary transition-all active:scale-[0.98]"
+              >
+                <Scale size={15} />
+                Compare {compareCount > 0 && `(${compareCount})`}
+              </Link>
+            </div>
+          )}
           <p className="mt-4 text-[10px] font-bold uppercase tracking-widest text-slate-400">
             {isLoggedIn ? "Your account" : "Account & partner portals"}
           </p>

@@ -43,6 +43,12 @@ check("currency changes synchronize across browser tabs", hook.includes('addEven
 check("conversion uses source and target rates", hook.includes("value / sourceRate") && hook.includes("* targetRate"));
 check("public header exposes the selector", publicHeader.includes("<LanguageCurrencySelector"));
 check("public header connects country selection to the saved currency context", publicHeader.includes("<LanguageCurrencySelector showCountry") && publicSelector.includes("fetchPublicCountries") && publicSelector.includes("setCountry(country.country_code, country.currency_code)"));
+check(
+  "public-header mobile location menu is viewport anchored and stays within screen gutters",
+  publicHeader.includes("mobileViewportMenu") &&
+    publicSelector.includes('mobileViewportMenu ? "static sm:relative" : "relative"') &&
+    publicSelector.includes("max-sm:inset-x-2 max-sm:top-full max-sm:w-auto max-sm:max-w-none"),
+);
 check("public country selector updates the local currency without changing the current page", publicSelector.includes("setCountry(country.country_code, country.currency_code)") && !publicSelector.includes("router.push(") && !publicSelector.includes("destinationUrl"));
 check("public location selector presents one searchable country and currency list", publicSelector.includes('placeholder={showCountry ? "Search country or currency..."') && publicSelector.includes('setCountry(country.country_code, country.currency_code)') && !publicSelector.includes('activeTab === "country"') && !publicSelector.includes('role="tablist"'));
 check("public location selector omits detection copy and tab controls", !publicSelector.includes("Auto-detected from your IP address.") && !publicSelector.includes("Enabled countries control the available currencies.") && !publicSelector.includes('>Country</button>') && !publicSelector.includes('>Currency</button>'));

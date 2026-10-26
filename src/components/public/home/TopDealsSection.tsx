@@ -464,9 +464,9 @@ export default function TopDealsSection({
         </div>
 
         {/* Filter Pills row (Left) + View all deals & Prev/Next (Right) */}
-        <div className="mt-8 mb-6 flex flex-wrap items-center justify-between gap-4">
+        <div className="mt-6 mb-4 sm:mt-8 sm:mb-6 flex items-center justify-between gap-4">
           {/* Filter Tabs */}
-          <div className="flex flex-wrap items-center gap-2 sm:gap-2.5">
+          <div className="no-scrollbar flex items-center gap-2 overflow-x-auto py-1 sm:flex-wrap sm:gap-2.5 w-full sm:w-auto">
             {tabs.map((tab) => {
               const isActive = activeTab === tab;
               return (
@@ -474,7 +474,7 @@ export default function TopDealsSection({
                   key={tab}
                   type="button"
                   onClick={() => setActiveTab(tab)}
-                  className={`rounded-full px-5 py-2 text-xs sm:text-sm font-semibold transition-all duration-150 cursor-pointer ${
+                  className={`shrink-0 rounded-full px-4 sm:px-5 py-2 text-xs sm:text-sm font-semibold transition-all duration-150 cursor-pointer ${
                     isActive
                       ? "bg-[#DF6951] text-white shadow-xs"
                       : "bg-white border border-slate-200 text-slate-800 hover:border-slate-300 hover:bg-slate-50"
@@ -486,8 +486,8 @@ export default function TopDealsSection({
             })}
           </div>
 
-          {/* Right controls: View all deals + Prev / Next */}
-          <div className="flex flex-col items-end gap-2 shrink-0">
+          {/* Right controls for desktop: View all deals + Prev / Next */}
+          <div className="hidden sm:flex flex-col items-end gap-2 shrink-0">
             <Link
               href={viewAllHref}
               className="text-xs sm:text-sm font-semibold text-[#DF6951] hover:underline"
@@ -544,6 +544,19 @@ export default function TopDealsSection({
             />
           )}
         </div>
+
+        {/* Mobile controls: Bottom "View all deals" text link */}
+        {!loading && displayTours.length > 0 && (
+          <div className="mt-4 flex sm:hidden items-center justify-center">
+            <Link
+              href={viewAllHref}
+              className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#DF6951] hover:underline"
+            >
+              <span>{text(copy.view_all_text, "View all deals")}</span>
+              <ArrowRight size={15} />
+            </Link>
+          </div>
+        )}
       </div>
     </section>
   );

@@ -5,6 +5,9 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import {
+  LuArrowRight as ArrowRight,
+  LuChevronLeft as ChevronLeft,
+  LuChevronRight as ChevronRight,
   LuGlobe as Globe2,
   LuMapPin as MapPin,
   LuSquareCheckBig as SquareCheckBig,
@@ -42,6 +45,32 @@ export default function FavouriteCountriesSection({
     initialDestinations || DEFAULT_FAVOURITE_COUNTRIES,
   );
   const [heading, setHeading] = useState<Partial<FavouriteCountriesSectionBlock>>({});
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+
+  const nextCard = () => {
+    setActiveIndex((prev) => (prev + 1) % destinations.length);
+  };
+
+  const prevCard = () => {
+    setActiveIndex((prev) => (prev - 1 + destinations.length) % destinations.length);
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStart === null) return;
+    const touchEnd = e.changedTouches[0].clientX;
+    const diff = touchStart - touchEnd;
+    if (diff > 45) {
+      nextCard();
+    } else if (diff < -45) {
+      prevCard();
+    }
+    setTouchStart(null);
+  };
 
   useEffect(() => {
     if (propTitle || propSubtitle) return;
@@ -117,7 +146,7 @@ export default function FavouriteCountriesSection({
       <div className="relative z-10 mx-auto max-w-[1400px] px-5">
         {/* Header */}
         <div className="mx-auto max-w-3xl text-center">
-          <h2 className="text-2xl sm:text-3xl lg:text-[34px] font-bold text-slate-950 tracking-tight">
+          <h2 className="text-2xl sm:text-3xl lg:text-[34px] font-bold text-slate-950 tracking-tight font-heading">
             {title}
           </h2>
           <p className="mt-2.5 text-xs sm:text-sm text-slate-500 leading-relaxed max-w-3xl mx-auto">
@@ -125,43 +154,173 @@ export default function FavouriteCountriesSection({
           </p>
         </div>
 
-        {/* 8 Country Cards in Responsive Grid */}
-        <div className="mt-8 sm:mt-10 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 sm:gap-6 reveal-stagger">
+        {/* ── MOBILE: Fade & Slide Card Stack ── */}
+        <div className="mt-8 sm:hidden">
+          <div
+            className="relative h-[410px] w-full max-w-[340px] mx-auto select-none"
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
+          >
+            {destinations.map((country, idx) => {
+              const count = destinations.length;
+              const isActive = idx === activeIndex;
+              const isNext = idx === (activeIndex + 1) % count;
+              const isSecondNext = idx === (activeIndex + 2) % count;
+
+              let stackClasses = "opacity-0 pointer-events-none translate-x-12 scale-90 z-0";
+              if (isActive) {
+                stackClasses = "opacity-100 pointer-events-auto translate-x-0 scale-100 z-30 shadow-2xl";
+              } else if (isNext) {
+                stackClasses = "opacity-60 pointer-events-none translate-x-3.5 -translate-y-1 scale-[0.94] z-20 shadow-lg";
+              } else if (isSecondNext) {
+                stackClasses = "opacity-25 pointer-events-none translate-x-7 -translate-y-2 scale-[0.88] z-10 shadow-sm";
+              }
+
+              return (
+                <div
+                  key={country.name}
+                  className={`absolute inset-0 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${stackClasses}`}
+                >
+                  <Link
+                    href={country.href || destinationUrl(country.name)}
+                    data-country-card
+                    className="relative block h-full w-full overflow-hidden rounded-[24px] bg-slate-900 border border-slate-100 active:scale-[0.99] transition-transform duration-200"
+                  >
+                    {/* Full-bleed image */}
+                    <img
+                      src={country.image}
+                      alt={country.name}
+                      className="absolute inset-0 h-full w-full object-cover"
+                    />
+
+                    {/* Gradient overlay for text contrast */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/40 to-transparent pointer-events-none rounded-[24px]" />
+
+                    {/* Top-Left Location Badge */}
+                    <span className="absolute left-3.5 top-3.5 z-10 inline-flex items-center gap-1.5 rounded-full bg-pub-accent px-3.5 py-1 text-[11px] font-bold text-white shadow-md">
+                      <MapPin size={11} className="shrink-0 text-white" />
+                      <span>{country.badge || country.name}</span>
+                    </span>
+
+                    {/* Bottom Content Overlay */}
+                    <div className="absolute inset-x-0 bottom-0 z-10 p-5 text-left text-white">
+                      <h3 className="text-xl font-bold !text-white tracking-tight drop-shadow-sm font-heading">
+                        {country.name.toLowerCase().endsWith("tours") ? country.name : `${country.name} tours`}
+                      </h3>
+                      <div className="mt-1.5 flex items-start gap-1.5 text-[11px] leading-relaxed">
+                        <SquareCheckBig
+                          size={12}
+                          className="mt-0.5 shrink-0 text-white"
+                        />
+                        <p
+                          className="line-clamp-2 !text-white text-white drop-shadow text-[11px] leading-relaxed"
+                          style={{ color: "#ffffff" }}
+                        >
+                          {country.snippet || "Explore historic landmarks, scenic landscapes and vibrant local culture."}
+                        </p>
+                      </div>
+                      <div className="mt-3 flex items-center gap-1.5 text-xs font-bold !text-white">
+                        <span className="text-white drop-shadow-xs">Explore tours</span>
+                        <ArrowRight size={13} className="text-pub-accent" />
+                      </div>
+                    </div>
+                  </Link>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Mobile Stack Navigation Controls */}
+          {destinations.length > 1 && (
+            <div className="mt-5 flex items-center justify-between gap-3 max-w-[340px] mx-auto px-2">
+              <button
+                type="button"
+                aria-label="Previous country"
+                onClick={prevCard}
+                className="flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-800 shadow-xs transition hover:bg-slate-50 active:scale-90 cursor-pointer"
+              >
+                <ChevronLeft size={20} className="stroke-[2.5]" />
+              </button>
+
+              {/* Slide Counter & Dots */}
+              <div className="flex flex-col items-center gap-1.5">
+                <span className="text-xs font-bold text-slate-700 tracking-wider">
+                  {String(activeIndex + 1).padStart(2, "0")}{" "}
+                  <span className="text-slate-400 font-normal">/</span>{" "}
+                  {String(destinations.length).padStart(2, "0")}
+                </span>
+                <div className="flex items-center gap-1.5">
+                  {destinations.map((_, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      aria-label={`Go to country slide ${i + 1}`}
+                      onClick={() => setActiveIndex(i)}
+                      className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer ${
+                        activeIndex === i ? "w-5 bg-pub-accent" : "w-1.5 bg-slate-300 hover:bg-slate-400"
+                      }`}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              <button
+                type="button"
+                aria-label="Next country"
+                onClick={nextCard}
+                className="flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-800 shadow-xs transition hover:bg-slate-50 active:scale-90 cursor-pointer"
+              >
+                <ChevronRight size={20} className="stroke-[2.5]" />
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* ── DESKTOP: 4-Column Responsive Grid ── */}
+        <div className="mt-10 hidden sm:grid sm:grid-cols-2 lg:grid-cols-4 sm:gap-6">
           {destinations.map((country) => (
             <Link
               key={country.name}
               href={country.href || destinationUrl(country.name)}
-              className="group relative h-[370px] sm:h-[390px] lg:h-[410px] w-full overflow-hidden rounded-[20px] bg-slate-900 transition-all duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:shadow-xl hover:-translate-y-1.5 focus:outline-none block"
+              data-country-card
+              className="group relative h-[390px] lg:h-[410px] w-full overflow-hidden rounded-[24px] bg-slate-900 transition-all duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:shadow-2xl hover:-translate-y-1.5 focus:outline-none block active:scale-[0.98] cursor-pointer"
             >
               {/* Full-bleed image */}
               <img
                 src={country.image}
                 alt={country.name}
-                className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-108"
+                className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
               />
 
               {/* Gradient overlay for bottom readability while keeping top bright */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/40 to-transparent pointer-events-none rounded-[20px]" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/40 to-transparent pointer-events-none rounded-[24px] transition-opacity duration-300 group-hover:from-black/90" />
 
               {/* Top-Left Location Badge */}
-              <span className="absolute left-3 top-3 z-10 inline-flex items-center gap-1 rounded-full bg-pub-accent px-3 py-1 text-[11px] font-bold text-white shadow-sm transition-transform duration-300 group-hover:scale-105">
+              <span className="absolute left-3.5 top-3.5 z-10 inline-flex items-center gap-1.5 rounded-full bg-pub-accent/90 backdrop-blur-md px-3.5 py-1 text-[11px] font-bold text-white shadow-md transition-transform duration-300 group-hover:scale-105">
                 <MapPin size={11} className="shrink-0 text-white" />
                 <span>{country.badge || country.name}</span>
               </span>
 
               {/* Bottom Content Overlay */}
-              <div className="absolute inset-x-0 bottom-0 z-10 p-4 sm:p-5 text-left">
-                <h3 className="text-lg sm:text-xl font-bold text-white tracking-tight drop-shadow-sm transition-colors duration-200 group-hover:text-pub-secondary">
+              <div className="absolute inset-x-0 bottom-0 z-10 p-5 text-left text-white">
+                <h3 className="text-lg sm:text-xl font-bold !text-white tracking-tight drop-shadow-sm transition-colors duration-200 group-hover:text-pub-secondary font-heading">
                   {country.name.toLowerCase().endsWith("tours") ? country.name : `${country.name} tours`}
                 </h3>
-                <div className="mt-1.5 flex items-start gap-1.5 text-[11px] text-white leading-relaxed">
+                <div className="mt-1.5 flex items-start gap-1.5 text-[11px] leading-relaxed">
                   <SquareCheckBig
                     size={12}
                     className="mt-0.5 shrink-0 text-white"
                   />
-                  <p className="line-clamp-2 !text-white drop-shadow">
+                  <p
+                    className="line-clamp-2 !text-white text-white drop-shadow text-[11px] leading-relaxed"
+                    style={{ color: "#ffffff" }}
+                  >
                     {country.snippet || "Explore historic landmarks, scenic landscapes and vibrant local culture."}
                   </p>
+                </div>
+                <div className="mt-2.5 flex items-center gap-1.5 text-[11px] font-bold !text-white transition-all duration-300 group-hover:translate-x-1">
+                  <span className="text-white drop-shadow-xs">Explore tours</span>
+                  <ArrowRight size={13} className="text-pub-accent transition-transform duration-300 group-hover:translate-x-0.5" />
                 </div>
               </div>
             </Link>

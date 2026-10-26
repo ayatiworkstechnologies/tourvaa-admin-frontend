@@ -2,9 +2,13 @@ import { chromium } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
 
-const SCREENSHOT_DIR = 'C:\\Users\\Lap1623\\.gemini\\antigravity-ide\\brain\\14d3d71d-a422-442e-a023-9cd2312b8fb3\\screenshots';
+const SCREENSHOT_DIR = 'C:\\Users\\Lap1623\\.gemini\\antigravity-ide\\brain\\9428d503-618e-4627-9dc3-6d3528e35bc8\\screenshots';
+if (!fs.existsSync(SCREENSHOT_DIR)) {
+  fs.mkdirSync(SCREENSHOT_DIR, { recursive: true });
+}
 
 const BREAKPOINTS = [
+  { name: 'mobile-mini', width: 320, height: 568, deviceType: 'mobile' },
   { name: 'mobile-se', width: 375, height: 667, deviceType: 'mobile' },
   { name: 'mobile-iphone14', width: 390, height: 844, deviceType: 'mobile' },
   { name: 'tablet-portrait', width: 768, height: 1024, deviceType: 'tablet' },
@@ -18,6 +22,12 @@ const ROUTES = [
   { name: 'tours', path: '/tours' },
   { name: 'tour-detail', path: '/tours/1' },
   { name: 'country-qatar', path: '/tours/qatar' },
+  { name: 'contact', path: '/contact' },
+  { name: 'wishlist', path: '/wishlist' },
+  { name: 'compare', path: '/compare' },
+  { name: 'supplier-portal', path: '/supplier-portal' },
+  { name: 'agent-portal', path: '/agent-portal' },
+  { name: 'affiliate-portal', path: '/affiliate-portal' },
   { name: 'login', path: '/login' },
   { name: 'accessibility', path: '/accessibility' }
 ];

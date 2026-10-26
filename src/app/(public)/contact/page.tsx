@@ -241,12 +241,12 @@ export default function ContactPage({ audience }: { audience?: "supplier" | "age
   // visitor's portal. The previous customer route (`/profile/bookings`) did
   // not exist, and the agent contact page incorrectly sent users there too.
   const bookingSupportHref = isSupplierInquiry
-    ? "/supplier-portal/login"
+    ? "/supplier/bookings"
     : isAgentInquiry
       ? "/agent-portal/login"
       : "/customer/bookings";
   const messageSupportHref = isSupplierInquiry
-    ? "/supplier-portal/login"
+    ? "/supplier/messages"
     : isAgentInquiry
       ? "/agent-portal/login"
       : "/customer/support";
@@ -459,7 +459,7 @@ export default function ContactPage({ audience }: { audience?: "supplier" | "age
               </p>
             </div>
             <Link
-              href={!isSupplierInquiry && !isAgentInquiry && displaySupportCards[0].button_url ? displaySupportCards[0].button_url : bookingSupportHref}
+              href={displaySupportCards[0].button_url && !isSupplierInquiry && !isAgentInquiry ? displaySupportCards[0].button_url : bookingSupportHref}
               className="mt-8 inline-flex items-center justify-center gap-2 rounded-xl bg-[#0B1F3A] hover:bg-slate-800 text-white text-xs font-bold px-5 py-3 w-fit shadow-xs transition"
             >
               <span>{isSupplierInquiry ? "Supplier Sign-in" : isAgentInquiry ? "Agent Sign-in" : displaySupportCards[0].button_label || "Manage My Bookings"}</span>

@@ -364,6 +364,24 @@ button {
   to   { transform: translateX(-50%); }
 }
 
+/* The public trust highlights are a right-aligned, continuous marquee only
+   on compact screens. Desktop keeps the static centered trust strip. */
+@keyframes mobileTrustMarquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+@media (max-width: 639px) {
+  .mobile-trust-marquee {
+    animation: mobileTrustMarquee 28s linear infinite;
+    will-change: transform;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mobile-trust-marquee { animation: none; }
+}
+
 @keyframes lineDraw {
   from { transform: scaleX(0); }
   to   { transform: scaleX(1); }
@@ -691,8 +709,9 @@ button {
 
 /* Ensure text inside dark containers or elements styled with text-white keeps light/white text */
 .public-site .text-white p:not([class*="text-slate-900"]):not([class*="text-slate-950"]):not([class*="text-black"]),
-.public-site [class*="text-white"] p:not([class*="text-slate-900"]):not([class*="text-slate-950"]):not([class*="text-black"]) {
-  color: inherit;
+.public-site [class*="text-white"] p:not([class*="text-slate-900"]):not([class*="text-slate-950"]):not([class*="text-black"]),
+.public-site [data-country-card] p {
+  color: #ffffff !important;
 }
 
 /* Force pure black on all public paragraphs that previously used washed-out grays */
@@ -893,6 +912,16 @@ button {
 body.lightbox-open [class*="elfsight-app"],
 body.lightbox-open [class*="eapps-website-translator"],
 body.lightbox-open [class*="eapp-website-translator"] {
+  display: none !important;
+}
+
+/* The floating third-party translator otherwise sits over the compact public
+   navigation drawer. It is restored immediately after that drawer closes. */
+body.mobile-nav-open [class*="elfsight-app"],
+body.mobile-nav-open [class*="eapps-website-translator"],
+body.mobile-nav-open [class*="eapp-website-translator"],
+body.mobile-nav-open [data-chat-launcher],
+body.mobile-nav-open [data-chat-widget] {
   display: none !important;
 }
 
