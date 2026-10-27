@@ -346,8 +346,23 @@ export default function AboutPage() {
             </p>
           </div>
 
-          {/* Mosaic Gallery - photo + location are CMS-editable, the tile sizing per position is fixed */}
-          <div className="mt-12 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 items-center">
+          {/* Mosaic Gallery - phone layout is a balanced 2-column gallery;
+              the editorial mosaic begins at tablet width. */}
+          <div className="mt-12 grid grid-cols-2 items-stretch gap-3 sm:grid-cols-3 sm:items-center sm:gap-4 lg:grid-cols-5">
+            <div
+              data-reveal
+              className="group relative aspect-[4/3] overflow-hidden rounded-2xl border border-slate-200/60 shadow-sm sm:hidden"
+            >
+              <img
+                src={gallery[0]?.image}
+                alt={gallery[0]?.location || "Gallery photo"}
+                className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
+              <span className="absolute bottom-2.5 left-2.5 flex items-center gap-1 text-[10px] font-bold text-white opacity-0 transition-opacity group-hover:opacity-100">
+                <MapPin size={10} /> {gallery[0]?.location}
+              </span>
+            </div>
             <div
               data-reveal
               className="hidden lg:block group relative h-[280px] overflow-hidden rounded-2xl shadow-sm border border-slate-200/60"
@@ -363,10 +378,10 @@ export default function AboutPage() {
               </span>
             </div>
 
-            <div className="grid gap-4">
+            <div className="contents sm:grid sm:gap-4">
               <div
                 data-reveal
-                className="group relative h-[145px] sm:h-[165px] overflow-hidden rounded-2xl shadow-sm border border-slate-200/60"
+                className="group relative aspect-[4/3] overflow-hidden rounded-2xl border border-slate-200/60 shadow-sm sm:h-[165px] sm:aspect-auto"
               >
                 <img
                   src={gallery[1]?.image}
@@ -380,7 +395,7 @@ export default function AboutPage() {
               </div>
               <div
                 data-reveal
-                className="group relative h-[145px] sm:h-[165px] overflow-hidden rounded-2xl shadow-sm border border-slate-200/60"
+                className="group relative aspect-[4/3] overflow-hidden rounded-2xl border border-slate-200/60 shadow-sm sm:h-[165px] sm:aspect-auto"
               >
                 <img
                   src={gallery[2]?.image}
@@ -396,7 +411,7 @@ export default function AboutPage() {
 
             <div
               data-reveal
-              className="group relative h-[310px] sm:h-[350px] overflow-hidden rounded-2xl shadow-md border border-slate-200/60"
+              className="group relative aspect-[4/3] overflow-hidden rounded-2xl border border-slate-200/60 shadow-md sm:h-[350px] sm:aspect-auto"
             >
               <img
                 src={gallery[3]?.image}
@@ -409,10 +424,10 @@ export default function AboutPage() {
               </span>
             </div>
 
-            <div className="grid gap-4">
+            <div className="contents sm:grid sm:gap-4">
               <div
                 data-reveal
-                className="group relative h-[145px] sm:h-[165px] overflow-hidden rounded-2xl shadow-sm border border-slate-200/60"
+                className="group relative aspect-[4/3] overflow-hidden rounded-2xl border border-slate-200/60 shadow-sm sm:h-[165px] sm:aspect-auto"
               >
                 <img
                   src={gallery[4]?.image}
@@ -426,7 +441,7 @@ export default function AboutPage() {
               </div>
               <div
                 data-reveal
-                className="group relative h-[145px] sm:h-[165px] overflow-hidden rounded-2xl shadow-sm border border-slate-200/60"
+                className="group relative aspect-[4/3] overflow-hidden rounded-2xl border border-slate-200/60 shadow-sm sm:h-[165px] sm:aspect-auto"
               >
                 <img
                   src={gallery[5]?.image}
@@ -635,20 +650,20 @@ export default function AboutPage() {
         </section>
 
         {/* ── 5. Awards & Industry Recognition ── */}
-        <section className="mx-auto max-w-[1400px] px-4 sm:px-6 pt-20 sm:pt-28">
-          <div data-reveal className="text-center max-w-2xl mx-auto">
-            <span className="text-xs sm:text-sm font-bold uppercase tracking-wider text-pub-secondary">
+        <section className="mx-auto max-w-[1400px] px-4 sm:px-6 pt-14 sm:pt-28">
+          <div data-reveal className="mx-auto max-w-2xl text-center">
+            <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-pub-secondary sm:text-sm sm:tracking-wider">
               {awardsHeading.eyebrow || DEFAULT_AWARDS_HEADING.eyebrow}
             </span>
-            <h2 className="mt-1 text-2xl sm:text-3xl font-black tracking-tight text-slate-950 font-heading">
+            <h2 className="mt-2 text-[1.65rem] font-black leading-tight tracking-tight text-slate-950 font-heading sm:text-3xl">
               {awardsHeading.heading || DEFAULT_AWARDS_HEADING.heading}
             </h2>
-            <p className="mt-2 text-xs sm:text-sm text-slate-600 font-medium">
+            <p className="mx-auto mt-3 max-w-xl text-sm font-medium leading-relaxed text-slate-600 sm:text-base">
               {awardsHeading.subtitle || DEFAULT_AWARDS_HEADING.subtitle}
             </p>
           </div>
 
-          <div className="mt-10 flex flex-wrap justify-center gap-4">
+          <div className="mx-auto mt-8 grid max-w-md grid-cols-1 gap-4 min-[480px]:max-w-none min-[480px]:grid-cols-2 sm:mt-10 sm:grid-cols-3 lg:grid-cols-5">
             {awards.map((item, index) => {
               const Icon = item.icon;
               return (
@@ -656,15 +671,15 @@ export default function AboutPage() {
                   key={index}
                   data-reveal
                   style={delay(index * 60)}
-                  className="flex w-[calc(50%-0.5rem)] flex-col items-start rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs hover:border-slate-300 hover:shadow-sm transition-all sm:basis-[calc(33.333%-0.667rem)] lg:basis-[calc(20%-0.8rem)]"
+                  className="flex min-w-0 flex-col items-start rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs transition-[border-color,box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-sm"
                 >
-                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-50 text-sky-700">
+                  <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-sky-50 text-sky-700">
                     <Icon size={20} />
                   </span>
-                  <h3 className="mt-3.5 text-xs sm:text-sm font-bold text-slate-950 leading-snug font-heading">
+                  <h3 className="mt-4 text-base font-bold leading-snug text-slate-950 font-heading sm:text-sm">
                     {item.title}
                   </h3>
-                  <p className="mt-1 text-[11px] text-slate-500 font-medium">
+                  <p className="mt-2 text-sm font-medium leading-relaxed text-slate-600 sm:text-xs">
                     {item.text}
                   </p>
                 </div>

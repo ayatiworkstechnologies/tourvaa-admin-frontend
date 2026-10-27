@@ -148,6 +148,33 @@ html {
   text-rendering: optimizeLegibility;
 }
 
+/*
+ * Responsive type scale
+ *
+ * Tourvaa uses Tailwind's rem-based typography for the majority of customer,
+ * partner and administration surfaces.  Keeping the root scale deliberate
+ * gives those pages the same readable rhythm without changing their content:
+ * compact on phones, the normal reading size on tablets and desktops. Inputs
+ * remain 16px on phones below so browsers do not zoom a form on focus.
+ */
+@media (max-width: 639px) {
+  html { font-size: 93.75%; }
+
+  /* Pixel-based display sizes appear in legacy and CMS-driven page headings.
+   * Bring them into the same phone hierarchy as rem-based headings. */
+  [class~="text-[24px]"] { font-size: 1.375rem; }
+  [class~="text-[28px]"] { font-size: 1.5rem; }
+  [class~="text-[30px]"] { font-size: 1.625rem; }
+  [class~="text-[32px]"] { font-size: 1.75rem; }
+  [class~="text-[34px]"] { font-size: 1.875rem; }
+  [class~="text-[36px]"] { font-size: 2rem; }
+  [class~="text-[38px]"] { font-size: 2.125rem; }
+  [class~="text-[40px]"] { font-size: 2.25rem; }
+  [class~="text-[42px]"] { font-size: 2.375rem; }
+  [class~="text-[46px]"] { font-size: 2.5rem; }
+  [class~="text-[52px]"] { font-size: 2.75rem; }
+}
+
 /* Public site heading font - aliased to --font-onest in PublicLayout.tsx.
  * Falls back to the body font stack outside the public route group where
  * --font-heading is never set. */
@@ -203,6 +230,36 @@ button {
 }
 
 @layer components {
+  /* Shared portal hierarchy: use these for page headers and card headers so
+   * customer, supplier, agent and tour-editor pages have one scale. */
+  .type-page-kicker {
+    @apply text-[10px] font-black uppercase tracking-[.16em] sm:text-[11px] lg:text-xs;
+  }
+
+  .type-page-title {
+    @apply text-[22px] font-black leading-tight tracking-tight sm:text-[26px] lg:text-3xl;
+  }
+
+  .type-page-description {
+    @apply text-[13px] leading-5 sm:text-sm sm:leading-6 lg:text-[15px];
+  }
+
+  .type-section-title {
+    @apply text-[15px] font-black leading-snug sm:text-base lg:text-lg;
+  }
+
+  .type-section-description {
+    @apply text-[11px] leading-5 sm:text-xs sm:leading-5 lg:text-sm;
+  }
+
+  .type-action-label {
+    @apply text-xs font-black sm:text-[13px];
+  }
+
+  .type-metric-value {
+    @apply text-xl font-black tracking-tight sm:text-2xl;
+  }
+
   .customer-input {
     @apply rounded-xl border border-[#D5E1EF] bg-white px-4 py-2.5 text-sm text-[#183252] outline-none transition placeholder:text-[#8A9AB1] focus:border-[#1478F2] focus:ring-4 focus:ring-blue-50;
   }
@@ -301,6 +358,45 @@ button {
   0% { transform: scale(.82); box-shadow: 0 0 0 0 rgb(37 99 235 / .35); }
   70% { transform: scale(1.06); box-shadow: 0 0 0 7px rgb(37 99 235 / 0); }
   100% { transform: scale(1); }
+}
+
+/* Tour Style rating timelines: a single entry motion communicates the saved
+ * pace/rating without turning an informational panel into a looping widget. */
+@keyframes ratingGuideIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes ratingStepIn {
+  from { opacity: 0.55; transform: scaleX(0.72); }
+  to { opacity: 1; transform: scaleX(1); }
+}
+
+@keyframes ratingMarkerIn {
+  from { opacity: 0; transform: scaleX(0.3); }
+  to { opacity: 1; transform: scaleX(1); }
+}
+
+.animate-rating-guide-in {
+  animation: ratingGuideIn 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-rating-step-in {
+  transform-origin: center;
+  animation: ratingStepIn 460ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-rating-marker-in {
+  transform-origin: center;
+  animation: ratingMarkerIn 340ms 140ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-rating-guide-in,
+  .animate-rating-step-in,
+  .animate-rating-marker-in {
+    animation: none;
+  }
 }
 
 @keyframes counterPop {

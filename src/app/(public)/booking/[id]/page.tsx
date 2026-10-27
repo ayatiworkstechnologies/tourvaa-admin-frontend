@@ -730,6 +730,7 @@ export default function DynamicTourBookingPage() {
   // must never prefill their own name as the traveller -- only the
   // customer they've explicitly linked or created below.
   const selfBookingName = isCustomer ? user?.name || "" : "";
+  const selfBookingEmail = isCustomer ? user?.email || "" : "";
 
   // Keep the passenger form list in sync with adult/child counts, and
   // prefill the lead traveller from the logged-in Customer only. Agent
@@ -741,7 +742,15 @@ export default function DynamicTourBookingPage() {
       for (let i = 0; i < total; i++) {
         const type: PassengerType = i < adultCount ? "adult" : "child";
         if (prev[i]) {
-          next.push({ ...prev[i], type });
+          const existing = { ...prev[i], type };
+          // Authentication resolves asynchronously on some page loads. Fill a
+          // blank lead email from the signed-in customer, never overwriting a
+          // value the traveller already entered.
+          if (i === 0 && !existing.email) {
+            if (isAgent && agentCustomerEmail) existing.email = agentCustomerEmail;
+            else if (!isAgent && selfBookingEmail) existing.email = selfBookingEmail;
+          }
+          next.push(existing);
           continue;
         }
         const passenger = emptyPassenger(type);
@@ -753,12 +762,13 @@ export default function DynamicTourBookingPage() {
             passenger.lastName = rest.join(" ");
           }
           if (isAgent && agentCustomerEmail) passenger.email = agentCustomerEmail;
+          else if (!isAgent && selfBookingEmail) passenger.email = selfBookingEmail;
         }
         next.push(passenger);
       }
       return next;
     });
-  }, [adultCount, childCount, isAgent, agentCustomerName, agentCustomerEmail, selfBookingName]);
+  }, [adultCount, childCount, isAgent, agentCustomerName, agentCustomerEmail, selfBookingName, selfBookingEmail]);
 
   // Tour metadata
   const tourTitle = tour?.title || "";
@@ -1369,8 +1379,7 @@ export default function DynamicTourBookingPage() {
             <div
               className="absolute left-6 top-1/2 -translate-y-1/2 h-1 bg-gradient-to-r from-emerald-500 via-pub-primary to-pub-accent transition-all duration-500 -z-0"
               style={{
-                width: step === 1 ? "0%" : step === 2 ? "50%" : "100%",
-                right: step === 3 ? "24px" : "auto",
+                width: step === 1 ? "0%" : step === 2 ? "calc(50% - 24px)" : "calc(100% - 48px)",
               }}
             />
 
@@ -1924,16 +1933,17 @@ export default function DynamicTourBookingPage() {
                             <div
                               key={extra.id}
                               onClick={() => toggleAccommodationExtra(extra.id)}
-                              className={`flex items-center justify-between gap-3.5 rounded-xl border p-3.5 sm:p-4 cursor-pointer transition ${
+                              className={`flex flex-col items-stretch gap-3 rounded-xl border p-3.5 sm:flex-row sm:items-center sm:justify-between sm:gap-3.5 sm:p-4 cursor-pointer transition ${
                                 checked ? "border-pub-primary bg-blue-50/10 shadow-2xs" : "border-slate-200 hover:border-slate-300"
                               }`}
                             >
-                              <div className="flex min-w-0 items-center gap-3.5">
-                                <div className="h-16 w-20 shrink-0 overflow-hidden rounded-lg bg-slate-100 sm:h-[72px] sm:w-24">
+                              <div className="flex min-w-0 items-start gap-3 sm:items-center sm:gap-3.5">
+                                <div className="h-14 w-16 shrink-0 overflow-hidden rounded-lg bg-slate-100 sm:h-[72px] sm:w-24">
                                   {imageSrc ? (
                                     <img
                                       src={imageSrc}
                                       alt={extra.name}
+                                      onError={(event) => { event.currentTarget.src = "/images/tour-card-fallback.jpg"; }}
                                       className="h-full w-full object-cover"
                                     />
                                   ) : (
@@ -1942,7 +1952,7 @@ export default function DynamicTourBookingPage() {
                                     </div>
                                   )}
                                 </div>
-                                <span className={`mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border ${checked ? "border-pub-primary bg-pub-primary text-white" : "border-slate-300 bg-white"}`}>
+                                <span className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border sm:mt-1 ${checked ? "border-pub-primary bg-pub-primary text-white" : "border-slate-300 bg-white"}`}>
                                   {checked && <Check size={13} className="stroke-[3]" />}
                                 </span>
                                 <div className="min-w-0">
@@ -1954,14 +1964,17 @@ export default function DynamicTourBookingPage() {
                                   )}
                                 </div>
                               </div>
-                              <div className="text-right shrink-0">
-                                <p className="text-xs sm:text-sm font-black text-slate-900">
+                              <div className="flex shrink-0 items-center justify-between gap-3 border-t border-slate-100 pt-3 sm:block sm:border-0 sm:pt-0 sm:text-right">
+                                <div>
+                                  <p className="text-xs sm:text-sm font-black text-slate-900">
                                   {format(extra.price ?? 0, tourCurrency)}
-                                </p>
+                                  </p>
+                                  <p className="mt-0.5 text-[10px] font-medium text-slate-500 sm:hidden">per adult</p>
+                                </div>
                                 <button
                                   type="button"
                                   onClick={(event) => { event.stopPropagation(); toggleAccommodationExtra(extra.id); }}
-                                  className={`mt-2 rounded-lg px-3 py-1.5 text-[11px] font-bold transition ${checked ? "bg-emerald-600 text-white hover:bg-emerald-700" : "bg-pub-primary text-white hover:bg-pub-primary/90"}`}
+                                  className={`min-h-10 rounded-lg px-3 py-1.5 text-[11px] font-bold transition sm:mt-2 sm:min-h-0 ${checked ? "bg-emerald-600 text-white hover:bg-emerald-700" : "bg-pub-primary text-white hover:bg-pub-primary/90"}`}
                                 >
                                   {checked ? "Added" : "Add add-on"}
                                 </button>
@@ -2011,7 +2024,7 @@ export default function DynamicTourBookingPage() {
                       </p>
                     </div>
                   </div>
-                  <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-800 group-hover:text-emerald-950 bg-white/90 border border-emerald-200 px-3 py-1.5 rounded-lg transition shadow-2xs">
+                  <span className="inline-flex min-h-10 shrink-0 items-center justify-center gap-1 rounded-lg border border-emerald-200 bg-white/90 px-3 text-xs font-bold text-emerald-800 shadow-2xs transition group-hover:text-emerald-950 sm:px-4">
                     Edit Step
                   </span>
                 </div>
@@ -2077,7 +2090,7 @@ export default function DynamicTourBookingPage() {
                     const isLead = idx === 0;
                     const ordinal = idx + 1 === 2 ? "2nd" : idx + 1 === 3 ? "3rd" : `${idx + 1}th`;
                     const labelTitle = isLead
-                      ? "Lead Passenger (Primary Contact)"
+                      ? "Lead traveller"
                       : `${ordinal} Passenger${passenger.type === "child" ? " (Child)" : ""}`;
 
                     return (
@@ -2092,7 +2105,7 @@ export default function DynamicTourBookingPage() {
                                 <span>{labelTitle}</span>
                                 {isLead && (
                                   <span className="rounded-full bg-blue-50 border border-blue-200/80 px-2 py-0.5 text-[10px] font-bold text-blue-700">
-                                    Lead Guest
+                                    Primary contact
                                   </span>
                                 )}
                               </h3>
@@ -2277,7 +2290,7 @@ export default function DynamicTourBookingPage() {
                                 <select
                                   value={passenger.gender}
                                   onChange={(e) => handlePassengerChange(idx, "gender", e.target.value)}
-                                  className="w-full appearance-none rounded-xl border border-slate-200 bg-slate-50/50 py-2.5 pl-3.5 pr-8 text-xs font-semibold text-slate-700 outline-none transition focus:border-pub-primary focus:bg-white"
+                                  className={`w-full appearance-none rounded-xl border border-slate-200 bg-slate-50/50 py-2.5 pl-3.5 pr-8 text-xs outline-none transition focus:border-pub-primary focus:bg-white ${passenger.gender ? "font-semibold text-slate-700" : "font-medium text-slate-400"}`}
                                 >
                                   <option value="">Select gender</option>
                                   <option value="male">Male</option>
@@ -2340,7 +2353,7 @@ export default function DynamicTourBookingPage() {
                       </p>
                     </div>
                   </div>
-                  <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-800 group-hover:text-emerald-950 bg-white/90 border border-emerald-200 px-3 py-1.5 rounded-lg transition shadow-2xs">
+                  <span className="inline-flex min-h-10 shrink-0 items-center justify-center gap-1 rounded-lg border border-emerald-200 bg-white/90 px-3 text-xs font-bold text-emerald-800 shadow-2xs transition group-hover:text-emerald-950 sm:px-4">
                     Edit Step
                   </span>
                 </div>

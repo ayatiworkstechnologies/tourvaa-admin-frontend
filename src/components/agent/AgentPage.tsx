@@ -47,16 +47,16 @@ export function AgentPageHeader({
             <Icon size={24} />
           </span>
           <div className="min-w-0">
-            <p className="text-[10px] font-black uppercase tracking-[.16em] text-[#2563EB]">{eyebrow}</p>
-            <h1 className="mt-1 text-[24px] font-black leading-tight tracking-tight text-[#10213F]">{title}</h1>
-            <p className="mt-1 max-w-3xl text-[13px] leading-5 text-[#63728B]">{description}</p>
+            <p className="type-page-kicker text-[#2563EB]">{eyebrow}</p>
+            <h1 className="type-page-title mt-1 text-[#10213F]">{title}</h1>
+            <p className="type-page-description mt-1 max-w-3xl text-[#63728B]">{description}</p>
           </div>
         </div>
 
         {actions.length > 0 && (
           <div className="grid w-full gap-2 sm:flex sm:w-auto sm:flex-wrap">
             {actions.map(({ label, href, onClick, icon: ActionIcon = ArrowRight, variant = "primary" }) => {
-              const className = `inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-xs font-black transition hover:-translate-y-0.5 ${
+              const className = `type-action-label inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 transition hover:-translate-y-0.5 ${
                   variant === "primary"
                     ? "bg-[#2563EB] text-white shadow-md shadow-blue-200 hover:bg-[#1D4ED8]"
                     : "border border-[#D7E2F2] bg-white text-[#355174] hover:bg-[#F1F6FD]"
@@ -95,11 +95,11 @@ export function AgentSection({
       {(title || description || action) && (
         <div className="flex flex-col gap-3 border-b border-[#E7EDF6] px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            {title && <h2 className="text-[15px] font-black text-[#10213F]">{title}</h2>}
-            {description && <p className="mt-1 text-[11px] leading-5 text-[#6C7A91]">{description}</p>}
+            {title && <h2 className="type-section-title text-[#10213F]">{title}</h2>}
+            {description && <p className="type-section-description mt-1 text-[#6C7A91]">{description}</p>}
           </div>
           {action && (
-            <Link href={action.href} className="inline-flex items-center gap-2 text-xs font-black text-[#2563EB]">
+            <Link href={action.href} className="type-action-label inline-flex items-center gap-2 text-[#2563EB]">
               {action.label} <ActionIcon size={13} />
             </Link>
           )}
@@ -128,8 +128,8 @@ export function AgentMetric({
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-[10px] font-black uppercase tracking-[.1em] text-[#738199]">{label}</p>
-          <p className="mt-2 text-2xl font-black tracking-tight text-[#10213F]">{value}</p>
-          {note && <p className="mt-1 text-[10px] text-[#748298]">{note}</p>}
+          <p className="type-metric-value mt-2 text-[#10213F]">{value}</p>
+          {note && <p className="type-section-description mt-1 text-[#748298]">{note}</p>}
         </div>
         <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${tone}`}><Icon size={18} /></span>
       </div>

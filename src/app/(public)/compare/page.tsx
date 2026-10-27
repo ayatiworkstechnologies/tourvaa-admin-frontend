@@ -106,6 +106,13 @@ function buildCompareItem(
   const incTexts = (detail?.inclusions || [])
     .map((i) => i.text.toLowerCase())
     .join(" ");
+  const accommodationSummary = detail?.overview?.accommodation_summary || "";
+  const accommodationEvidence = `${accommodationSummary} ${incTexts}`.toLowerCase();
+  const accommodationExplicitlyExcluded = /(?:no accommodation|accommodation\s*(?:is)?\s*not included|accommodation\s*:\s*no|without accommodation|own accommodation)/i.test(accommodationEvidence);
+  const accommodationIncluded =
+    daysCount > 1 &&
+    !accommodationExplicitlyExcluded &&
+    /\b(accommodation|hotel|overnight stay|lodging)\b/i.test(incTexts);
 
   return {
     id: base.id,
@@ -139,7 +146,7 @@ function buildCompareItem(
         : "Max 16 travellers",
       difficulty: detail?.overview?.physical_rating || "Moderate",
       accommodation:
-        detail?.overview?.accommodation_summary || "3-4 Star Hostels & Hotels",
+        accommodationSummary || (daysCount <= 1 ? "Not included for this day tour" : "Not specified"),
       meals: detail?.overview?.meal_summary || "Daily Breakfast Included",
       transport:
         detail?.overview?.transportation_summary ||
@@ -152,7 +159,7 @@ function buildCompareItem(
     inclusionsMap: {
       flights: incTexts.includes("flight"),
       transfers: incTexts.includes("transfer"),
-      accommodation: incTexts.includes("hotel") || incTexts.includes("accommodation"),
+      accommodation: accommodationIncluded,
       breakfast: incTexts.includes("breakfast"),
       guidedTours: incTexts.includes("guide") || true,
       adventure: incTexts.includes("activity") || idx % 2 === 0,

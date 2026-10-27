@@ -46,15 +46,15 @@ export function CustomerPageHeader({
             <Icon size={24} />
           </span>
           <div className="min-w-0">
-            <p className="text-[10px] font-black uppercase tracking-[.16em] text-[#2475E8]">{eyebrow}</p>
-            <h1 className="mt-1 text-xl font-black leading-tight tracking-tight text-[#0C2043] sm:text-[24px]">{title}</h1>
-            <p className="mt-1 max-w-2xl text-[13px] leading-5 text-[#5D7292]">{description}</p>
+            <p className="type-page-kicker text-[#2475E8]">{eyebrow}</p>
+            <h1 className="type-page-title mt-1 text-[#0C2043]">{title}</h1>
+            <p className="type-page-description mt-1 max-w-2xl text-[#5D7292]">{description}</p>
           </div>
         </div>
         {action && (
           <Link
             href={action.href}
-            className="inline-flex w-full shrink-0 items-center justify-center gap-2 rounded-xl bg-[#0868E8] px-4 py-2.5 text-[12px] font-black text-white shadow-md shadow-blue-200 transition hover:-translate-y-0.5 hover:bg-[#075AC9] sm:w-auto"
+            className="type-action-label inline-flex w-full shrink-0 items-center justify-center gap-2 rounded-xl bg-[#0868E8] px-4 py-2.5 text-white shadow-md shadow-blue-200 transition hover:-translate-y-0.5 hover:bg-[#075AC9] sm:w-auto"
           >
             <ActionIcon size={15} />
             {action.label}
@@ -81,8 +81,8 @@ export function CustomerSection({
     <section className={`overflow-hidden rounded-2xl border border-[#DDE7F3] bg-white shadow-[0_8px_30px_-25px_rgba(24,68,126,.6)] ${className}`}>
       {(title || description) && (
         <div className="border-b border-[#E6EDF6] px-5 py-4">
-          {title && <h2 className="text-[15px] font-black text-[#0C2043]">{title}</h2>}
-          {description && <p className="mt-1 text-[11px] text-[#6B7F9D]">{description}</p>}
+          {title && <h2 className="type-section-title text-[#0C2043]">{title}</h2>}
+          {description && <p className="type-section-description mt-1 text-[#6B7F9D]">{description}</p>}
         </div>
       )}
       {children}

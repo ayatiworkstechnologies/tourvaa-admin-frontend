@@ -77,7 +77,16 @@ export function Reveal({
 
     observer.observe(node);
 
+    // Browser restores and automated full-page captures can throttle observer
+    // callbacks. Content must never remain invisible because its animation did
+    // not receive an intersection event.
+    const fallbackTimer = window.setTimeout(() => {
+      node.classList.add("is-visible");
+      observer.unobserve(node);
+    }, 2500 + delay);
+
     return () => {
+      window.clearTimeout(fallbackTimer);
       observer.disconnect();
     };
   }, [delay, threshold, rootMargin, once]);

@@ -2,7 +2,7 @@
 
 /* eslint-disable @next/next/no-img-element */
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import {
   LuArrowRight as ArrowRight,
@@ -167,17 +167,6 @@ export default function DealsPage() {
     return () => { active = false; };
   }, []);
 
-  const byCountry = useMemo(() => {
-    const groups = new Map<string, DealCardItem[]>();
-    deals.forEach((deal) => groups.set(deal.country, [...(groups.get(deal.country) || []), deal]));
-    return Array.from(groups.entries()).sort((a, b) => b[1].length - a[1].length).slice(0, 3);
-  }, [deals]);
-  const byCategory = useMemo(() => {
-    const groups = new Map<string, DealCardItem[]>();
-    deals.forEach((deal) => groups.set(deal.category, [...(groups.get(deal.category) || []), deal]));
-    return Array.from(groups.entries()).sort((a, b) => b[1].length - a[1].length).slice(0, 3);
-  }, [deals]);
-
   return (
     <main className="w-full overflow-x-clip bg-white pb-12 text-slate-900">
       <section className="mx-auto max-w-[1400px] px-4 pt-4 sm:px-6 sm:pt-6">
@@ -188,8 +177,6 @@ export default function DealsPage() {
       </section>
 
       <DealRail title="Current deals" deals={deals} loading={loading} />
-      {byCountry.map(([country, countryDeals]) => <DealRail key={country} title={`Deals in ${country}`} deals={countryDeals} loading={loading} />)}
-      {byCategory.map(([category, categoryDeals]) => <DealRail key={category} title={`${category} offers`} deals={categoryDeals} loading={loading} />)}
 
       {!loading && deals.length === 0 && <section className="mx-auto max-w-[1400px] px-4 pt-10 sm:px-6 sm:pt-14"><div className="rounded-2xl border border-slate-200 bg-slate-50 px-6 py-12 text-center"><h2 className="text-xl font-bold text-slate-900">No active deals right now</h2><p className="mx-auto mt-2 max-w-lg text-sm leading-relaxed text-slate-600">New offers appear here after Tourvaa activates a deal for a published tour.</p><Link href="/tours" className="mt-5 inline-flex items-center gap-2 rounded-xl bg-pub-primary px-5 py-3 text-sm font-bold text-white transition hover:bg-pub-primary-dark active:translate-y-px">Browse all tours <ArrowRight size={15} /></Link></div></section>}
       {failed && <p role="status" className="mx-auto mt-8 max-w-[1400px] px-4 text-center text-sm text-slate-600 sm:px-6">Deals could not be refreshed. Please try again shortly.</p>}

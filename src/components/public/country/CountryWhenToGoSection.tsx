@@ -37,7 +37,7 @@ export default function CountryWhenToGoSection({
         {/* ── When to Go & Climate ── */}
         <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4 mb-8">
           <div className="max-w-md">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-pub-accent block mb-1">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-[#A83F12] block mb-1">
               When to Go &amp; Climate
             </span>
             <h2 className="text-2xl sm:text-3xl font-semibold text-slate-900 tracking-tight">
@@ -54,7 +54,7 @@ export default function CountryWhenToGoSection({
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {seasons.map((season) => (
               <article key={season.label} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-2xs">
-                <p className="text-[11px] font-bold uppercase tracking-wider text-pub-accent">{season.label}</p>
+                <p className="text-[11px] font-bold uppercase tracking-wider text-[#A83F12]">{season.label}</p>
                 <h3 className="mt-2 text-lg font-bold text-slate-900">{season.months}</h3>
                 <p className="mt-3 text-sm font-medium leading-relaxed text-slate-700">{season.weather}</p>
                 <p className="mt-3 text-xs leading-relaxed text-slate-500">{season.description}</p>

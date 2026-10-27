@@ -659,19 +659,19 @@ function RatingGuide({
   const displayLabel = normalizedValue || steps[currentStepIndex];
 
   return (
-    <div className="rounded-2xl border border-slate-200/80 bg-gradient-to-b from-white via-slate-50/30 to-slate-50/70 p-5 shadow-xs transition-all hover:border-slate-300">
-      <div className="flex items-center justify-between gap-3">
+    <div className="animate-rating-guide-in rounded-[22px] border border-[#C9DAEE] bg-gradient-to-b from-white via-slate-50/30 to-slate-50/70 p-4 shadow-[0_8px_20px_-18px_rgba(15,42,82,0.45)] transition-colors sm:p-5 motion-reduce:animate-none">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex items-center gap-3">
           <div
-            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border ${activeStyle.badgeBorder} ${activeStyle.badgeBg} ${activeStyle.badgeText} shadow-2xs`}
+            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border ${activeStyle.badgeBorder} ${activeStyle.badgeBg} ${activeStyle.badgeText} shadow-2xs`}
           >
-            {isPace ? <Gauge size={17} /> : <Activity size={17} />}
+            {isPace ? <Gauge size={18} /> : <Activity size={18} />}
           </div>
           <div>
-            <h3 className="text-sm sm:text-base font-black tracking-tight text-[#0B2A52]">
+            <h3 className="text-[15px] font-black tracking-tight text-[#0B2A52] sm:text-base">
               {title}
             </h3>
-            <p className="text-[11px] font-medium text-slate-400">
+            <p className="mt-0.5 text-[11px] font-medium text-slate-500">
               {isPace
                 ? "Daily sightseeing tempo"
                 : "Activity & fitness demand"}
@@ -679,14 +679,14 @@ function RatingGuide({
           </div>
         </div>
         <span
-          className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-black capitalize shadow-2xs transition-colors ${activeStyle.badgeBg} ${activeStyle.badgeText} ${activeStyle.badgeBorder}`}
+          className={`inline-flex w-fit items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-black capitalize shadow-2xs ${activeStyle.badgeBg} ${activeStyle.badgeText} ${activeStyle.badgeBorder}`}
         >
           <span className={`h-1.5 w-1.5 rounded-full ${activeStyle.dotBg}`} />
           {displayLabel}
         </span>
       </div>
 
-      {/* Pill bars track */}
+      {/* Saved pace/rating timeline */}
       <div className="mt-5 flex gap-2 sm:gap-2.5">
         {steps.map((step, index) => {
           const isActive =
@@ -698,24 +698,20 @@ function RatingGuide({
           return (
             <div key={step} className="flex-1">
               <div
-                className={`relative h-3.5 rounded-full transition-all duration-300 ${
+                className={`relative h-3.5 rounded-full transition-colors duration-300 ${
                   isActive
-                    ? `${stepStyle.bg} ring-4 ${stepStyle.ring} scale-y-110 shadow-sm`
+                    ? `${stepStyle.bg} animate-rating-step-in ring-4 ${stepStyle.ring} shadow-sm motion-reduce:animate-none`
                     : "bg-[#b9d9f8] border border-sky-200/60"
                 }`}
                 title={`${step}${isActive ? " (Active)" : ""}`}
-              >
-                {isActive && (
-                  <span className="absolute inset-0 rounded-full bg-white/20 animate-pulse" />
-                )}
-              </div>
+              />
             </div>
           );
         })}
       </div>
 
       {/* Step labels */}
-      <div className="mt-3.5 flex justify-between text-xs">
+      <div className="mt-3 flex justify-between text-xs">
         {steps.map((step, index) => {
           const isActive =
             matchedIndices.length > 0
@@ -734,9 +730,9 @@ function RatingGuide({
             >
               <span>{step}</span>
               <span
-                className={`h-1 rounded-full transition-all ${
+                className={`h-1 rounded-full transition-colors ${
                   isActive
-                    ? `${stepStyle.dotBg} w-3.5`
+                    ? `${stepStyle.dotBg} animate-rating-marker-in w-3.5 motion-reduce:animate-none`
                     : "bg-transparent w-1"
                 }`}
               />
@@ -2271,7 +2267,6 @@ export default function TourDetailExperience({
                       icon={<Users size={19} />}
                       label="Group & vehicle capacity"
                       value={groupSizeLabel}
-                      detail="Larger groups may travel across multiple vehicles, subject to availability."
                     />
                   )}
                   {vehicleStyle && (
@@ -2287,7 +2282,6 @@ export default function TourDetailExperience({
                       icon={<Gauge size={19} />}
                       label="Travel style"
                       value={tourPace}
-                      detail="Carefully curated tempo for comfortable sightseeing"
                     />
                   )}
                   {(guideStyle || tour.tour_language) && (
@@ -2295,7 +2289,6 @@ export default function TourDetailExperience({
                       icon={<User size={19} />}
                       label="Guiding style"
                       value={guideStyle || `Guided in ${tour.tour_language}`}
-                      detail="Live knowledgeable host accompanying the departure"
                     />
                   )}
                 </div>
@@ -2308,13 +2301,6 @@ export default function TourDetailExperience({
                   </div>
                 )}
 
-                {/* Footer Sparkle Callout */}
-                <div className="mt-5 flex items-center gap-3.5 rounded-2xl border border-blue-100 bg-gradient-to-r from-blue-50/70 via-sky-50/40 to-blue-50/70 px-4.5 py-3 text-xs sm:text-sm font-semibold text-[#173f70] shadow-2xs">
-                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-blue-100 bg-white text-blue-600 shadow-2xs">
-                    <Sparkles size={15} />
-                  </div>
-                  <span>These ratings are a general guide to help you choose the right trip and may vary slightly by tour.</span>
-                </div>
               </section>
             )}
 

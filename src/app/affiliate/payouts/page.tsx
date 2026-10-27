@@ -1,21 +1,15 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import Link from "next/link";
-import { LuPlus as Plus } from "react-icons/lu";
+import { useCallback, useEffect, useState } from "react";
 import { useToast } from "@/hooks/useToast";
 import { useCurrency } from "@/hooks/useCurrency";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
 import {
   getAffiliatePayouts,
-  getPayoutMethods,
   getWalletSummary,
-  requestPayout,
   type AffiliatePayout,
-  type AffiliatePayoutMethod,
   type AffiliateWalletSummary,
 } from "@/lib/api/services/affiliateService";
-import { getApiErrorMessage } from "@/lib/utils/errorHandler";
 
 function statusCls(s: string) {
   const v = (s || "").toLowerCase();
@@ -28,16 +22,9 @@ function statusCls(s: string) {
 export default function AffiliatePayoutsPage() {
   const toast = useToast();
   const { formatExact: money } = useCurrency();
-  const submitLock = useRef(false);
   const [payouts, setPayouts] = useState<AffiliatePayout[]>([]);
-  const [methods, setMethods] = useState<AffiliatePayoutMethod[]>([]);
   const [summary, setSummary] = useState<AffiliateWalletSummary | null>(null);
   const [loading, setLoading] = useState(true);
-  const [showForm, setShowForm] = useState(false);
-  const [amount, setAmount] = useState("");
-  const [currency, setCurrency] = useState("");
-  const [methodId, setMethodId] = useState<number | "">("");
-  const [saving, setSaving] = useState(false);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
@@ -46,15 +33,13 @@ export default function AffiliatePayoutsPage() {
   const load = useCallback(async (targetPage: number = page) => {
     setLoading(true);
     try {
-      const [payoutsRes, methodsRes, summaryRes] = await Promise.all([
+      const [payoutsRes, summaryRes] = await Promise.all([
         getAffiliatePayouts({ page: targetPage, limit: pageSize }),
-        getPayoutMethods(),
         getWalletSummary(),
       ]);
       setPayouts(payoutsRes.items ?? []);
       setTotal(payoutsRes.total ?? 0);
       setTotalPages(payoutsRes.total_pages ?? 1);
-      setMethods(methodsRes);
       setSummary(summaryRes);
     } catch {
       toast.error("Could not load payout data.");
@@ -65,33 +50,6 @@ export default function AffiliatePayoutsPage() {
   }, [page]);
 
   useEffect(() => { void load(); }, [load]);
-
-  async function submitRequest(e: React.FormEvent) {
-    e.preventDefault();
-    if (submitLock.current) return;
-    if (!methodId) { toast.error("Select a payout method."); return; }
-    const requested = Number(amount);
-    const selectedBalance = summary?.available_balances?.find((balance) => balance.currency === currency);
-    const available = Number(selectedBalance?.amount ?? 0);
-    if (!Number.isFinite(requested) || requested <= 0) { toast.error("Enter a valid amount."); return; }
-    if (!currency || !selectedBalance) { toast.error("Select a payout currency."); return; }
-    if (requested > available) { toast.error(`Requested amount exceeds your available balance (${money(available)}).`); return; }
-    submitLock.current = true;
-    setSaving(true);
-    try {
-      await requestPayout({ amount, currency, payout_method_id: methodId as number });
-      toast.success("Payout requested. Admin will review it shortly.");
-      setShowForm(false);
-      setAmount("");
-      setCurrency("");
-      await load();
-    } catch (e) {
-      toast.error(getApiErrorMessage(e) || "Could not request payout.");
-    } finally {
-      submitLock.current = false;
-      setSaving(false);
-    }
-  }
 
   const columns: DataTableColumn<AffiliatePayout>[] = [
     {
@@ -120,15 +78,11 @@ export default function AffiliatePayoutsPage() {
 
   return (
     <div className="p-6 md:p-8">
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+      <div className="mb-6">
         <div>
           <h1 className="text-2xl font-black text-dash-text">Payouts</h1>
-          <p className="mt-1 text-sm text-dash-muted">Request a payout and track commission payment status.</p>
+          <p className="mt-1 text-sm text-dash-muted">View your commission balance and Tourvaa-managed payout status.</p>
         </div>
-        <button type="button" onClick={() => setShowForm((v) => !v)}
-          className="inline-flex items-center gap-2 rounded-xl bg-purple-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-purple-700">
-          <Plus size={16} /> Request Payout
-        </button>
       </div>
 
       <div className="mb-6 rounded-xl border border-purple-100 bg-purple-50 px-5 py-4">
@@ -139,55 +93,6 @@ export default function AffiliatePayoutsPage() {
           ) : <p className="text-2xl font-black text-purple-900">{money("0")}</p>}
         </div>
       </div>
-
-      {showForm && (
-        methods.length === 0 ? (
-          <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm font-semibold text-amber-800">
-            Add a payout method before requesting a payout. <Link href="/affiliate/payout-methods" className="underline">Add one now</Link>.
-          </div>
-        ) : (
-          <form onSubmit={submitRequest} className="mb-6 rounded-xl border border-purple-100 bg-purple-50 p-5">
-            <div className="grid gap-4 sm:grid-cols-3">
-              <div>
-                <label className="mb-1 block text-xs font-bold text-dash-body">Currency</label>
-                <select required value={currency} onChange={(e) => {
-                  const nextCurrency = e.target.value;
-                  setCurrency(nextCurrency);
-                  const balance = summary?.available_balances?.find((item) => item.currency === nextCurrency);
-                  setAmount(balance?.amount ?? "");
-                }}
-                  className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-100">
-                  <option value="">Select currency</option>
-                  {(summary?.available_balances ?? []).map((balance) => <option key={balance.currency} value={balance.currency}>{balance.currency} - {money(balance.amount, balance.currency)}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="mb-1 block text-xs font-bold text-dash-body">Amount</label>
-                <input required readOnly value={amount} placeholder="Select a currency"
-                  className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-100" />
-              </div>
-              <div>
-                <label className="mb-1 block text-xs font-bold text-dash-body">Payout Method</label>
-                <select required value={methodId} onChange={(e) => setMethodId(Number(e.target.value))}
-                  className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-100">
-                  <option value="">Select method</option>
-                  {methods.map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.method_type === "paypal" ? `PayPal - ${m.paypal_email}` : `${m.bank_name} - ${m.account_number_masked}`}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-            <div className="mt-4 flex gap-2">
-              <button type="submit" disabled={saving} className="rounded-xl bg-purple-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-purple-700 disabled:opacity-60">
-                {saving ? "Submitting…" : "Submit Request"}
-              </button>
-              <button type="button" onClick={() => setShowForm(false)} className="rounded-xl border border-dash-border px-4 py-2.5 text-sm font-semibold text-dash-muted hover:bg-white">Cancel</button>
-            </div>
-          </form>
-        )
-      )}
 
       <div className="rounded-xl border border-dash-border bg-white shadow-sm p-0">
         <DataTable
@@ -201,7 +106,7 @@ export default function AffiliatePayoutsPage() {
           totalPages={totalPages}
           onPageChange={(nextPage) => { setPage(nextPage); void load(nextPage); }}
           emptyTitle="No payouts yet"
-          emptyDescription="Payout history will appear here once you request a payout."
+          emptyDescription="Payout history will appear here after Tourvaa records a payment."
         />
       </div>
     </div>

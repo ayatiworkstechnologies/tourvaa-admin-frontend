@@ -22,8 +22,8 @@ export default function CountryWhyVisitSection({ info }: CountryWhyVisitSectionP
       <div className="mx-auto max-w-[1380px] px-4 sm:px-6">
         {/* Section Header matching CMS Tab 3 */}
         <div className="mx-auto max-w-3xl text-center mb-10 sm:mb-12">
-          <div className="inline-flex items-center gap-1.5 rounded-full bg-orange-100/80 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-pub-accent">
-            <Sparkles size={11} className="fill-pub-accent" />
+          <div className="inline-flex items-center gap-1.5 rounded-full bg-orange-100/80 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-[#A83F12]">
+            <Sparkles size={11} className="fill-[#A83F12]" />
             <span>Why Visit {info.country_name}</span>
           </div>
 
@@ -49,10 +49,13 @@ export default function CountryWhyVisitSection({ info }: CountryWhyVisitSectionP
                 >
                   <div>
                     {/* Visual Photo */}
-                    {imgSrc && <div className="relative h-48 w-full overflow-hidden rounded-xl bg-slate-100">
+                    <div className="relative h-48 w-full overflow-hidden rounded-xl bg-slate-100">
                       <img
-                        src={imgSrc}
+                        src={imgSrc || "/images/tour-card-fallback.jpg"}
                         alt={reason.title}
+                        onError={(event) => {
+                          event.currentTarget.src = "/images/tour-card-fallback.jpg";
+                        }}
                         className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                       />
                       {reason.badge && (
@@ -62,13 +65,13 @@ export default function CountryWhyVisitSection({ info }: CountryWhyVisitSectionP
                           </span>
                         </div>
                       )}
-                    </div>}
+                    </div>
 
                     {/* Content */}
-                    <h3 className="mt-4 text-base sm:text-lg font-bold text-slate-900 tracking-tight group-hover:text-pub-accent transition">
+                    <h3 className="mt-4 text-base sm:text-lg font-bold text-slate-900 tracking-tight group-hover:text-[#A83F12] transition">
                       {reason.title}
                     </h3>
-                    <p className="mt-2 text-xs sm:text-sm text-slate-600 font-normal leading-relaxed">
+                    <p className="mt-2 text-xs sm:text-sm text-slate-700 font-normal leading-relaxed">
                       {reason.description}
                     </p>
                   </div>

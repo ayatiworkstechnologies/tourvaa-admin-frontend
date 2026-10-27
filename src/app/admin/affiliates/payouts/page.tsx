@@ -160,7 +160,7 @@ export default function AdminAffiliatePayoutsPage() {
           <div>
             <p className="text-xs font-bold uppercase tracking-wide text-dash-brand">Finance Operations</p>
             <h1 className="mt-1 text-2xl font-black text-dash-text">Affiliate Payouts</h1>
-            <p className="mt-1 text-sm text-dash-muted">Review affiliate payout requests, approve, process, and mark them paid.</p>
+            <p className="mt-1 text-sm text-dash-muted">Manage affiliate payout records, update their status, and record completed payments.</p>
           </div>
           <button type="button" onClick={() => void load()} disabled={loading}
             className="inline-flex items-center justify-center gap-2 rounded-xl border border-dash-border bg-white px-4 py-2.5 text-sm font-bold text-dash-body hover:bg-dash-bg-muted disabled:opacity-50">
@@ -171,7 +171,7 @@ export default function AdminAffiliatePayoutsPage() {
         <div className="rounded-xl border border-dash-border bg-white shadow-sm">
           <div className="flex flex-col gap-3 border-b border-dash-border px-5 py-4 xl:flex-row xl:items-center xl:justify-between">
             <div>
-              <h2 className="font-bold text-dash-text">Payout Requests</h2>
+              <h2 className="font-bold text-dash-text">Payout Records</h2>
               <p className="mt-0.5 text-xs text-dash-subtle">{total} matching records</p>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -201,8 +201,8 @@ export default function AdminAffiliatePayoutsPage() {
               total={total}
               totalPages={totalPages}
               onPageChange={setPage}
-              emptyTitle="No payout requests found"
-              emptyDescription="Affiliate payout requests will appear here after affiliates submit them."
+              emptyTitle="No payout records found"
+              emptyDescription="Affiliate payout records will appear here when they are available."
               actions={(p) => (
                 <div className="flex flex-wrap items-center justify-end gap-1.5">
                   {p.status === "requested" && (

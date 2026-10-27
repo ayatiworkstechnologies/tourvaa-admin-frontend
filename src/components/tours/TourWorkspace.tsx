@@ -88,11 +88,11 @@ export function TourWorkspaceHeader({
             <Icon size={24} />
           </span>
           <div className="min-w-0">
-            <p className={`text-[10px] font-black uppercase tracking-[.16em] ${colors.eyebrow}`}>
+            <p className={`type-page-kicker ${colors.eyebrow}`}>
               {eyebrow ?? (role === "admin" ? "Admin Tour Workspace" : "Supplier Tour Workspace")}
             </p>
-            <h1 className="mt-1 text-[24px] font-black leading-tight tracking-tight text-dash-text">{title}</h1>
-            <p className="mt-1 max-w-3xl text-[13px] leading-5 text-dash-muted">{description}</p>
+            <h1 className="type-page-title mt-1 text-dash-text">{title}</h1>
+            <p className="type-page-description mt-1 max-w-3xl text-dash-muted">{description}</p>
           </div>
         </div>
         {actions.length > 0 && (
@@ -101,7 +101,7 @@ export function TourWorkspaceHeader({
               <Link
                 key={`${href}-${label}`}
                 href={href}
-                className={`inline-flex items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-xs font-black transition hover:-translate-y-0.5 ${
+                className={`type-action-label inline-flex items-center justify-center gap-2 rounded-xl border px-4 py-2.5 transition hover:-translate-y-0.5 ${
                   variant === "primary"
                     ? `border-transparent text-white shadow-md ${colors.primary}`
                     : `bg-white ${colors.secondary}`

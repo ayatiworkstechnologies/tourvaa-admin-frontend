@@ -54,6 +54,14 @@ check("homepage does not ship fictional tour or destination fallbacks", !publicH
 check("homepage tour cards do not invent ratings or discounts", !publicHomepage.includes('"2,050 reviews"') && !publicHomepage.includes('"Save 25%"') && !publicHomepage.includes('?? 4.8'));
 check("homepage has truthful empty collection states", homepageSections.includes("No featured tours are available yet.") && homepageSections.includes("No destinations are available yet."));
 check("homepage fallbacks use bundled images", homepageSections.includes('"/images/hero-1.jpg"') && !homepageSections.includes("images.unsplash.com"));
+const homeHelpers = read("src/components/public/home/HomeHelpers.tsx");
+const dealsPage = read("src/app/(public)/deals/page.tsx");
+const comparePage = read("src/app/(public)/compare/page.tsx");
+const newsletter = read("src/components/public/home/HomeNewsletterBanner.tsx");
+check("homepage reveal blocks have a visible fallback when observer delivery is delayed", homeHelpers.includes("fallbackTimer") && homeHelpers.includes('node.classList.add("is-visible")'));
+check("compare only marks accommodation included with explicit matching data", comparePage.includes("accommodationExplicitlyExcluded") && comparePage.includes("accommodationIncluded") && !comparePage.includes('"3-4 Star Hostels & Hotels"'));
+check("deals page does not repeat the same catalogue in country and category rails", !dealsPage.includes("byCountry") && !dealsPage.includes("byCategory"));
+check("newsletter calls its email action Subscribe", newsletter.includes('"Subscribe"') && !newsletter.includes('"Register"'));
 
 const publicLayout = read("src/components/public/PublicLayout.tsx");
 const publicSettings = read("src/providers/PublicSettingsProvider.tsx");
@@ -181,9 +189,9 @@ check("profile does not fall back to the unrelated user id", !companyInfoTab.inc
 // affiliate_id - a stronger guarantee than the old pattern since a client
 // can no longer influence which affiliate's data it reads by any id it holds.
 const payoutsSource = read("src/app/affiliate/payouts/page.tsx");
-check("payouts uses session-scoped self-service endpoints", payoutsSource.includes("getAffiliatePayouts") && payoutsSource.includes("getPayoutMethods") && payoutsSource.includes("getWalletSummary"));
+check("payouts uses session-scoped self-service endpoints", payoutsSource.includes("getAffiliatePayouts") && payoutsSource.includes("getWalletSummary"));
 check("payouts does not fall back to the unrelated user id", !payoutsSource.includes("dashboard?.user?.id"));
-check("affiliate payout requests select one available settlement currency", payoutsSource.includes("available_balances") && payoutsSource.includes("Select a payout currency") && payoutsSource.includes("readOnly value={amount}"));
+check("affiliate payout history is read-only while the balance remains visible", payoutsSource.includes("available_balances") && !payoutsSource.includes("requestPayout") && !payoutsSource.includes("Request Payout"));
 
 // Profile self-edit is now a self-service PATCH /affiliates/me (see
 // CompanyInfoTab.tsx above) - there is no separate approval-permission gate

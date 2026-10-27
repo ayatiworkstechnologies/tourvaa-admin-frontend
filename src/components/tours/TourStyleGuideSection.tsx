@@ -7,7 +7,7 @@ import { getApiErrorMessage } from "@/lib/utils/errorHandler";
 import { useToast } from "@/hooks/useToast";
 
 const emptyOverview = (): TourOverview => ({
-  duration_text: "", start_location: "", end_location: "", group_size: "", tour_type: "", vehicle_style: "", guide_style: "", physical_rating: "easy",
+  duration_text: "", start_location: "", end_location: "", group_size: "", tour_type: "", vehicle_style: "", guide_style: "", physical_rating: "",
   why_choose_this_tour: "", ideal_for: "", best_season: "", tour_pace: "", transportation_summary: "", accommodation_summary: "", meal_summary: "",
 });
 
@@ -134,17 +134,17 @@ export default function TourStyleGuideSection({ tourId, minBookingSize, maxGroup
           <p className="mt-2 text-xs text-dash-subtle">Min / max travellers. Current: {groupSizeLabel(Number(minGroupSize), Number(maxGroupSizeInput))}</p>
         </div>
         <label className="rounded-xl border border-blue-100 bg-white p-4">
-          <span className="text-xs font-black uppercase tracking-wide text-dash-subtle">Travel style</span>
+          <span className="text-xs font-black uppercase tracking-wide text-dash-subtle">Tour type</span>
           <input value={overview.tour_type ?? ""} disabled={loading} onChange={(event) => updateDraft({ overview: { ...overview, tour_type: event.target.value }, hasStyleChanges: true })}
             placeholder="e.g. Relaxed, Luxury, Adventure"
             className="mt-2 w-full rounded-lg border border-dash-border bg-white px-3 py-2 text-sm font-semibold text-dash-text outline-none focus:border-dash-brand disabled:cursor-not-allowed disabled:opacity-60" />
         </label>
         <label className="rounded-xl border border-blue-100 bg-white p-4">
-          <span className="flex items-center gap-2 text-xs font-black uppercase tracking-wide text-dash-subtle"><Car size={15} className="text-dash-brand" /> Tour style</span>
+          <span className="flex items-center gap-2 text-xs font-black uppercase tracking-wide text-dash-subtle"><Car size={15} className="text-dash-brand" /> Vehicle style</span>
           <input value={overview.vehicle_style ?? ""} disabled={loading} onChange={(event) => updateDraft({ overview: { ...overview, vehicle_style: event.target.value }, hasStyleChanges: true })}
             placeholder="e.g. Mini cab, Minivan, Coach"
             className="mt-2 w-full rounded-lg border border-dash-border bg-white px-3 py-2 text-sm font-semibold text-dash-text outline-none focus:border-dash-brand disabled:cursor-not-allowed disabled:opacity-60" />
-          <p className="mt-1 text-xs text-dash-subtle">Saved to the backend and shown as Tour Style on the public tour page.</p>
+          <p className="mt-1 text-xs text-dash-subtle">Shown to travellers as transport / vehicle.</p>
         </label>
         <label className="rounded-xl border border-blue-100 bg-white p-4">
           <span className="flex items-center gap-2 text-xs font-black uppercase tracking-wide text-dash-subtle"><UserRound size={15} className="text-dash-brand" /> Guide style</span>
@@ -167,8 +167,9 @@ export default function TourStyleGuideSection({ tourId, minBookingSize, maxGroup
         </label>
         <label className="rounded-xl border border-blue-100 bg-white p-4">
           <span className="text-xs font-black uppercase tracking-wide text-dash-subtle">Physical rating</span>
-          <select value={overview.physical_rating} disabled={loading} onChange={(event) => updateDraft({ overview: { ...overview, physical_rating: event.target.value as TourOverview["physical_rating"] }, hasStyleChanges: true })}
+          <select value={overview.physical_rating ?? ""} disabled={loading} onChange={(event) => updateDraft({ overview: { ...overview, physical_rating: event.target.value as TourOverview["physical_rating"] }, hasStyleChanges: true })}
             className="mt-2 w-full rounded-lg border border-dash-border bg-white px-3 py-2 text-sm font-semibold text-dash-text outline-none focus:border-dash-brand disabled:cursor-not-allowed disabled:opacity-60">
+            <option value="">Select physical rating</option>
             <option value="easy">Easy</option>
             <option value="moderate">Moderate</option>
             <option value="hard">Serious</option>

@@ -6,6 +6,7 @@ import React from "react";
 import Link from "next/link";
 import {
   LuArrowRight as ArrowRight,
+  LuArrowLeft as ArrowLeft,
   LuCalendar as Calendar,
   LuCar as Car,
   LuChevronRight as ChevronRight,
@@ -52,6 +53,11 @@ export default function CountryDestinationHero({
       <div className="mx-auto max-w-[1380px] px-4 sm:px-6">
         {/* Breadcrumb Navigation */}
         <nav aria-label="Breadcrumb" className="mb-5 flex items-center gap-2 text-xs font-semibold text-slate-500">
+          <Link href="/destinations" className="inline-flex min-h-11 items-center gap-1 rounded-lg px-2 text-slate-600 transition hover:bg-slate-100 hover:text-slate-900">
+            <ArrowLeft size={14} aria-hidden="true" />
+            <span>Back to destinations</span>
+          </Link>
+          <span className="h-4 w-px bg-slate-200" aria-hidden="true" />
           <Link href="/" className="inline-flex items-center gap-1 transition hover:text-slate-900">
             <Home size={13} className="text-slate-400" />
             <span>Home</span>
@@ -114,15 +120,18 @@ export default function CountryDestinationHero({
           </div>
 
           {/* Right Column: Hero Visual Showcase */}
-          {heroImageSrc && <div className="lg:col-span-5">
+          <div className="lg:col-span-5">
             <div className="relative h-[280px] sm:h-[360px] lg:h-[380px] w-full overflow-hidden rounded-[24px] bg-slate-100 shadow-sm border border-slate-100">
               <img
-                src={heroImageSrc}
+                src={heroImageSrc || "/images/tour-card-fallback.jpg"}
                 alt={`${info.country_name} showcase`}
+                onError={(event) => {
+                  event.currentTarget.src = "/images/tour-card-fallback.jpg";
+                }}
                 className="h-full w-full object-cover object-center transition-transform duration-700 hover:scale-105"
               />
             </div>
-          </div>}
+          </div>
         </div>
 
         {/* ── Quick Facts Strip (Rendered at Base of Hero) ── */}

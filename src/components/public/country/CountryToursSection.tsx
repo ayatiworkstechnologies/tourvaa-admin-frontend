@@ -116,7 +116,7 @@ export default function CountryToursSection({
   }, [tours, activeCategory, searchTerm]);
 
   return (
-    <section id="section-tours" className="py-12 sm:py-16 bg-white border-b border-slate-100">
+    <section id="section-tours" className="py-12 pb-28 sm:py-16 bg-white border-b border-slate-100">
       <div className="mx-auto max-w-[1380px] px-4 sm:px-6">
         {/* ── Heading matching screenshot ── */}
         <div className="flex items-center justify-between gap-4 mb-6">
@@ -135,7 +135,7 @@ export default function CountryToursSection({
         </div>
 
         {/* ── Category Filter Pills Row matching screenshot ── */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
+        <div className="flex flex-wrap items-center gap-2 pb-2 sm:flex-nowrap sm:overflow-x-auto sm:scrollbar-none">
           {categoryPills.map((pill) => {
             const isActive = activeCategory === pill.id;
             return (

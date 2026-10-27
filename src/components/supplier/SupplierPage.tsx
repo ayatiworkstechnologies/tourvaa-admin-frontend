@@ -41,9 +41,9 @@ export function SupplierPageHeader({
             <Icon size={24} />
           </span>
           <div className="min-w-0">
-            <p className="text-[10px] font-black uppercase tracking-[.16em] text-[#16833A]">{eyebrow}</p>
-            <h1 className="mt-1 text-[24px] font-black leading-tight tracking-tight text-[#123024]">{title}</h1>
-            <p className="mt-1 max-w-3xl text-[13px] leading-5 text-[#647B6E]">{description}</p>
+            <p className="type-page-kicker text-[#16833A]">{eyebrow}</p>
+            <h1 className="type-page-title mt-1 text-[#123024]">{title}</h1>
+            <p className="type-page-description mt-1 max-w-3xl text-[#647B6E]">{description}</p>
           </div>
         </div>
 
@@ -53,7 +53,7 @@ export function SupplierPageHeader({
               <Link
                 key={`${href}-${label}`}
                 href={href}
-                className={`inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-xs font-black transition hover:-translate-y-0.5 ${
+                className={`type-action-label inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 transition hover:-translate-y-0.5 ${
                   variant === "primary"
                     ? "bg-[#16833A] text-white shadow-md shadow-emerald-200 hover:bg-[#117331]"
                     : "border border-[#D5E6DB] bg-white text-[#365A45] hover:bg-[#F0F8F3]"
@@ -90,11 +90,11 @@ export function SupplierSection({
       {(title || description || action) && (
         <div className="flex flex-col gap-3 border-b border-[#E5EFE9] px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            {title && <h2 className="text-[15px] font-black text-[#123024]">{title}</h2>}
-            {description && <p className="mt-1 text-[11px] leading-5 text-[#6D8276]">{description}</p>}
+            {title && <h2 className="type-section-title text-[#123024]">{title}</h2>}
+            {description && <p className="type-section-description mt-1 text-[#6D8276]">{description}</p>}
           </div>
           {action && (
-            <Link href={action.href} className="inline-flex items-center gap-2 text-xs font-black text-[#16833A]">
+            <Link href={action.href} className="type-action-label inline-flex items-center gap-2 text-[#16833A]">
               {action.label} <ActionIcon size={13} />
             </Link>
           )}
@@ -123,8 +123,8 @@ export function SupplierMetric({
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-[10px] font-black uppercase tracking-[.1em] text-[#708579]">{label}</p>
-          <p className="mt-2 text-2xl font-black tracking-tight text-[#123024]">{value}</p>
-          {note && <p className="mt-1 text-[10px] text-[#71867A]">{note}</p>}
+          <p className="type-metric-value mt-2 text-[#123024]">{value}</p>
+          {note && <p className="type-section-description mt-1 text-[#71867A]">{note}</p>}
         </div>
         <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${tone}`}><Icon size={18} /></span>
       </div>

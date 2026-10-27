@@ -14,7 +14,9 @@ export type TourOverview = {
   tour_type: string;
   vehicle_style: string;
   guide_style?: "" | "driver_guide" | "dedicated_guide" | "driver_only";
-  physical_rating: "easy" | "moderate" | "hard";
+  // Empty until an editor explicitly selects a rating.  This prevents a new
+  // tour from being presented to travellers as "Easy" by default.
+  physical_rating?: "" | "easy" | "moderate" | "hard";
   overview_icon_data?: Record<string, string>[] | null;
   why_choose_this_tour?: string;
   ideal_for?: string;

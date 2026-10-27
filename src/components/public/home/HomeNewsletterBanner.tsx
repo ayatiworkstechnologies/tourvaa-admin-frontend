@@ -121,7 +121,7 @@ export default function HomeNewsletterBanner({
                   disabled={subscribing}
                   className="inline-flex h-11 items-center justify-center gap-2 rounded-[10px] bg-pub-primary px-6 text-sm font-extrabold text-white shadow-[0_8px_18px_rgba(11,31,58,0.2)] transition-all hover:-translate-y-0.5 hover:bg-pub-primary-dark hover:shadow-[0_12px_24px_rgba(11,31,58,0.28)] active:scale-[0.98] disabled:opacity-60 sm:h-12 sm:px-7 whitespace-nowrap"
                 >
-                  <span>{subscribing ? "Registering..." : "Register"}</span>
+                  <span>{subscribing ? "Subscribing..." : "Subscribe"}</span>
                   <ArrowRight
                     size={16}
                     className="transition-transform group-hover:translate-x-0.5"
