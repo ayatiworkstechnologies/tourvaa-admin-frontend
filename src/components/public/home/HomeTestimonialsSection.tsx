@@ -166,7 +166,7 @@ export default function HomeTestimonialsSection({
                   <div
                     key={index}
                     data-review-card
-                    className="w-[calc(100%-1rem)] max-w-[300px] sm:w-[360px] sm:max-w-none shrink-0 snap-start animate-pulse rounded-3xl border border-slate-100 bg-white p-7 shadow-sm"
+                    className="w-[calc(100%-1rem)] max-w-[300px] shrink-0 snap-start animate-pulse rounded-3xl border border-slate-100 bg-white p-7 shadow-sm sm:w-[calc((100%-1.25rem)/2)] sm:max-w-none lg:w-[calc((100%-2.5rem)/3)]"
                   >
                     <div className="h-6 w-8 rounded bg-slate-100 mb-4" />
                     <div className="h-4 w-full rounded-full bg-slate-100" />
@@ -190,7 +190,7 @@ export default function HomeTestimonialsSection({
                     <article
                       key={`${review.name}-${index}`}
                       data-review-card
-                      className="group w-[calc(100%-1rem)] max-w-[290px] sm:w-[350px] sm:max-w-none lg:w-[370px] shrink-0 snap-start flex flex-col justify-between rounded-3xl border border-slate-200/80 bg-white p-6 sm:p-7 text-left shadow-xs transition-all duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:border-slate-300 hover:shadow-lg hover:-translate-y-1.5"
+                      className="group flex w-[calc(100%-1rem)] max-w-[290px] shrink-0 snap-start flex-col justify-between rounded-3xl border border-slate-200/80 bg-white p-6 text-left shadow-xs transition-all duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-1.5 hover:border-slate-300 hover:shadow-lg sm:w-[calc((100%-1.25rem)/2)] sm:max-w-none sm:p-7 lg:w-[calc((100%-2.5rem)/3)]"
                     >
                       <div>
                         <span className="block text-slate-300 text-3xl sm:text-4xl font-serif leading-none select-none mb-3 transition-colors duration-200 group-hover:text-amber-400">

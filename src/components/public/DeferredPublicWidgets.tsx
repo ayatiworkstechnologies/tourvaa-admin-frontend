@@ -4,7 +4,7 @@ import { useEffect, useState, type ComponentType } from "react";
 
 type LoadedWidgets = {
   ChatWidget: ComponentType;
-  ElfsightTranslator: ComponentType;
+  ElfsightTranslator: ComponentType | null;
 };
 
 /**
@@ -18,14 +18,15 @@ export default function DeferredPublicWidgets() {
   useEffect(() => {
     let active = true;
     const timer = window.setTimeout(() => {
+      const shouldLoadTranslator = window.matchMedia("(min-width: 1024px)").matches;
       void Promise.all([
         import("./ChatWidget"),
-        import("./ElfsightTranslator"),
+        shouldLoadTranslator ? import("./ElfsightTranslator") : Promise.resolve(null),
       ]).then(([chatModule, translatorModule]) => {
         if (!active) return;
         setWidgets({
           ChatWidget: chatModule.default,
-          ElfsightTranslator: translatorModule.default,
+          ElfsightTranslator: translatorModule?.default ?? null,
         });
       });
     }, 4_000);
@@ -41,7 +42,7 @@ export default function DeferredPublicWidgets() {
   const { ChatWidget, ElfsightTranslator } = widgets;
   return (
     <>
-      <ElfsightTranslator />
+      {ElfsightTranslator && <ElfsightTranslator />}
       <ChatWidget />
     </>
   );

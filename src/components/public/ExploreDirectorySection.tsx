@@ -11,8 +11,8 @@ import {
 } from "@/lib/api/publicClient";
 import { destinationUrl } from "@/lib/utils/tourUrl";
 
-const MAX_DIRECTORY_COUNTRIES = 24;
-const MAX_DIRECTORY_ITEMS = 24;
+const MAX_DIRECTORY_COUNTRIES = 15;
+const MAX_DIRECTORY_ITEMS = 15;
 
 type DirectoryTab = "countries" | "cities" | "categories";
 

@@ -64,7 +64,7 @@ export function TrendingTourCard({ tour }: { tour: Tour }) {
   return (
     <article
       data-trending-card
-      className="group relative w-full sm:w-[calc((100%-1.25rem)/2)] md:w-[calc((100%-2*1.25rem)/3)] lg:w-[calc((100%-3*1.25rem)/4)] shrink-0 snap-start flex flex-col justify-between overflow-hidden rounded-[26px] border border-slate-200 bg-white shadow-xs transition-all duration-300 hover:border-pub-accent hover:shadow-md h-full"
+      className="group relative flex h-full w-full shrink-0 snap-start flex-col justify-between overflow-hidden rounded-[26px] border border-slate-200 bg-white shadow-xs transition-all duration-300 hover:border-pub-accent hover:shadow-md sm:w-[calc((100%-1.25rem)/2)] lg:w-[calc((100%-2*1.25rem)/3)] xl:w-[calc((100%-3*1.25rem)/4)]"
     >
       <Link href={href} className="flex flex-col h-full justify-between">
         <div>
@@ -72,7 +72,7 @@ export function TrendingTourCard({ tour }: { tour: Tour }) {
           <div className="relative h-56 sm:h-60 w-full overflow-hidden rounded-t-[25px] bg-slate-100 shrink-0">
             <MarketingImage
               fill
-              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 320px"
+              sizes="(max-width: 639px) 100vw, (max-width: 1023px) 50vw, (max-width: 1279px) 34vw, 25vw"
               src={tour.image}
               alt={tour.title}
               className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-108"
@@ -363,7 +363,7 @@ export default function TrendingToursSection({
               Array.from({ length: 4 }).map((_, index) => (
                 <div
                   key={index}
-                  className="w-full sm:w-[calc((100%-1.25rem)/2)] md:w-[calc((100%-2*1.25rem)/3)] lg:w-[calc((100%-3*1.25rem)/4)] shrink-0 snap-start"
+                  className="w-full shrink-0 snap-start sm:w-[calc((100%-1.25rem)/2)] lg:w-[calc((100%-2*1.25rem)/3)] xl:w-[calc((100%-3*1.25rem)/4)]"
                 >
                   <TourCardSkeleton />
                 </div>

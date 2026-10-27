@@ -45,7 +45,7 @@ const ARROW_CLASS =
   "flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 shadow-sm transition-all duration-200 hover:scale-110 active:scale-90 hover:border-pub-secondary hover:text-pub-secondary hover:bg-slate-50 cursor-pointer";
 
 const CARD_WIDTH =
-  "w-full sm:w-[calc((100%-1.25rem)/2)] md:w-[calc((100%-2*1.25rem)/3)] lg:w-[calc((100%-3*1.25rem)/4)]";
+  "w-full sm:w-[calc((100%-1.25rem)/2)] lg:w-[calc((100%-2*1.25rem)/3)] xl:w-[calc((100%-3*1.25rem)/4)]";
 
 // /tours silently ignores an unknown category/subcategory slug and returns
 // every tour, so a section pointing at a deleted or renamed category would

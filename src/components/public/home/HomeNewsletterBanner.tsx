@@ -119,7 +119,7 @@ export default function HomeNewsletterBanner({
                 <button
                   type="submit"
                   disabled={subscribing}
-                  className="h-11 sm:h-12 inline-flex items-center justify-center gap-2 rounded-lg bg-pub-primary hover:bg-pub-primary-dark active:scale-95 px-6 sm:px-7 text-sm font-bold text-white shadow-sm transition-all whitespace-nowrap disabled:opacity-60 cursor-pointer"
+                  className="inline-flex h-11 items-center justify-center gap-2 rounded-[10px] bg-pub-primary px-6 text-sm font-extrabold text-white shadow-[0_8px_18px_rgba(11,31,58,0.2)] transition-all hover:-translate-y-0.5 hover:bg-pub-primary-dark hover:shadow-[0_12px_24px_rgba(11,31,58,0.28)] active:scale-[0.98] disabled:opacity-60 sm:h-12 sm:px-7 whitespace-nowrap"
                 >
                   <span>{subscribing ? "Registering..." : "Register"}</span>
                   <ArrowRight

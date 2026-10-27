@@ -10,6 +10,7 @@ import {
   HeroExtrasBlock,
 } from "@/lib/api/publicClient";
 import { Reveal } from "./HomeHelpers";
+import PrimaryCtaButton from "@/components/public/PrimaryCtaButton";
 
 export interface EscapeSaleSectionProps {
   promoBanner?: CmsBanner | null;
@@ -101,13 +102,9 @@ export default function EscapeSaleSection({
           </div>
 
           <div className="shrink-0 flex items-center">
-            <Link
-              href={visualBannerCtaUrl}
-              className="inline-flex items-center gap-2 rounded-xl bg-pub-primary hover:bg-pub-primary-dark active:scale-95 px-6 py-3.5 text-sm font-bold text-white shadow-sm transition-all cursor-pointer"
-            >
-              <span>{visualBannerCtaText}</span>
-              <ArrowRight size={16} className="transition-transform group-hover:translate-x-0.5" />
-            </Link>
+            <PrimaryCtaButton href={visualBannerCtaUrl}>
+              {visualBannerCtaText}
+            </PrimaryCtaButton>
           </div>
         </section>
 

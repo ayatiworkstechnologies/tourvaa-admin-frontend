@@ -11,6 +11,7 @@ import {
   LuStar as Star,
 } from "react-icons/lu";
 import MarketingImage from "@/components/public/MarketingImage";
+import PrimaryCtaButton from "@/components/public/PrimaryCtaButton";
 import WishlistButton from "@/components/public/WishlistButton";
 import { useCurrency } from "@/hooks/useCurrency";
 import { publicTourUrl } from "@/lib/utils/tourUrl";
@@ -138,7 +139,7 @@ export function TopDealCard({ tour }: { tour: Tour }) {
   return (
     <article
       data-deal-card
-      className="group relative w-full sm:w-[calc((100%-1.25rem)/2)] md:w-[calc((100%-2*1.25rem)/3)] lg:w-[calc((100%-3*1.25rem)/4)] shrink-0 snap-start flex flex-col justify-between transition-all duration-300 hover:-translate-y-1 h-full"
+      className="group relative w-full sm:w-[calc((100%-1.25rem)/2)] lg:w-[calc((100%-2*1.25rem)/3)] xl:w-[calc((100%-3*1.25rem)/4)] shrink-0 snap-start flex flex-col justify-between transition-all duration-300 hover:-translate-y-1 h-full"
     >
       <Link href={href} className="flex flex-col h-full justify-between">
         {/* Rounded Image with overlaid badges */}
@@ -453,13 +454,9 @@ export default function TopDealsSection({
           </div>
 
           <div className="shrink-0 pt-1 md:pt-0">
-            <Link
-              href={text(copy.cta_url, "/deals")}
-              className="inline-flex items-center gap-2 rounded-xl bg-[#0F172A] hover:bg-[#1E293B] px-6 py-3.5 text-sm font-bold text-white shadow-sm transition active:scale-[0.98]"
-            >
-              <span>{text(copy.cta_text, "Explore Deals")}</span>
-              <ArrowRight size={16} />
-            </Link>
+            <PrimaryCtaButton href={text(copy.cta_url, "/deals")}>
+              {text(copy.cta_text, "Explore Deals")}
+            </PrimaryCtaButton>
           </div>
         </div>
 
@@ -527,7 +524,7 @@ export default function TopDealsSection({
             Array.from({ length: 4 }).map((_, index) => (
               <div
                 key={index}
-                className="w-full sm:w-[calc((100%-1.25rem)/2)] md:w-[calc((100%-2*1.25rem)/3)] lg:w-[calc((100%-3*1.25rem)/4)] shrink-0 snap-start"
+                className="w-full sm:w-[calc((100%-1.25rem)/2)] lg:w-[calc((100%-2*1.25rem)/3)] xl:w-[calc((100%-3*1.25rem)/4)] shrink-0 snap-start"
               >
                 <TourCardSkeleton />
               </div>

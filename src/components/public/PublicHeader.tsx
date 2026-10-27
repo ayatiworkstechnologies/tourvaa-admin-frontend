@@ -38,6 +38,8 @@ import LanguageCurrencySelector from "@/components/public/LanguageCurrencySelect
 import { useTravelStore } from "@/providers/TravelStoreProvider";
 import type { AuthUser } from "@/types/auth";
 import { AFFILIATE_ENABLED } from "@/lib/features";
+import { fetchPublicTours, type PublicTour } from "@/lib/api/publicClient";
+import { publicTourUrl } from "@/lib/utils/tourUrl";
 
 const TRUST_ICONS = [
   { Icon: Globe, color: "text-sky-400" },
@@ -202,7 +204,7 @@ export default function PublicHeader() {
           Hidden site-wide by the Top Bar switch in CMS > Home Page. */}
       {showTopBar && (
       <div className="w-full bg-pub-primary text-white border-b border-white/10 overflow-hidden">
-        <div className="sm:hidden flex h-11 w-full items-center justify-start overflow-hidden text-xs font-semibold whitespace-nowrap">
+        <div className="flex h-11 w-full items-center justify-start overflow-hidden text-xs font-semibold whitespace-nowrap lg:hidden">
           <div className="mobile-trust-marquee flex w-max shrink-0 items-center">
             <div className="flex shrink-0 items-center gap-4 px-4">
               {trustHighlights}
@@ -214,7 +216,7 @@ export default function PublicHeader() {
             </div>
           </div>
         </div>
-        <div className="mx-auto hidden h-12 w-full max-w-[1440px] min-w-0 items-center justify-center gap-6 overflow-x-auto px-8 py-2.5 text-[12.5px] font-semibold whitespace-nowrap no-scrollbar sm:flex lg:gap-8 lg:px-12">
+        <div className="mx-auto hidden h-12 w-full max-w-[1440px] min-w-0 items-center justify-center gap-8 overflow-x-auto px-12 py-2.5 text-[12.5px] font-semibold whitespace-nowrap no-scrollbar lg:flex">
           {trustHighlights}
         </div>
       </div>
@@ -222,7 +224,7 @@ export default function PublicHeader() {
 
       {/* On phones, keep the logo at the left and the two controls at the
           real right edge. The external language-widget lane is desktop-only. */}
-      <div className="mx-auto flex h-20 max-w-[1440px] min-w-0 items-center justify-between gap-6 px-4 sm:pl-8 sm:pr-[148px] lg:pl-12 lg:pr-[164px]">
+      <div className="mx-auto flex h-20 max-w-[1440px] min-w-0 items-center justify-between gap-6 px-4 sm:px-8 lg:pl-12 lg:pr-[164px]">
         <Link
           href="/"
           className="flex shrink-0 items-center text-2xl font-black tracking-tight text-pub-primary transition hover:opacity-90 sm:text-3xl"
@@ -350,7 +352,9 @@ export default function PublicHeader() {
       </div>
       {open && (
         <div className="border-t border-slate-100 bg-white px-5 py-5 pb-32 shadow-lg lg:hidden max-h-[calc(100dvh-7.5rem)] overflow-y-auto overscroll-contain">
-          <HeaderTourSearch compact onSearch={() => setOpen(false)} />
+          <div className="md:hidden">
+            <HeaderTourSearch compact onSearch={() => setOpen(false)} />
+          </div>
           {!isAdminRole && (
             <div className="mt-3 grid grid-cols-2 gap-2.5">
               <Link
@@ -631,6 +635,9 @@ function ProfileLoginMenu({ onClose }: { onClose: () => void }) {
 const portalNavigation = [
   { label: "Agent Portal", href: "/agent-portal", icon: Briefcase },
   { label: "Supplier Portal", href: "/supplier-portal", icon: Building },
+  ...(AFFILIATE_ENABLED
+    ? [{ label: "Affiliate Portal", href: "/affiliate-portal/login", icon: Handshake }]
+    : []),
 ];
 
 type SpeechRecognitionInstance = {
@@ -645,17 +652,69 @@ type SpeechRecognitionInstance = {
 
 type SpeechRecognitionConstructor = new () => SpeechRecognitionInstance;
 
-function HeaderTourSearch({ compact = false, onSearch }: { compact?: boolean; onSearch?: () => void }) {
+const SEARCH_PAGES = [
+  { label: "Browse all tours", description: "Explore every experience", href: "/tours", keywords: "tour tours experiences trips holidays" },
+  { label: "Destination guides", description: "Find a country or city", href: "/destinations", keywords: "destination destinations countries cities travel guide" },
+  { label: "Latest deals", description: "Browse current travel offers", href: "/deals", keywords: "deal deals offer offers discounts sale" },
+  { label: "Travel advice", description: "Plan your next journey", href: "/travel-advice", keywords: "advice planning visa packing travel help" },
+  { label: "Help centre", description: "Get booking support", href: "/help-centre", keywords: "help support faq booking question" },
+  { label: "Contact us", description: "Talk to the Tourvaa team", href: "/contact", keywords: "contact phone email support" },
+] as const;
+
+function HeaderTourSearch({ compact = false, tablet = false, onSearch }: { compact?: boolean; tablet?: boolean; onSearch?: () => void }) {
   const router = useRouter();
   const [query, setQuery] = useState("");
   const [listening, setListening] = useState(false);
+  const [tourSuggestions, setTourSuggestions] = useState<PublicTour[]>([]);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const searchTerm = query.trim();
+  const showSuggestions = searchTerm.length >= 2;
+
+  useEffect(() => {
+    if (!showSuggestions) {
+      setTourSuggestions([]);
+      setLoadingSuggestions(false);
+      return;
+    }
+
+    let active = true;
+    const timer = window.setTimeout(() => {
+      setLoadingSuggestions(true);
+      fetchPublicTours({ search: searchTerm, page: 1, limit: 4 })
+        .then((result) => {
+          if (active) setTourSuggestions(result.items || []);
+        })
+        .catch(() => {
+          if (active) setTourSuggestions([]);
+        })
+        .finally(() => {
+          if (active) setLoadingSuggestions(false);
+        });
+    }, 250);
+
+    return () => {
+      active = false;
+      window.clearTimeout(timer);
+    };
+  }, [searchTerm, showSuggestions]);
+
+  const pageSuggestions = SEARCH_PAGES.filter((page) => {
+    const haystack = `${page.label} ${page.description} ${page.keywords}`.toLowerCase();
+    return haystack.includes(searchTerm.toLowerCase());
+  }).slice(0, 3);
 
   const submit = (value = query) => {
     const term = value.trim();
     if (!term) return;
     onSearch?.();
     router.push(`/tours?search=${encodeURIComponent(term)}`);
+  };
+
+  const openSuggestion = (href: string) => {
+    onSearch?.();
+    setQuery("");
+    router.push(href);
   };
 
   const startVoiceSearch = () => {
@@ -684,11 +743,46 @@ function HeaderTourSearch({ compact = false, onSearch }: { compact?: boolean; on
   };
 
   return (
-    <form onSubmit={(event) => { event.preventDefault(); submit(); }} className={`relative ${compact ? "w-full" : "hidden min-w-0 flex-1 lg:block lg:max-w-xl"}`} role="search">
+    <form onSubmit={(event) => { event.preventDefault(); submit(); }} className={`relative ${compact ? "w-full" : "hidden min-w-0 flex-1 md:block md:max-w-[42vw] lg:max-w-xl"}`} role="search">
       <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-      <input ref={inputRef} value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search tours, cities or itineraries" aria-label="Search tours, cities or itineraries" className="h-10 w-full rounded-xl border border-slate-200 bg-slate-50 py-2 pl-9 pr-20 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-pub-secondary focus:bg-white focus:ring-2 focus:ring-pub-secondary/15" />
+      <input ref={inputRef} value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search tours, cities or itineraries" aria-label="Search tours, cities or itineraries" aria-autocomplete="list" aria-expanded={showSuggestions} aria-controls="header-search-suggestions" className={`${tablet ? "h-12 text-base" : "h-10 text-sm"} w-full rounded-xl border border-slate-200 bg-slate-50 py-2 pl-9 pr-20 text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-pub-secondary focus:bg-white focus:ring-2 focus:ring-pub-secondary/15`} />
       <button type="button" onClick={startVoiceSearch} aria-label="Search by voice" title="Search by voice" className={`absolute right-9 top-1/2 -translate-y-1/2 rounded-md p-1.5 transition ${listening ? "bg-rose-100 text-rose-600 animate-pulse" : "text-slate-500 hover:bg-slate-100 hover:text-pub-secondary"}`}><Mic size={16} /></button>
       <button type="submit" aria-label="Search tours" className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded-lg bg-pub-primary p-1.5 text-white transition hover:bg-pub-secondary"><Search size={15} /></button>
+      {showSuggestions && (
+        <div id="header-search-suggestions" role="listbox" aria-label="Search suggestions" className="absolute left-0 right-0 top-[calc(100%+0.5rem)] z-[70] overflow-hidden rounded-2xl border border-slate-200 bg-white p-2 shadow-[0_16px_36px_rgba(15,23,42,0.18)]">
+          {loadingSuggestions ? (
+            <p className="px-3 py-2 text-xs font-medium text-slate-500">Searching tours…</p>
+          ) : (
+            <>
+              {tourSuggestions.length > 0 && (
+                <div>
+                  <p className="px-3 pb-1 pt-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">Tours</p>
+                  {tourSuggestions.map((tour) => (
+                    <button key={tour.id} type="button" role="option" onClick={() => openSuggestion(publicTourUrl(tour))} className="flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2 text-left transition hover:bg-slate-50 focus-visible:bg-slate-50 focus-visible:outline-none">
+                      <span className="min-w-0"><span className="block truncate text-xs font-bold text-slate-900">{tour.title}</span><span className="block truncate text-[11px] text-slate-500">{[tour.city_name, tour.country_name].filter(Boolean).join(", ")}</span></span>
+                      <ArrowRight size={14} className="shrink-0 text-pub-secondary" aria-hidden="true" />
+                    </button>
+                  ))}
+                </div>
+              )}
+              {pageSuggestions.length > 0 && (
+                <div className={tourSuggestions.length > 0 ? "mt-1 border-t border-slate-100 pt-1" : ""}>
+                  <p className="px-3 pb-1 pt-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">Pages</p>
+                  {pageSuggestions.map((page) => (
+                    <button key={page.href} type="button" role="option" onClick={() => openSuggestion(page.href)} className="flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2 text-left transition hover:bg-slate-50 focus-visible:bg-slate-50 focus-visible:outline-none">
+                      <span className="min-w-0"><span className="block text-xs font-bold text-slate-900">{page.label}</span><span className="block truncate text-[11px] text-slate-500">{page.description}</span></span>
+                      <ArrowRight size={14} className="shrink-0 text-pub-secondary" aria-hidden="true" />
+                    </button>
+                  ))}
+                </div>
+              )}
+              {tourSuggestions.length === 0 && pageSuggestions.length === 0 && (
+                <button type="button" onClick={() => submit()} className="flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-left transition hover:bg-slate-50"><span><span className="block text-xs font-bold text-slate-900">Search all tours for “{searchTerm}”</span><span className="block text-[11px] text-slate-500">View matching destinations and itineraries</span></span><Search size={14} className="shrink-0 text-pub-secondary" aria-hidden="true" /></button>
+              )}
+            </>
+          )}
+        </div>
+      )}
     </form>
   );
 }
@@ -696,12 +790,12 @@ function HeaderTourSearch({ compact = false, onSearch }: { compact?: boolean; on
 function PortalNavigationLinks({ onClose }: { onClose: () => void }) {
   return (
     <div className="mt-3 grid grid-cols-2 gap-2">
-      {portalNavigation.map(({ label, href, icon: Icon }) => (
+      {portalNavigation.map(({ label, href, icon: Icon }, index) => (
         <Link
           key={href}
           href={href}
           onClick={onClose}
-          className="flex items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-2 py-2.5 text-xs font-bold text-slate-700 transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700"
+          className={`flex items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-2 py-2.5 text-xs font-bold text-slate-700 transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 ${index === 2 ? "col-span-2" : ""}`}
         >
           <Icon size={15} />
           <span>{label}</span>

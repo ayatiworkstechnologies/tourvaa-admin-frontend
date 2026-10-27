@@ -170,11 +170,12 @@ export default function HeroFilterBar({
   };
 
   const fieldClass = (name: typeof open) =>
-    `hero-filter-field group flex min-h-[58px] w-full items-center justify-start px-4 sm:px-6 py-2.5 text-left transition rounded-xl outline-none focus:outline-none focus-visible:outline-none hover:bg-slate-50/80 ${
+    `hero-filter-field group flex min-h-[58px] w-full items-center justify-start rounded-xl px-4 py-2.5 text-left outline-none transition hover:bg-slate-50/80 focus:outline-none focus-visible:outline-none sm:px-6 md:min-h-[72px] lg:min-h-[58px] ${
       open === name ? "is-active bg-slate-50/95" : "bg-white"
     }`;
 
-  const fieldWrapClass = "relative rounded-xl border border-slate-200 m-0.5 md:m-1";
+  const fieldWrapClass = (name: typeof open) =>
+    `relative rounded-xl border border-slate-200 m-0.5 md:m-1 ${open === name ? "z-[110]" : "z-0"}`;
 
   const displayDestination = destination || "Select country";
   const displayDate = travelDate === "Anytime" ? "Flexible / Anytime" : travelDate || "Select date";
@@ -210,10 +211,10 @@ export default function HeroFilterBar({
     <div ref={wrapperRef} className="hero-filter-enter relative z-50 mx-auto w-full max-w-[980px] lg:w-fit text-slate-900">
       <form
         onSubmit={submit}
-        className="hero-filter-bar flex flex-col lg:flex-row lg:items-center overflow-visible rounded-2xl border-[2px] border-white/95 bg-white p-1.5"
+        className="hero-filter-bar grid grid-cols-1 overflow-visible rounded-[18px] border border-white/90 bg-white/95 p-2 shadow-[0_18px_45px_rgba(15,23,42,0.2)] backdrop-blur-sm md:grid-cols-2 lg:flex lg:items-center"
       >
         {/* 1. Where to? */}
-        <div className={fieldWrapClass}>
+        <div className={fieldWrapClass("destination")}>
           <button
             type="button"
             onClick={() => setOpen(open === "destination" ? null : "destination")}
@@ -251,7 +252,7 @@ export default function HeroFilterBar({
         </div>
 
         {/* 2. When? */}
-        <div className={fieldWrapClass}>
+        <div className={fieldWrapClass("date")}>
           <button
             type="button"
             onClick={() => setOpen(open === "date" ? null : "date")}
@@ -288,7 +289,7 @@ export default function HeroFilterBar({
         </div>
 
         {/* 3. How Many Days? */}
-        <div className={fieldWrapClass}>
+        <div className={fieldWrapClass("duration")}>
           <button
             type="button"
             onClick={() => setOpen(open === "duration" ? null : "duration")}
@@ -329,7 +330,7 @@ export default function HeroFilterBar({
         </div>
 
         {/* 4. Who's going? */}
-        <div className={fieldWrapClass}>
+        <div className={fieldWrapClass("passengers")}>
           <button
             type="button"
             onClick={() => setOpen(open === "passengers" ? null : "passengers")}
@@ -365,10 +366,10 @@ export default function HeroFilterBar({
         </div>
 
         {/* 5. Search Button */}
-        <div className="p-1">
+        <div className="p-1 md:col-span-2 lg:col-auto">
           <button
             type="submit"
-            className="hero-search-button relative overflow-hidden flex h-12 w-full lg:w-auto min-w-[130px] items-center justify-center gap-2 rounded-xl bg-pub-primary px-7 text-sm font-bold text-white shadow-md transition duration-200 hover:bg-pub-primary-dark hover:shadow-lg hover:-translate-y-0.5 active:scale-95"
+            className="hero-search-button relative flex h-12 min-w-[130px] w-full items-center justify-center gap-2 overflow-hidden rounded-[10px] bg-pub-primary px-7 text-sm font-extrabold text-white shadow-[0_8px_18px_rgba(11,31,58,0.2)] transition duration-200 hover:-translate-y-0.5 hover:bg-pub-primary-dark hover:shadow-[0_12px_24px_rgba(11,31,58,0.28)] active:scale-[0.98] md:h-14 lg:h-12 lg:w-auto"
           >
             <Search size={16} className="stroke-[2.5]" />
             <span>Search</span>
@@ -380,7 +381,7 @@ export default function HeroFilterBar({
 }
 
 const basePanelClass =
-  "hero-filter-panel absolute top-[calc(100%+14px)] z-[100] rounded-2xl sm:rounded-3xl border border-slate-150 bg-white p-4 sm:p-5 text-left shadow-[0_24px_60px_rgba(15,23,42,0.25)] ring-1 ring-slate-900/5 animate-in fade-in zoom-in-95 duration-200";
+  "hero-filter-panel absolute top-[calc(100%+14px)] z-[100] rounded-2xl sm:rounded-3xl border border-slate-150 bg-white p-3 sm:p-4 lg:p-5 text-left shadow-[0_24px_60px_rgba(15,23,42,0.25)] ring-1 ring-slate-900/5 animate-in fade-in zoom-in-95 duration-200";
 
 /* -------------------------------------------------------------
  * 1. UPGRADED DESTINATION PANEL
@@ -405,7 +406,7 @@ function DestinationPanel({
   }, [countries, search]);
 
   return (
-    <div className={`${basePanelClass} left-0 w-full min-w-[320px] sm:min-w-[360px] max-w-sm`}>
+    <div className={`${basePanelClass} left-1/2 w-[calc(100vw-3rem)] max-w-[340px] -translate-x-1/2 sm:left-0 sm:w-[400px] sm:max-w-[calc(100vw-3rem)] sm:translate-x-0 lg:w-full lg:min-w-[360px] lg:max-w-sm`}>
       {/* Header & Search Bar */}
       <div className="relative mb-3">
         <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -444,7 +445,7 @@ function DestinationPanel({
       </div>
 
       {/* Destination List */}
-      <div className="max-h-72 space-y-1 overflow-y-auto overscroll-contain pr-1 no-scrollbar">
+      <div className="max-h-56 space-y-1 overflow-y-auto overscroll-contain pr-1 no-scrollbar sm:max-h-64 lg:max-h-72">
         {filtered.length > 0 ? (
           filtered.map((country, index) => {
             const isSelected = selected === country.country_name;
@@ -544,7 +545,7 @@ function DatePanel({
   ];
 
   return (
-    <div className={`${basePanelClass} left-1/2 -translate-x-1/2 md:left-0 md:translate-x-0 min-w-[min(94vw,660px)]`}>
+    <div className={`${basePanelClass} left-1/2 w-[calc(100vw-3rem)] max-w-[340px] -translate-x-1/2 md:left-auto md:right-0 md:w-[560px] md:max-w-[calc(100vw-3rem)] md:translate-x-0 lg:w-auto lg:min-w-[660px] lg:max-w-none`}>
       {/* Switcher Tabs */}
       <div className="mb-4 flex items-center justify-between gap-4 border-b border-slate-100 pb-3">
         <div className="flex rounded-xl bg-slate-100/90 p-1 text-xs font-bold">
@@ -869,7 +870,7 @@ function DurationPanel({
   const [sliderVal, setSliderVal] = useState(1);
 
   return (
-    <div className={`${basePanelClass} left-0 w-full min-w-[280px] sm:min-w-[300px] max-w-xs`}>
+    <div className={`${basePanelClass} left-1/2 w-[calc(100vw-3rem)] max-w-[280px] -translate-x-1/2 sm:left-0 sm:w-[320px] sm:max-w-[calc(100vw-3rem)] sm:translate-x-0 lg:w-full lg:min-w-[300px] lg:max-w-xs`}>
       <div className="flex items-center justify-between mb-2.5 px-0.5">
         <h4 className="text-xs font-bold text-slate-900">Duration</h4>
         {selected && (
@@ -989,7 +990,7 @@ function PassengerPanel({
   onApply: () => void;
 }) {
   return (
-    <div className={`${basePanelClass} right-0 left-auto w-full min-w-[290px] sm:min-w-[330px] max-w-sm`}>
+    <div className={`${basePanelClass} left-1/2 w-[calc(100vw-3rem)] max-w-[300px] -translate-x-1/2 sm:left-auto sm:right-0 sm:w-[360px] sm:max-w-[calc(100vw-3rem)] sm:translate-x-0 lg:w-full lg:min-w-[330px] lg:max-w-sm`}>
       <div className="mb-3 px-1">
         <h4 className="text-xs font-bold text-slate-900">Traveller Details</h4>
         <p className="text-[11px] text-slate-400">Select number of passengers</p>
