@@ -39,7 +39,7 @@ export default function CookieConsentBanner() {
     try {
       const stored = localStorage.getItem(CONSENT_KEY);
       if (!stored) {
-        let timer: ReturnType<typeof window.setTimeout> | undefined;
+        let timer: number | undefined;
         const scheduleBanner = () => {
           timer = window.setTimeout(() => setVisible(true), BANNER_DELAY_MS);
         };
