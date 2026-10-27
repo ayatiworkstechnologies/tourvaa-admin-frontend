@@ -354,6 +354,7 @@ check(
   publicTourDetail.includes("const tourPace = tour.overview?.tour_pace?.trim() || \"\"") &&
     publicTourDetail.includes("(guideStyle || tour.tour_language) && (") &&
     publicTourDetail.includes('title="Tour pace" value={tourPace}') &&
+    publicTourDetail.includes('["Relaxed", "Moderate", "Fast"][currentStepIndex]') &&
     !publicTourDetail.includes("fallbackPool"),
 );
 const tourStyleGuide = read("src/components/tours/TourStyleGuideSection.tsx");

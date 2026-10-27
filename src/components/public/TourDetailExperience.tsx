@@ -656,7 +656,12 @@ function RatingGuide({
   );
 
   const activeStyle = stylesList[currentStepIndex] || stylesList[0];
-  const displayLabel = normalizedValue || steps[currentStepIndex];
+  // Earlier records could contain prose such as “Moderate, with temple
+  // visits and road travel”. Tour Style is an at-a-glance rating, so show the
+  // selected pace level only rather than repeating descriptive filler.
+  const displayLabel = isPace
+    ? (["Relaxed", "Moderate", "Fast"][currentStepIndex] || "Moderate")
+    : (steps[currentStepIndex] || normalizedValue);
 
   return (
     <div className="animate-rating-guide-in rounded-[22px] border border-[#C9DAEE] bg-gradient-to-b from-white via-slate-50/30 to-slate-50/70 p-4 shadow-[0_8px_20px_-18px_rgba(15,42,82,0.45)] transition-colors sm:p-5 motion-reduce:animate-none">
