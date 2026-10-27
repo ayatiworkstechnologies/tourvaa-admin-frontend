@@ -44,7 +44,7 @@ import {
   LuCalendar as Calendar,
 } from "react-icons/lu";
 import publicApi, { PublicTourDetail } from "@/lib/api/publicClient";
-import { destinationUrl } from "@/lib/utils/tourUrl";
+import { destinationUrl, slugifyTourSegment } from "@/lib/utils/tourUrl";
 import { useCurrency } from "@/hooks/useCurrency";
 import { mediaUrl } from "@/lib/utils/mediaUrl";
 import MarketingImage from "@/components/public/MarketingImage";
@@ -769,6 +769,7 @@ export default function TourDetailExperience({
   const [itineraryPreviewOpen, setItineraryPreviewOpen] = useState(false);
 
   const destination = tour.country_name || tour.city_name || "Destination";
+  const countryToursUrl = `/tours/${slugifyTourSegment(destination) || "worldwide"}`;
   const itineraryPreviewUrl = tour.brochure_pdf ? `/api/public/tours/${tour.id}/brochure?inline=1` : `/api/public/tours/${tour.id}/itinerary`;
   const itineraryFallbackUrl = tour.brochure_pdf && (/^https:\/\/res\.cloudinary\.com\//i.test(tour.brochure_pdf) || tour.brochure_pdf.startsWith("/storage/")) ? tour.brochure_pdf : undefined;
   const city = tour.city_name || "";
@@ -1733,7 +1734,7 @@ export default function TourDetailExperience({
               <>
                 <span className="text-slate-300">/</span>
                 <Link
-                  href={destinationUrl(destination)}
+                  href={countryToursUrl}
                   className="hover:text-blue-600 transition flex items-center gap-1 font-semibold text-slate-700"
                 >
                   {countryFlag && <span>{countryFlag}</span>}

@@ -18,7 +18,7 @@ const SHADOW_STYLE_ID = "tourvaa-translator-elevation";
  * Content-Security-Policy in next.config.ts, or the widget loads and then
  * silently renders nothing.
  */
-export default function ElfsightTranslator() {
+export default function ElfsightTranslator({ className = "" }: { className?: string }) {
   useEffect(() => {
     const shadowObservers: MutationObserver[] = [];
     const observedRoots = new WeakSet<ShadowRoot>();
@@ -77,7 +77,7 @@ export default function ElfsightTranslator() {
   return (
     <>
       <Script src="https://elfsightcdn.com/platform.js" strategy="afterInteractive" />
-      <div className={`elfsight-app-${ELFSIGHT_APP_ID}`} data-elfsight-app-lazy />
+      <div className={`elfsight-app-${ELFSIGHT_APP_ID} ${className}`.trim()} data-elfsight-app-lazy />
     </>
   );
 }

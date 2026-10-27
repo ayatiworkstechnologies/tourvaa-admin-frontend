@@ -176,6 +176,9 @@ check("agent dashboard follows the supplier control-centre composition in agent 
 check("agent page system retains the calm blue visual identity", agentPage.includes("#2563EB") && agentPage.includes("#F8FAFC"));
 check("agent dashboard prioritizes list and catalogue actions", ["Browse Tours", "My Customers", "Invoices"].every((label) => dashboard.includes(label)) && !dashboard.includes('href: "/agent/bookings/create"'));
 check("agent catalogue exposes reserve and full-payment actions", tours.includes("AgentSection") && tours.includes("Reserve Now") && tours.includes("Pay in Full Today") && tours.includes("agent_action=reserve") && tours.includes("agent_action=full"));
+check("agent dashboard keeps mobile booking statuses and View actions in separate columns", dashboard.includes("grid-cols-[minmax(0,1fr)_auto]") && dashboard.includes("whitespace-nowrap text-xs font-bold text-dash-brand"));
+check("agent tour cards give all mobile purchase actions dedicated rows", tours.includes("grid w-full grid-cols-2") && tours.includes("col-span-2 inline-flex") && tours.includes("sm:col-auto"));
+check("agent booking table uses a compact mobile width with wrapped status badges", bookings.includes("max-w-[9.5rem] whitespace-normal") && bookings.includes('minWidthClass="min-w-[34rem] sm:min-w-[46rem] xl:min-w-[64rem]"'));
 check("agent booking action is preserved into settlement", publicBooking.includes('searchParams.get("agent_action")') && publicBooking.includes('"pay_later"') && publicBooking.includes('payment_type: "full"'));
 check("agent Reserve Now is a no-deposit invoice flow", publicBooking.includes("Reserve your booking now with no deposit") && !publicBooking.includes("agent_reserve_deposit") && !publicBooking.includes("agentReserveSplit"));
 const tourDetail = read("src/components/public/TourDetailExperience.tsx");

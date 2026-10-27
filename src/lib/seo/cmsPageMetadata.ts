@@ -18,11 +18,17 @@ export type ServerCmsPage = {
 
 const API_BASE = (process.env.API_PROXY_TARGET || "http://127.0.0.1:8000").replace(/\/+$/, "");
 
+// The public CMS route is a single path segment.  Never send arbitrary text
+// (for example an image description accidentally used as an href) to the CMS
+// lookup endpoint: that creates needless encoded/double-encoded 404 requests.
+const CMS_SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/i;
+
 /** Server-side lookup of an admin-created CMS page by slug, for use in
  * generateMetadata and the [slug] page itself - mirrors fetchBlogForServer
  * in blogMetadata.ts. Only ever returns a published page: the backend 404s
  * for drafts/unknown slugs, which this treats the same as "not found". */
 export async function fetchCmsPageForServer(slug: string): Promise<ServerCmsPage | null> {
+  if (!CMS_SLUG_PATTERN.test(slug) || slug.length > 120) return null;
   try {
     const res = await fetch(`${API_BASE}/api/cms/pages/by-slug/${encodeURIComponent(slug)}`, {
       cache: "no-store",

@@ -416,9 +416,9 @@ export default function CustomerProfilePage() {
                     <select
                       value={country}
                       onChange={(e) => setCountry(e.target.value)}
-                      className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs font-semibold text-slate-800 outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-100"
+                      className={`w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs font-semibold outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-100 ${country ? "text-slate-800" : "text-slate-400"}`}
                     >
-                      <option value="">Select country</option>
+                      <option value="" disabled>Select country</option>
                       {COUNTRIES.map((option) => (
                         <option key={option} value={option}>
                           {option}
@@ -546,8 +546,9 @@ export default function CustomerProfilePage() {
                     <select
                       value={preferredAirline}
                       onChange={(e) => setPreferredAirline(e.target.value)}
-                      className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs font-semibold text-slate-800 outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-100"
+                      className={`w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs font-semibold outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-100 ${preferredAirline ? "text-slate-800" : "text-slate-400"}`}
                     >
+                      <option value="" disabled>Select preferred airline</option>
                       {AIRLINES.map((a) => (
                         <option key={a} value={a}>
                           {a}

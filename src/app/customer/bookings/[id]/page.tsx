@@ -816,7 +816,7 @@ export default function CustomerBookingDetailPage() {
                 ) : <span className="flex items-center gap-1"><MapPinned size={14} className="text-dash-brand" />{booking.tour_name}</span>} />
                 <Field label="Travel Date" value={<span className="flex items-center gap-1"><CalendarCheck size={14} className="text-dash-brand" />{booking.tour_date || "-"}</span>} />
                 <Field label="Country" value={booking.country} />
-                <a href={`/api/customer/bookings/${booking.id}/itinerary`} className="mt-1 flex w-full items-center justify-center gap-2 rounded-xl border border-dash-border px-3 py-2 text-xs font-bold text-dash-body hover:bg-[#F3F8FC]">
+                <a href={`/api/customer/bookings/${booking.id}/itinerary`} className="mt-1 flex w-full items-center justify-center gap-2 rounded-xl bg-dash-brand px-3 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-dash-brand-hover active:scale-[0.98]">
                   <FileText size={13} /> Download Itinerary
                 </a>
                 {booking.booking_status === "confirmed" && (

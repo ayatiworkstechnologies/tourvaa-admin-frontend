@@ -136,9 +136,6 @@ function parseDurationFromParams(sp: { get: (key: string) => string | null }): s
   if (min === "7" && max === "10") return "7-10";
   if (min === "11" && max === "14") return "11-14";
   if (min === "15" && !max) return "15+";
-  if (min === "1" && max === "3") return "1-3";
-  if (min === "4" && max === "7") return "4-7";
-  if (min === "8" && !max) return "8+";
   return "";
 }
 
@@ -148,9 +145,6 @@ function durationRange(val: string, sp?: { get: (key: string) => string | null }
   if (val === "7-10") return { min_days: 7, max_days: 10 };
   if (val === "11-14") return { min_days: 11, max_days: 14 };
   if (val === "15+") return { min_days: 15 };
-  if (val === "1-3") return { min_days: 1, max_days: 3 };
-  if (val === "4-7") return { min_days: 4, max_days: 7 };
-  if (val === "8+") return { min_days: 8 };
   if (sp) {
     const min = sp.get("min_days");
     const max = sp.get("max_days");
@@ -162,6 +156,18 @@ function durationRange(val: string, sp?: { get: (key: string) => string | null }
     }
   }
   return {};
+}
+
+const DURATION_FILTER_OPTIONS = [
+  { value: "1", label: "1 Day" },
+  { value: "2-6", label: "2-6 Days" },
+  { value: "7-10", label: "7-10 Days" },
+  { value: "11-14", label: "11-14 Days" },
+  { value: "15+", label: "15+ Days" },
+] as const;
+
+function durationFilterLabel(value: string): string {
+  return DURATION_FILTER_OPTIONS.find((option) => option.value === value)?.label || "Duration";
 }
 
 export default function CountryTourListing({ countrySlug }: { countrySlug?: string }) {
@@ -1000,7 +1006,7 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
                 <div className="flex items-center gap-2 min-w-0 pr-4">
                   <Clock size={15} className={selectedDuration ? "text-blue-600" : "text-slate-400 group-hover:text-slate-600"} />
                   <span className="truncate max-w-[110px]">
-                    {selectedDuration ? `${selectedDuration} Days` : "Duration"}
+                    {durationFilterLabel(selectedDuration)}
                   </span>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
@@ -1027,14 +1033,9 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
                   className="absolute inset-0 h-full w-full opacity-0 cursor-pointer"
                 >
                   <option value="">Any Duration</option>
-                  <option value="1">1 Day</option>
-                  <option value="2-6">2–6 Days</option>
-                  <option value="7-10">7–10 Days</option>
-                  <option value="11-14">11–14 Days</option>
-                  <option value="15+">15+ Days</option>
-                  <option value="1-3">1–3 Days</option>
-                  <option value="4-7">4–7 Days</option>
-                  <option value="8+">8+ Days</option>
+                  {DURATION_FILTER_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>{option.label}</option>
+                  ))}
                 </select>
               </div>
 
@@ -1309,7 +1310,7 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
 
               {selectedDuration && (
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 border border-amber-200 px-3 py-1 text-xs font-bold text-amber-800 shadow-2xs">
-                  <span>Duration: {selectedDuration} Days</span>
+                  <span>Duration: {durationFilterLabel(selectedDuration)}</span>
                   <button
                     type="button"
                     onClick={() => handleDurationChange("")}

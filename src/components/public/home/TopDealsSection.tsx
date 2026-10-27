@@ -255,6 +255,7 @@ export default function TopDealsSection({
   );
   const [activeTab, setActiveTab] = useState("Top deals");
   const [sectionEnabled, setSectionEnabled] = useState(true);
+  const [activeSlide, setActiveSlide] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
   const copy = useSectionCopy("top_deals_section");
 
@@ -404,6 +405,22 @@ export default function TopDealsSection({
 
   const displayTours = filteredTours;
 
+  useEffect(() => {
+    setActiveSlide(0);
+    const el = scrollRef.current;
+    if (!el || displayTours.length === 0) return;
+
+    const updateActiveSlide = () => {
+      const firstCard = el.querySelector<HTMLElement>("[data-deal-card]");
+      const step = firstCard ? firstCard.offsetWidth + 20 : 320;
+      setActiveSlide(Math.min(displayTours.length - 1, Math.max(0, Math.round(el.scrollLeft / step))));
+    };
+
+    updateActiveSlide();
+    el.addEventListener("scroll", updateActiveSlide, { passive: true });
+    return () => el.removeEventListener("scroll", updateActiveSlide);
+  }, [displayTours.length, activeTab]);
+
   // Auto-slides right-to-left every few seconds; pauses on hover/touch/drag
   // or a manual arrow click, resuming shortly after.
   const { notifyInteraction } = useAutoSlide(scrollRef, {
@@ -422,6 +439,17 @@ export default function TopDealsSection({
     const step = firstCard ? firstCard.offsetWidth + gap : 320;
     smoothScrollTo(el, el.scrollLeft + direction * step);
   };
+
+  const goToSlide = (index: number) => {
+    notifyInteraction();
+    const el = scrollRef.current;
+    if (!el) return;
+    const firstCard = el.querySelector<HTMLElement>("[data-deal-card]");
+    const step = firstCard ? firstCard.offsetWidth + 20 : 320;
+    smoothScrollTo(el, step * index);
+  };
+
+  const showCarouselControls = !loading && displayTours.length > 1;
 
   const viewAllHref =
     activeTab === "All deals" || activeTab === "Top deals"
@@ -492,7 +520,7 @@ export default function TopDealsSection({
               {text(copy.view_all_text, "View all deals")}
             </Link>
 
-            {!loading && displayTours.length > 0 && (
+            {showCarouselControls && (
               <div className="flex items-center gap-1.5">
                 <button
                   type="button"
@@ -502,6 +530,18 @@ export default function TopDealsSection({
                 >
                   <ChevronLeft size={16} />
                 </button>
+                <div className="flex items-center gap-1" aria-label="Deal carousel position">
+                  {displayTours.map((tour, index) => (
+                    <button
+                      key={`${tour.id ?? tour.title}-indicator-${index}`}
+                      type="button"
+                      onClick={() => goToSlide(index)}
+                      aria-label={`Show deal ${index + 1} of ${displayTours.length}`}
+                      aria-current={activeSlide === index ? "true" : undefined}
+                      className={`h-1.5 rounded-full transition-all ${activeSlide === index ? "w-5 bg-[#DF6951]" : "w-1.5 bg-slate-300 hover:bg-slate-400"}`}
+                    />
+                  ))}
+                </div>
                 <button
                   type="button"
                   aria-label="Next deals"
@@ -542,9 +582,41 @@ export default function TopDealsSection({
           )}
         </div>
 
-        {/* Mobile controls: Bottom "View all deals" text link */}
+        {/* Mobile controls: visible arrows and position indicators make autoplay discoverable. */}
         {!loading && displayTours.length > 0 && (
-          <div className="mt-4 flex sm:hidden items-center justify-center">
+          <div className="mt-4 flex flex-col items-center gap-3 sm:hidden">
+            {showCarouselControls && (
+              <div className="flex items-center gap-3" aria-label="Deal carousel controls">
+                <button
+                  type="button"
+                  aria-label="Previous deals"
+                  onClick={() => move(-1)}
+                  className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 shadow-2xs transition hover:bg-slate-50 active:scale-95"
+                >
+                  <ChevronLeft size={17} />
+                </button>
+                <div className="flex items-center gap-1.5" aria-label="Deal carousel position">
+                  {displayTours.map((tour, index) => (
+                    <button
+                      key={`${tour.id ?? tour.title}-mobile-indicator-${index}`}
+                      type="button"
+                      onClick={() => goToSlide(index)}
+                      aria-label={`Show deal ${index + 1} of ${displayTours.length}`}
+                      aria-current={activeSlide === index ? "true" : undefined}
+                      className={`h-2 rounded-full transition-all ${activeSlide === index ? "w-6 bg-[#DF6951]" : "w-2 bg-slate-300 hover:bg-slate-400"}`}
+                    />
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  aria-label="Next deals"
+                  onClick={() => move(1)}
+                  className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 shadow-2xs transition hover:bg-slate-50 active:scale-95"
+                >
+                  <ChevronRight size={17} />
+                </button>
+              </div>
+            )}
             <Link
               href={viewAllHref}
               className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#DF6951] hover:underline"

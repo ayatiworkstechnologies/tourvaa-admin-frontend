@@ -211,17 +211,17 @@ export default function AgentToursPage() {
                     )}
                   </div>
 
-                  <div className="mt-3 flex items-end justify-between gap-3">
+                  <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                     <div>
                       <p className="text-xs text-dash-muted">From</p>
                       <p className="text-base font-black text-dash-brand">
                         {money(tour.price_start_per_person, tour.currency ?? "USD")}
                       </p>
                     </div>
-                    <div className="flex flex-wrap justify-end gap-2">
+                    <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-wrap sm:justify-end">
                       <Link
                         href={publicTourUrl(tour)}
-                        className="inline-flex items-center gap-1.5 rounded-lg border border-dash-border px-3 py-2 text-xs font-bold text-dash-brand-hover transition hover:bg-[#E7F5FF]"
+                        className="inline-flex min-w-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border border-dash-border px-2.5 py-2 text-xs font-bold text-dash-brand-hover transition hover:bg-[#E7F5FF]"
                       >
                         <Eye size={14} /> View Details
                       </Link>
@@ -229,13 +229,13 @@ export default function AgentToursPage() {
                         <>
                           <Link
                             href={`/booking/${tour.id}?agent_action=reserve`}
-                            className="inline-flex items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-bold text-blue-700 transition hover:bg-blue-100"
+                            className="inline-flex min-w-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-2 text-xs font-bold text-blue-700 transition hover:bg-blue-100"
                           >
                             Reserve Now
                           </Link>
                           <Link
                             href={`/booking/${tour.id}?agent_action=full`}
-                            className="inline-flex items-center gap-1.5 rounded-lg bg-dash-brand px-3 py-2 text-xs font-bold text-white transition hover:bg-dash-brand-hover"
+                            className="col-span-2 inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-lg bg-dash-brand px-2.5 py-2 text-xs font-bold text-white transition hover:bg-dash-brand-hover sm:col-auto"
                           >
                             Pay in Full Today
                           </Link>

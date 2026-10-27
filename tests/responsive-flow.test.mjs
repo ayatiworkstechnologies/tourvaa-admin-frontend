@@ -73,6 +73,10 @@ check("portal header reserves a language widget lane", portalHeader.includes("pr
 const customerHeader = read("src/components/customer/CustomerPortalHeader.tsx");
 check("customer header has compact mobile height", customerHeader.includes("h-20") && customerHeader.includes("sm:h-[84px]"));
 check("customer profile menu is viewport bounded", customerHeader.includes("calc(100vw-1.5rem)"));
+const customerLayout = read("src/app/customer/layout.tsx");
+const translator = read("src/components/public/ElfsightTranslator.tsx");
+const globalStyles = read("src/app/globals.css");
+check("customer portal suppresses the external translator in the compact mobile header", customerLayout.includes('className="customer-language-translator"') && translator.includes("className = \"\"") && globalStyles.includes(".customer-language-translator"));
 
 const dataTable = read("src/components/ui/DataTable.tsx");
 check("tables scroll horizontally on narrow screens", dataTable.includes("overflow-x-auto") && dataTable.includes("-webkit-overflow-scrolling:touch"));

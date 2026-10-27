@@ -667,22 +667,22 @@ export default function AgentDashboardPage() {
                 ) : (
                   <div className="space-y-3">
                     {bookings.map((b) => (
-                      <div key={b.id} className="flex items-center justify-between rounded-xl border border-dash-border px-4 py-3">
-                        <div>
+                      <div key={b.id} className="flex flex-col gap-3 rounded-xl border border-dash-border px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="min-w-0">
                           <p className="font-semibold text-dash-text">{b.booking_code}</p>
                           <p className="text-xs text-dash-muted">{b.customer_name ?? b.tour_name ?? "-"}</p>
                           <p className="mt-1 text-xs text-dash-muted">
                             {paymentMethodLabel(b.agent_payment_method)} · Payment {humanize(b.payment_status || "pending")}
                           </p>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${statusColors(b.booking_status)}`}>
+                        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 sm:flex">
+                          <span className={`w-fit rounded-full px-2.5 py-1 text-xs font-bold leading-4 ${statusColors(b.booking_status)}`}>
                             {bookingStatusLabel(b.booking_status, "agent")}
                           </span>
                           <span className={`hidden rounded-full px-2.5 py-1 text-xs font-bold sm:inline-flex ${statusColors(b.payment_status || "pending")}`}>
                             {humanize(b.payment_status || "pending")}
                           </span>
-                          <Link href={`/agent/bookings/${b.id}`} className="text-xs font-bold text-dash-brand hover:underline">
+                          <Link href={`/agent/bookings/${b.id}`} className="whitespace-nowrap text-xs font-bold text-dash-brand hover:underline">
                             View
                           </Link>
                         </div>

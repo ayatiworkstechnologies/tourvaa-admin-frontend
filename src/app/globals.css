@@ -1031,6 +1031,13 @@ body.mobile-nav-open [data-chat-widget] {
   [class*="eapp-website-translator"] {
     display: none !important;
   }
+
+  /* Customer portal has its own compact header controls. Keep the external
+     translator out of that small header rather than letting its fixed host
+     overlap the profile and currency triggers. */
+  .customer-language-translator {
+    display: none !important;
+  }
 }
 
 /* The translator belongs to the public storefront. Its external runtime can

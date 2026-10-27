@@ -23,6 +23,9 @@ const countryTours = read("src/components/public/country/CountryToursSection.tsx
 const whyVisit = read("src/components/public/country/CountryWhyVisitSection.tsx");
 const destinationListing = read("src/app/(public)/destinations/page.tsx");
 const globalStyles = read("src/app/globals.css");
+const countryListing = read("src/components/public/CountryTourListing.tsx");
+const tourDetail = read("src/components/public/TourDetailExperience.tsx");
+const topDeals = read("src/components/public/home/TopDealsSection.tsx");
 const editor = read("src/components/admin/cms/CountryDestinationInfoPanel.tsx");
 const countryPagesEditor = read("src/components/admin/cms/CountryPagesEditor.tsx");
 const cmsCountries = read("src/lib/api/cmsCountries.ts");
@@ -39,6 +42,9 @@ check("destination reasons retain readable body contrast", whyVisit.includes("te
 check("destination category controls scroll inside the viewport and leave room for the chat launcher", countryTours.includes('aria-label="Tour categories"') && countryTours.includes("flex-nowrap") && countryTours.includes("overflow-x-auto") && countryTours.includes("pb-32"));
 check("destination listing supporting copy keeps a readable colour on its light surface", destinationListing.includes('<div className="mt-3 max-w-3xl text-sm leading-relaxed text-slate-700 sm:text-base">'));
 check("light-surface destination copy is not mistaken for dark-section copy by a selection utility", globalStyles.includes('[class~="text-white"] p') && !globalStyles.includes('[class*="text-white"] p'));
+check("duration filters use one non-overlapping range system", countryListing.includes("DURATION_FILTER_OPTIONS") && countryListing.includes('value: "2-6"') && countryListing.includes('value: "15+"') && !countryListing.includes('value="1-3"') && !countryListing.includes('value="4-7"') && !countryListing.includes('value="8+"'));
+check("tour detail country breadcrumb returns to the country tour listing while the guide CTA stays available", tourDetail.includes("const countryToursUrl") && tourDetail.includes("href={countryToursUrl}") && tourDetail.includes("href={destinationUrl(destination)}"));
+check("top deals carousel has visible mobile and desktop controls with position indicators", topDeals.includes("showCarouselControls") && topDeals.includes('aria-label="Deal carousel controls"') && topDeals.includes("aria-current={activeSlide === index") && topDeals.includes("goToSlide"));
 check("admin can save each selected country guide to its scoped CMS block", editor.includes("country_info_") && editor.includes("Destination Overview &amp; Narrative"));
 check("country page editors load the complete country catalogue regardless of public status", cmsCountries.includes('api.get("/countries"') && cmsCountries.includes("limit: 1000") && !countryPagesEditor.includes("fetchPublicCountries") && !editor.includes('get("/public/countries")'));
 check("preview and editing selectors share one searchable all-country list", countryPagesEditor.includes("countryOptions={countries}") && countryPagesEditor.includes("<SearchableSelect") && editor.includes("<SearchableSelect") && countryPagesEditor.includes("Search any country or code") && editor.includes("Search any country or code"));

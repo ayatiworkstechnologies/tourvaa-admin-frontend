@@ -52,7 +52,7 @@ export default function CustomerLayout({ children }: { children: React.ReactNode
       <TravelStoreProvider>
         <div className="customer-public-portal min-h-screen bg-[#F8FAFC]">
         <PortalDataRefresh />
-        <ElfsightTranslator />
+        <ElfsightTranslator className="customer-language-translator" />
         <CustomerPortalHeader showNotifications />
 
         <div className="pt-20 sm:pt-[84px]">

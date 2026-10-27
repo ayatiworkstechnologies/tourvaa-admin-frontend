@@ -92,7 +92,7 @@ function statusClass(status?: string) {
 
 function Pill({ status, children }: { status?: string; children: React.ReactNode }) {
   return (
-    <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-bold ${statusClass(status)}`}>
+    <span className={`inline-flex max-w-[9.5rem] whitespace-normal rounded-full px-2.5 py-1 text-xs font-bold leading-4 ${statusClass(status)}`}>
       {children}
     </span>
   );
@@ -212,7 +212,7 @@ export default function AgentBookingsPage() {
     { key: "customer", header: "Customer", render: (b) => b.customer_name ?? "-", className: "hidden text-dash-muted sm:table-cell" },
     { key: "tour", header: "Tour", render: (b) => b.tour_name ?? "-", className: "hidden max-w-[180px] truncate text-dash-muted md:table-cell" },
     { key: "date", header: "Date", render: (b) => dateText(b.tour_date), className: "hidden text-dash-muted lg:table-cell" },
-    { key: "status", header: "Booking Status", render: (b) => <Pill status={b.booking_status}>{agentBookingStatusLabel(b.booking_status, b.cancellation_source)}</Pill> },
+    { key: "status", header: "Booking Status", render: (b) => <Pill status={b.booking_status}>{agentBookingStatusLabel(b.booking_status, b.cancellation_source)}</Pill>, className: "min-w-[8.75rem] whitespace-normal" },
     { key: "payment", header: "Payment Status", render: (b) => <Pill status={b.payment_status}>{agentPaymentStatusLabel(b.payment_status)}</Pill>, className: "hidden xl:table-cell" },
     { key: "payment_method", header: "Payment Plan", render: (b) => agentBookingMethodLabel(b), className: "hidden whitespace-nowrap text-dash-muted xl:table-cell" },
     { key: "paid", header: "Paid", render: (b) => money(b.amount_paid, b.currency), className: "hidden text-right text-dash-muted xl:table-cell" },
@@ -286,6 +286,7 @@ export default function AgentBookingsPage() {
           onPageChange={setPage}
           emptyTitle="No bookings found"
           emptyDescription="Bookings created from the public tour checkout will appear here."
+          minWidthClass="min-w-[34rem] sm:min-w-[46rem] xl:min-w-[64rem]"
           emptyAction={
               <Link
                 href="/agent/tours"

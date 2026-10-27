@@ -43,6 +43,7 @@ const portalAuth = read("src/components/public/portal/PortalAuthPage.tsx");
 const customerRegister = read("src/app/(public)/register/page.tsx");
 const customerProfile = read("src/app/customer/profile/page.tsx");
 check("customer profile uses a balanced Country and Gender row instead of an editable nationality field", customerProfile.includes("{/* Country & gender */}") && customerProfile.includes("Select country") && !customerProfile.includes("Select nationality") && !customerProfile.includes("setNationality"));
+check("customer profile keeps country and airline as visibly unselected placeholders until chosen", customerProfile.includes('country ? "text-slate-800" : "text-slate-400"') && customerProfile.includes('<option value="" disabled>Select preferred airline</option>') && customerProfile.includes('preferredAirline ? "text-slate-800" : "text-slate-400"'));
 const cookieConsent = read("src/components/public/CookieConsentBanner.tsx");
 check(
   "supplier, agent, affiliate, and customer registration policy links open safely in a new tab",
@@ -194,6 +195,7 @@ check(
     pricingTab.includes("Profit includes markup and supplier commission"),
 );
 const customerBookingDetail = read("src/app/customer/bookings/[id]/page.tsx");
+check("customer booking itinerary download is a primary full-width action", customerBookingDetail.includes('bg-dash-brand px-3 py-2.5 text-xs font-bold text-white') && customerBookingDetail.includes("Download Itinerary"));
 const paymentLogos = read("src/components/common/PaymentLogos.tsx");
 check(
   "checkout payment brands use local SVG assets rather than hand-drawn logos",
