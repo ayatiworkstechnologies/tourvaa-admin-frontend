@@ -310,7 +310,6 @@ export default function ChatWidget() {
   useEffect(() => {
     if (open) return;
     let lastY = window.scrollY;
-    let hideTimer: number | undefined;
 
     const onScroll = () => {
       const y = window.scrollY;
@@ -319,15 +318,11 @@ export default function ChatWidget() {
       if (goingDown) setLauncherVisible(false);
       else if (goingUp) setLauncherVisible(true);
       lastY = y;
-
-      window.clearTimeout(hideTimer);
-      hideTimer = window.setTimeout(() => setLauncherVisible(true), 600);
     };
 
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => {
       window.removeEventListener("scroll", onScroll);
-      window.clearTimeout(hideTimer);
     };
   }, [open]);
 

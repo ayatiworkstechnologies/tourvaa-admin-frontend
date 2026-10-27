@@ -865,9 +865,9 @@ export default function DestinationsPage() {
                 ? (pageContent.countries_heading || "Favourite Countries for Travellers")
                 : `Top Countries in ${selectedRegion}`}
           </h2>
-          <p className="mt-2.5 text-xs sm:text-sm text-slate-500 leading-relaxed max-w-3xl mx-auto">
+          <div className="mt-3 max-w-3xl text-sm leading-relaxed text-slate-700 sm:text-base">
             {pageContent.countries_description || "Explore the destinations travellers love most, from sun-soaked coastlines to iconic cultural gems and unforgettable experiences."}
-          </p>
+          </div>
         </div>
 
         {/* 4 Country Cards per Row Grid */}

@@ -805,7 +805,7 @@ button {
 
 /* Ensure text inside dark containers or elements styled with text-white keeps light/white text */
 .public-site .text-white p:not([class*="text-slate-900"]):not([class*="text-slate-950"]):not([class*="text-black"]),
-.public-site [class*="text-white"] p:not([class*="text-slate-900"]):not([class*="text-slate-950"]):not([class*="text-black"]),
+.public-site [class~="text-white"] p:not([class*="text-slate-900"]):not([class*="text-slate-950"]):not([class*="text-black"]),
 .public-site [data-country-card] p {
   color: #ffffff !important;
 }

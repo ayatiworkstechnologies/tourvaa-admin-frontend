@@ -42,6 +42,7 @@ check(
     chat.includes("group-focus-visible:opacity-100") &&
     chat.includes("Chat with Scout AI"),
 );
+check("Scout launcher stays out of the way while visitors scroll down catalogue cards", chat.includes("if (goingDown) setLauncherVisible(false)") && !chat.includes("hideTimer"));
 
 const publicHomepage = read("src/app/(public)/page.tsx");
 const homepageSections = [
