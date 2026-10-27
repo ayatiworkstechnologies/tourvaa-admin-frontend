@@ -257,7 +257,7 @@ export default function CompanyInfoTab({ onSaved }: { onSaved?: () => void }) {
   }
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[1fr_380px]">
+    <div className="grid min-w-0 max-w-full gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
       {loadError && (
         <div className="flex items-center justify-between gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700 lg:col-span-2">
           <span className="flex items-center gap-2"><AlertCircle size={16} />{loadError}</span>
@@ -265,11 +265,11 @@ export default function CompanyInfoTab({ onSaved }: { onSaved?: () => void }) {
         </div>
       )}
       {/* company details */}
-      <form onSubmit={saveCompany} className="rounded-2xl border border-dash-border bg-white p-4 shadow-sm sm:p-6">
-        <div className="mb-5 flex flex-col gap-3 border-b border-dash-border pb-4 sm:flex-row sm:items-center sm:justify-between">
-          <h3 className="text-lg font-bold text-dash-text">Company Details</h3>
+      <form onSubmit={saveCompany} className="min-w-0 max-w-full rounded-2xl border border-dash-border bg-white p-4 shadow-sm sm:p-6">
+        <div className="mb-5 flex min-w-0 flex-col gap-3 border-b border-dash-border pb-4 sm:flex-row sm:items-center sm:justify-between">
+          <h3 className="min-w-0 text-lg font-bold text-dash-text">Company Details</h3>
           <button type="submit" disabled={saving}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-bold text-white hover:bg-emerald-700 disabled:opacity-60 transition-colors sm:w-auto">
+            className="inline-flex w-full max-w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-bold text-white hover:bg-emerald-700 disabled:opacity-60 transition-colors sm:w-auto">
             {saving ? <Loader2 className="animate-spin" size={15} /> : <CheckCircle2 size={15} />}
             Save Changes
           </button>
@@ -453,7 +453,7 @@ export default function CompanyInfoTab({ onSaved }: { onSaved?: () => void }) {
       </form>
 
       {/* security & password */}
-      <form onSubmit={savePassword} className="rounded-2xl border border-dash-border bg-white p-6 shadow-sm self-start">
+      <form onSubmit={savePassword} className="min-w-0 max-w-full rounded-2xl border border-dash-border bg-white p-4 shadow-sm self-start sm:p-6">
         <div className="mb-5 flex items-center justify-between">
           <h3 className="text-lg font-bold text-dash-text">Security & Password</h3>
           <button type="submit" disabled={savingPw}

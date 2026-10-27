@@ -556,16 +556,16 @@ export default function BlogsListClient({ initialPosts }: BlogsListClientProps) 
 
           {/* ── 4. Newsletter Subscribe Banner ── */}
           <div data-reveal className="mt-16 sm:mt-24">
-            <section className="relative overflow-hidden rounded-[26px] border border-slate-200/80 bg-gradient-to-br from-[#0B1B33] via-[#0E2548] to-[#12345B] p-8 sm:p-12 text-white shadow-xl">
+            <section className="relative overflow-hidden rounded-[24px] border border-slate-200/80 bg-gradient-to-br from-[#0B1B33] via-[#0E2548] to-[#12345B] p-6 sm:rounded-[26px] sm:p-12 text-white shadow-xl">
               <div className="pointer-events-none absolute -top-24 -right-24 h-96 w-96 rounded-full bg-amber-400/10 blur-3xl" />
               <div className="pointer-events-none absolute -bottom-24 -left-24 h-96 w-96 rounded-full bg-sky-400/10 blur-3xl" />
 
-              <div className="relative z-10 flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
-                <div className="max-w-xl">
+              <div className="relative z-10 flex flex-col gap-6 sm:gap-8 lg:flex-row lg:items-center lg:justify-between">
+                <div className="min-w-0 max-w-xl">
                   <span className="inline-block rounded-full bg-white/10 px-3.5 py-1 text-xs font-bold uppercase tracking-wider text-amber-300 backdrop-blur-xs">
                     Join Our Travel Community
                   </span>
-                  <h3 className="mt-3 text-2xl sm:text-3xl font-black text-white tracking-tight">
+                  <h3 className="mt-3 text-[1.65rem] leading-tight sm:text-3xl font-black text-white tracking-tight">
                     Get Global Travel Stories Straight to Your Inbox
                   </h3>
                   <p className="mt-2 text-xs sm:text-sm text-white/80 font-medium leading-relaxed">
@@ -573,19 +573,19 @@ export default function BlogsListClient({ initialPosts }: BlogsListClientProps) 
                   </p>
                 </div>
 
-                <form onSubmit={subscribe} className="flex w-full max-w-md flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                <form onSubmit={subscribe} className="flex w-full max-w-md min-w-0 flex-col items-stretch gap-2.5 sm:flex-row sm:items-center sm:gap-3">
                   <input
                     type="email"
                     required
                     placeholder="Enter your email address"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="h-12 flex-1 rounded-xl border border-white/20 bg-white/10 px-4 text-sm text-white placeholder:text-white/60 backdrop-blur-md focus:border-white focus:bg-white/15 focus:outline-none"
+                    className="h-11 min-w-0 flex-1 rounded-xl border border-white/80 bg-white px-4 text-sm font-medium text-slate-900 placeholder:text-slate-500 shadow-sm outline-none transition focus:border-pub-accent focus:ring-4 focus:ring-white/20 sm:h-12"
                   />
                   <button
                     type="submit"
                     disabled={subscribing}
-                    className="h-12 rounded-xl bg-pub-accent px-6 text-sm font-black text-white shadow-md hover:bg-pub-accent/90 transition disabled:opacity-60 cursor-pointer"
+                    className="h-11 w-full shrink-0 rounded-xl bg-pub-accent px-6 text-sm font-black text-white shadow-md transition hover:bg-pub-accent/90 disabled:opacity-60 cursor-pointer sm:h-12 sm:w-auto"
                   >
                     {subscribing ? "Subscribing..." : "Subscribe"}
                   </button>

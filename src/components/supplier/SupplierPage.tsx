@@ -11,7 +11,7 @@ type SupplierPageHeaderAction = {
 export function SupplierPageShell({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
     <div className={`min-h-screen min-w-0 bg-[#F5FAF7] px-4 py-4 text-[#123024] sm:px-6 sm:py-6 xl:px-8 ${className}`}>
-      <div className="mx-auto max-w-[1500px]">{children}</div>
+      <div className="mx-auto min-w-0 max-w-[1500px]">{children}</div>
     </div>
   );
 }

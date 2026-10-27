@@ -40,8 +40,8 @@ export default function UnifiedSupplierProfilePage() {
     <SupplierPageShell>
       <SupplierPageHeader title="My Profile" description="Keep your business details, settlement information, fleet, verification documents, and commission agreement up to date." icon={Building} eyebrow="Supplier Account" />
 
-      <div className="mt-4 rounded-2xl border border-[#DCEBE2] bg-white p-2 shadow-[0_8px_24px_-22px_rgba(15,82,48,.7)]">
-        <div className="flex overflow-x-auto" role="tablist" aria-label="Supplier profile sections">
+      <div className="mt-4 min-w-0 max-w-full rounded-2xl border border-[#DCEBE2] bg-white p-2 shadow-[0_8px_24px_-22px_rgba(15,82,48,.7)]">
+        <div className="flex min-w-0 max-w-full overflow-x-auto" role="tablist" aria-label="Supplier profile sections">
         {TABS.map((tab) => {
           const isActive = activeTab === tab.id;
           const Icon = tab.icon;
@@ -66,18 +66,18 @@ export default function UnifiedSupplierProfilePage() {
         </div>
       </div>
 
-      <div className="mt-4 w-full rounded-2xl border border-[#DCEBE2] bg-white p-5 shadow-[0_10px_32px_-27px_rgba(15,82,48,.7)] sm:p-6">
+      <div className="mt-4 min-w-0 max-w-full rounded-2xl border border-[#DCEBE2] bg-white p-4 shadow-[0_10px_32px_-27px_rgba(15,82,48,.7)] sm:p-6">
         <div className="mb-6 flex items-start gap-3 rounded-xl border border-emerald-100 bg-emerald-50/70 px-4 py-3 text-sm text-slate-700">
           <BadgeCheck size={19} className="mt-0.5 shrink-0 text-emerald-700" />
           <p><span className="font-black text-slate-900">{TABS.find((tab) => tab.id === activeTab)?.label}</span><span className="hidden sm:inline"> - {TABS.find((tab) => tab.id === activeTab)?.description}</span></p>
         </div>
         {/* Every tab stays mounted (hidden via CSS, not unmounted) so
             in-progress form edits on inactive tabs survive switching. */}
-        <div className={activeTab === "company" ? "" : "hidden"}><CompanyInfoTab onSaved={() => advanceToNextTab("company")} /></div>
-        <div className={activeTab === "billing" ? "" : "hidden"}><BankAndInvoicingTab onSaved={() => advanceToNextTab("billing")} /></div>
-        <div className={activeTab === "vehicles" ? "" : "hidden"}><VehiclesTab onSaved={() => advanceToNextTab("vehicles")} /></div>
-        <div className={activeTab === "documents" ? "" : "hidden"}><DocumentsTab onVerificationSubmitted={() => advanceToNextTab("documents")} /></div>
-        <div className={activeTab === "commission" ? "" : "hidden"}><CommissionTab /></div>
+        <div className={activeTab === "company" ? "min-w-0 max-w-full" : "hidden"}><CompanyInfoTab onSaved={() => advanceToNextTab("company")} /></div>
+        <div className={activeTab === "billing" ? "min-w-0 max-w-full" : "hidden"}><BankAndInvoicingTab onSaved={() => advanceToNextTab("billing")} /></div>
+        <div className={activeTab === "vehicles" ? "min-w-0 max-w-full" : "hidden"}><VehiclesTab onSaved={() => advanceToNextTab("vehicles")} /></div>
+        <div className={activeTab === "documents" ? "min-w-0 max-w-full" : "hidden"}><DocumentsTab onVerificationSubmitted={() => advanceToNextTab("documents")} /></div>
+        <div className={activeTab === "commission" ? "min-w-0 max-w-full" : "hidden"}><CommissionTab /></div>
       </div>
     </SupplierPageShell>
   );

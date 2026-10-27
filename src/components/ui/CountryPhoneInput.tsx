@@ -85,12 +85,12 @@ export default function CountryPhoneInput({
   );
 
   return (
-    <div className={className}>
-      <label className="block">
+    <div className={`min-w-0 max-w-full ${className}`}>
+      <label className="block min-w-0 max-w-full">
         <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">{label}</span>
         <div
           ref={containerRef}
-          className={`relative flex overflow-visible rounded-xl border bg-white transition-shadow focus-within:ring-4 ${
+          className={`relative flex min-w-0 max-w-full overflow-visible rounded-xl border bg-white transition-shadow focus-within:ring-4 ${
             validationMessage
               ? "border-red-400 focus-within:border-red-400 focus-within:ring-red-100"
               : "border-dash-border focus-within:border-dash-brand focus-within:ring-sky-100"
@@ -120,7 +120,7 @@ export default function CountryPhoneInput({
           {open && (
             <div
               role="listbox"
-              className="absolute left-0 top-[calc(100%+6px)] z-50 max-h-72 min-w-[280px] origin-top overflow-hidden rounded-xl border border-dash-border bg-white shadow-xl transition duration-150 ease-out"
+              className="absolute left-0 top-[calc(100%+6px)] z-50 max-h-72 min-w-[min(280px,calc(100vw-2rem))] max-w-[calc(100vw-2rem)] origin-top overflow-hidden rounded-xl border border-dash-border bg-white shadow-xl transition duration-150 ease-out"
             >
               <div className="flex items-center gap-2 border-b border-dash-border px-3 py-2">
                 <Search size={14} className="shrink-0 text-dash-subtle" />

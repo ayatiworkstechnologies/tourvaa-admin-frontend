@@ -338,7 +338,7 @@ export default function AboutPage() {
             <span className="text-xs sm:text-sm font-bold uppercase tracking-wider text-pub-secondary">
               {story.eyebrow || DEFAULT_STORY.eyebrow}
             </span>
-            <h2 className="mt-2 text-3xl sm:text-4xl font-black tracking-tight text-slate-950 font-heading">
+            <h2 className="mt-2 text-3xl sm:text-4xl lg:text-[42px] lg:leading-[1.2] font-black tracking-tight text-slate-950 font-heading">
               {story.heading || DEFAULT_STORY.heading}
             </h2>
             <p className="mt-4 text-sm sm:text-base leading-relaxed text-slate-600 font-medium max-w-3xl mx-auto">
@@ -358,9 +358,9 @@ export default function AboutPage() {
                 alt={gallery[0]?.location || "Gallery photo"}
                 className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
-              <span className="absolute bottom-2.5 left-2.5 flex items-center gap-1 text-[10px] font-bold text-white opacity-0 transition-opacity group-hover:opacity-100">
-                <MapPin size={10} /> {gallery[0]?.location}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-90 sm:opacity-0 transition-opacity sm:group-hover:opacity-100" />
+              <span className="absolute bottom-2.5 left-2.5 flex items-center gap-1.5 rounded-md bg-black/50 backdrop-blur-xs px-2 py-0.5 text-xs font-semibold text-white opacity-90 sm:opacity-0 transition-opacity sm:group-hover:opacity-100">
+                <MapPin size={12} /> {gallery[0]?.location}
               </span>
             </div>
             <div
@@ -373,8 +373,8 @@ export default function AboutPage() {
                 className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-              <span className="absolute bottom-3 left-3 text-[11px] font-bold text-white opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
-                <MapPin size={11} /> {gallery[0]?.location}
+              <span className="absolute bottom-3 left-3 flex items-center gap-1.5 rounded-md bg-black/50 backdrop-blur-xs px-2 py-0.5 text-xs font-semibold text-white opacity-0 group-hover:opacity-100 transition-opacity">
+                <MapPin size={12} /> {gallery[0]?.location}
               </span>
             </div>
 
@@ -388,9 +388,9 @@ export default function AboutPage() {
                   alt={gallery[1]?.location || "Gallery photo"}
                   className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                <span className="absolute bottom-2.5 left-2.5 text-[10px] font-bold text-white opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
-                  <MapPin size={10} /> {gallery[1]?.location}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-90 sm:opacity-0 group-hover:opacity-100 transition-opacity" />
+                <span className="absolute bottom-2.5 left-2.5 flex items-center gap-1.5 rounded-md bg-black/50 backdrop-blur-xs px-2 py-0.5 text-xs font-semibold text-white opacity-90 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+                  <MapPin size={12} /> {gallery[1]?.location}
                 </span>
               </div>
               <div
@@ -402,9 +402,9 @@ export default function AboutPage() {
                   alt={gallery[2]?.location || "Gallery photo"}
                   className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                <span className="absolute bottom-2.5 left-2.5 text-[10px] font-bold text-white opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
-                  <MapPin size={10} /> {gallery[2]?.location}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-90 sm:opacity-0 group-hover:opacity-100 transition-opacity" />
+                <span className="absolute bottom-2.5 left-2.5 flex items-center gap-1.5 rounded-md bg-black/50 backdrop-blur-xs px-2 py-0.5 text-xs font-semibold text-white opacity-90 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+                  <MapPin size={12} /> {gallery[2]?.location}
                 </span>
               </div>
             </div>
@@ -418,9 +418,9 @@ export default function AboutPage() {
                 alt={gallery[3]?.location || "Gallery photo"}
                 className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-              <span className="absolute bottom-3 left-3 text-[11px] font-bold text-white opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
-                <MapPin size={11} /> {gallery[3]?.location}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-90 sm:opacity-0 group-hover:opacity-100 transition-opacity" />
+              <span className="absolute bottom-3 left-3 flex items-center gap-1.5 rounded-md bg-black/50 backdrop-blur-xs px-2 py-0.5 text-xs font-semibold text-white opacity-90 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+                <MapPin size={12} /> {gallery[3]?.location}
               </span>
             </div>
 
@@ -434,9 +434,9 @@ export default function AboutPage() {
                   alt={gallery[4]?.location || "Gallery photo"}
                   className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                <span className="absolute bottom-2.5 left-2.5 text-[10px] font-bold text-white opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
-                  <MapPin size={10} /> {gallery[4]?.location}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-90 sm:opacity-0 group-hover:opacity-100 transition-opacity" />
+                <span className="absolute bottom-2.5 left-2.5 flex items-center gap-1.5 rounded-md bg-black/50 backdrop-blur-xs px-2 py-0.5 text-xs font-semibold text-white opacity-90 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+                  <MapPin size={12} /> {gallery[4]?.location}
                 </span>
               </div>
               <div
@@ -448,9 +448,9 @@ export default function AboutPage() {
                   alt={gallery[5]?.location || "Gallery photo"}
                   className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                <span className="absolute bottom-2.5 left-2.5 text-[10px] font-bold text-white opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
-                  <MapPin size={10} /> {gallery[5]?.location}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-90 sm:opacity-0 group-hover:opacity-100 transition-opacity" />
+                <span className="absolute bottom-2.5 left-2.5 flex items-center gap-1.5 rounded-md bg-black/50 backdrop-blur-xs px-2 py-0.5 text-xs font-semibold text-white opacity-90 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+                  <MapPin size={12} /> {gallery[5]?.location}
                 </span>
               </div>
             </div>
@@ -465,8 +465,8 @@ export default function AboutPage() {
                 className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-              <span className="absolute bottom-3 left-3 text-[11px] font-bold text-white opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
-                <MapPin size={11} /> {gallery[6]?.location}
+              <span className="absolute bottom-3 left-3 flex items-center gap-1.5 rounded-md bg-black/50 backdrop-blur-xs px-2 py-0.5 text-xs font-semibold text-white opacity-0 group-hover:opacity-100 transition-opacity">
+                <MapPin size={12} /> {gallery[6]?.location}
               </span>
             </div>
           </div>
@@ -481,7 +481,7 @@ export default function AboutPage() {
                 <p className="text-sm sm:text-base font-medium italic leading-relaxed text-slate-800">
                   &ldquo;{story.quote_text || DEFAULT_STORY.quote_text}&rdquo;
                 </p>
-                <p className="mt-2 text-xs font-bold text-pub-secondary">
+                <p className="mt-2 text-xs sm:text-sm font-bold text-pub-secondary">
                   - {story.quote_author || DEFAULT_STORY.quote_author}
                 </p>
               </div>
@@ -515,10 +515,10 @@ export default function AboutPage() {
                       <Icon size={20} />
                     </span>
                   </div>
-                  <div className="mt-3 text-sm font-bold text-slate-900 leading-snug">
+                  <div className="mt-3 text-sm sm:text-base font-bold text-slate-900 leading-snug">
                     {m.label}
                   </div>
-                  <div className="mt-1 text-xs text-slate-500 font-medium">
+                  <div className="mt-1 text-xs sm:text-sm text-slate-500 font-medium">
                     {m.sub}
                   </div>
                   <div className="mt-4 h-1 w-12 rounded-full bg-pub-secondary/40 group-hover:w-full group-hover:bg-pub-secondary transition-all duration-300" />
@@ -534,10 +534,10 @@ export default function AboutPage() {
             <span className="text-xs sm:text-sm font-bold uppercase tracking-wider text-pub-secondary">
               {valuesHeading.eyebrow || DEFAULT_VALUES_HEADING.eyebrow}
             </span>
-            <h2 className="mt-2 text-3xl sm:text-4xl font-black tracking-tight text-slate-950 font-heading">
+            <h2 className="mt-2 text-3xl sm:text-4xl lg:text-[42px] lg:leading-[1.2] font-black tracking-tight text-slate-950 font-heading">
               {valuesHeading.heading || DEFAULT_VALUES_HEADING.heading}
             </h2>
-            <p className="mt-3 text-sm text-slate-600 font-medium max-w-xl mx-auto">
+            <p className="mt-3 text-sm sm:text-base text-slate-600 font-medium max-w-xl mx-auto">
               {valuesHeading.subtitle || DEFAULT_VALUES_HEADING.subtitle}
             </p>
           </div>
@@ -562,36 +562,36 @@ export default function AboutPage() {
                   data-reveal
                   style={delay(index * 60)}
                   tabIndex={0}
-                  className="group relative flex min-h-[300px] flex-col justify-between overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-6 shadow-xs transition-all duration-300 hover:border-slate-700 hover:shadow-lg focus-visible:border-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2"
+                  className="group relative flex min-h-[290px] sm:min-h-[310px] flex-col justify-between overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-6 shadow-xs transition-all duration-300 hover:-translate-y-1 hover:border-slate-700 hover:shadow-lg active:-translate-y-0.5 active:border-slate-700 active:shadow-lg touch-manipulation focus-visible:border-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2"
                 >
                   <img
                     src={v.image}
                     alt=""
                     aria-hidden="true"
-                    className="absolute inset-0 h-full w-full scale-105 object-cover opacity-0 transition duration-500 group-hover:scale-100 group-hover:opacity-100 group-focus-visible:scale-100 group-focus-visible:opacity-100 motion-reduce:transform-none motion-reduce:transition-none"
+                    className="absolute inset-0 h-full w-full scale-105 object-cover opacity-0 transition duration-500 group-hover:scale-100 group-hover:opacity-100 group-active:scale-100 group-active:opacity-100 group-focus-visible:scale-100 group-focus-visible:opacity-100 motion-reduce:transform-none motion-reduce:transition-none"
                   />
                   <div
                     aria-hidden="true"
-                    className="absolute inset-0 bg-gradient-to-b from-slate-900/65 via-slate-900/70 to-[#0B1F3A]/95 opacity-0 transition-opacity duration-300 group-hover:opacity-100 group-focus-visible:opacity-100 motion-reduce:transition-none"
+                    className="absolute inset-0 bg-gradient-to-b from-slate-900/65 via-slate-900/70 to-[#0B1F3A]/95 opacity-0 transition-opacity duration-300 group-hover:opacity-100 group-active:opacity-100 group-focus-visible:opacity-100 motion-reduce:transition-none"
                   />
 
                   <div className="relative z-10 flex items-center justify-between">
-                    <span className="text-3xl font-black text-slate-300 transition-colors duration-300 group-hover:text-orange-400 group-focus-visible:text-orange-400 font-heading">
+                    <span className="text-3xl font-black text-slate-300 transition-colors duration-300 group-hover:text-orange-400 group-active:text-orange-400 group-focus-visible:text-orange-400 font-heading">
                       {v.number}
                     </span>
-                    <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-[10px] font-bold text-slate-600 transition-colors duration-300 group-hover:bg-white/20 group-hover:text-white group-focus-visible:bg-white/20 group-focus-visible:text-white group-hover:backdrop-blur-xs group-focus-visible:backdrop-blur-xs">
+                    <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600 transition-colors duration-300 group-hover:bg-white/20 group-hover:text-white group-active:bg-white/20 group-active:text-white group-focus-visible:bg-white/20 group-focus-visible:text-white group-hover:backdrop-blur-xs group-active:backdrop-blur-xs group-focus-visible:backdrop-blur-xs">
                       {v.badge}
                     </span>
                   </div>
 
-                  <div className="relative z-10 mt-auto pt-8">
-                    <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-xl bg-sky-50 text-sky-700 transition-colors duration-300 group-hover:bg-white/20 group-hover:text-white group-focus-visible:bg-white/20 group-focus-visible:text-white group-hover:backdrop-blur-xs group-focus-visible:backdrop-blur-xs">
+                  <div className="relative z-10 mt-auto pt-6">
+                    <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-xl bg-sky-50 text-sky-700 transition-colors duration-300 group-hover:bg-white/20 group-hover:text-white group-active:bg-white/20 group-active:text-white group-focus-visible:bg-white/20 group-focus-visible:text-white group-hover:backdrop-blur-xs group-active:backdrop-blur-xs group-focus-visible:backdrop-blur-xs">
                       <Icon size={18} />
                     </div>
-                    <h3 className="text-base font-bold leading-tight text-slate-950 transition-colors duration-300 group-hover:text-white group-focus-visible:text-white font-heading">
+                    <h3 className="text-base sm:text-lg font-bold leading-tight text-slate-950 transition-colors duration-300 group-hover:text-white group-active:text-white group-focus-visible:text-white font-heading">
                       {v.title}
                     </h3>
-                    <p className="mt-2 text-xs font-normal leading-relaxed text-slate-600 transition-colors duration-300 group-hover:!text-white group-focus-visible:!text-white">
+                    <p className="mt-2 text-xs sm:text-sm font-normal leading-relaxed text-slate-600 transition-colors duration-300 group-hover:!text-white group-active:!text-white group-focus-visible:!text-white">
                       {v.desc}
                     </p>
                   </div>
@@ -607,42 +607,54 @@ export default function AboutPage() {
             <span className="text-xs sm:text-sm font-bold uppercase tracking-wider text-pub-secondary">
               {teamHeading.eyebrow || DEFAULT_TEAM_HEADING.eyebrow}
             </span>
-            <h2 className="mt-1 text-3xl sm:text-4xl font-black tracking-tight text-slate-950 font-heading">
+            <h2 className="mt-1 text-3xl sm:text-4xl lg:text-[42px] lg:leading-[1.2] font-black tracking-tight text-slate-950 font-heading">
               {teamHeading.heading || DEFAULT_TEAM_HEADING.heading}
             </h2>
-            <p className="mt-2 text-sm text-slate-600 font-medium max-w-xl">
+            <p className="mt-2 text-sm sm:text-base text-slate-600 font-medium max-w-xl">
               {teamHeading.subtitle || DEFAULT_TEAM_HEADING.subtitle}
             </p>
           </div>
 
-          <div className="mt-10 flex flex-wrap justify-center gap-5">
+          <div className={`mt-10 grid gap-5 ${
+            team.length === 1
+              ? "mx-auto max-w-sm grid-cols-1"
+              : team.length === 2
+                ? "mx-auto max-w-2xl grid-cols-1 sm:grid-cols-2"
+                : team.length === 3
+                  ? "mx-auto max-w-5xl grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
+                  : team.length === 4
+                    ? "mx-auto max-w-6xl grid-cols-1 sm:grid-cols-2 lg:grid-cols-4"
+                    : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5"
+          }`}>
             {team.map((member, index) => (
               <div
                 key={index}
                 data-reveal
                 style={delay(index * 60)}
-                className="group w-full sm:basis-[calc(50%-0.625rem)] lg:basis-[calc(33.333%-1rem)] xl:basis-[calc(25%-1rem)] overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-4 shadow-xs hover:border-slate-300 hover:shadow-md transition-all duration-200"
+                className="group flex flex-col justify-between overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-4 shadow-xs hover:border-slate-300 hover:shadow-md transition-all duration-200"
               >
-                <div className="relative h-60 w-full overflow-hidden rounded-xl bg-slate-100">
-                  <img
-                    src={member.image}
-                    alt={member.name}
-                    className="h-full w-full object-cover object-top transition duration-500 group-hover:scale-105"
-                  />
-                  <span className="absolute bottom-2.5 left-2.5 rounded-md bg-black/60 backdrop-blur-xs px-2 py-0.5 text-[10px] font-bold text-white">
-                    {member.specialty}
-                  </span>
-                </div>
-                <div className="mt-4 px-1">
-                  <h3 className="text-base sm:text-lg font-bold text-slate-950 font-heading">
-                    {member.name}
-                  </h3>
-                  <p className="text-xs font-bold text-sky-700 mt-0.5">
-                    {member.role}
-                  </p>
-                  <p className="mt-2.5 text-xs sm:text-sm text-slate-600 leading-relaxed font-normal">
-                    {member.bio}
-                  </p>
+                <div>
+                  <div className="relative h-56 sm:h-60 w-full overflow-hidden rounded-xl bg-slate-100">
+                    <img
+                      src={member.image}
+                      alt={member.name}
+                      className="h-full w-full object-cover object-top transition duration-500 group-hover:scale-[1.02]"
+                    />
+                    <span className="absolute bottom-2.5 left-2.5 rounded-md bg-black/60 backdrop-blur-xs px-2.5 py-1 text-xs font-semibold text-white">
+                      {member.specialty}
+                    </span>
+                  </div>
+                  <div className="mt-4 px-1">
+                    <h3 className="text-base sm:text-lg font-bold text-slate-950 font-heading">
+                      {member.name}
+                    </h3>
+                    <p className="text-xs sm:text-[13px] font-bold text-sky-700 mt-0.5">
+                      {member.role}
+                    </p>
+                    <p className="mt-2.5 text-xs sm:text-sm text-slate-600 leading-relaxed font-normal">
+                      {member.bio}
+                    </p>
+                  </div>
                 </div>
               </div>
             ))}
@@ -650,15 +662,15 @@ export default function AboutPage() {
         </section>
 
         {/* ── 5. Awards & Industry Recognition ── */}
-        <section className="mx-auto max-w-[1400px] px-4 sm:px-6 pt-14 sm:pt-28">
+        <section className="mx-auto max-w-[1400px] px-4 sm:px-6 pt-16 sm:pt-28">
           <div data-reveal className="mx-auto max-w-2xl text-center">
-            <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-pub-secondary sm:text-sm sm:tracking-wider">
+            <span className="text-xs sm:text-sm font-bold uppercase tracking-wider text-pub-secondary">
               {awardsHeading.eyebrow || DEFAULT_AWARDS_HEADING.eyebrow}
             </span>
-            <h2 className="mt-2 text-[1.65rem] font-black leading-tight tracking-tight text-slate-950 font-heading sm:text-3xl">
+            <h2 className="mt-2 text-3xl sm:text-4xl lg:text-[42px] lg:leading-[1.2] font-black tracking-tight text-slate-950 font-heading">
               {awardsHeading.heading || DEFAULT_AWARDS_HEADING.heading}
             </h2>
-            <p className="mx-auto mt-3 max-w-xl text-sm font-medium leading-relaxed text-slate-600 sm:text-base">
+            <p className="mx-auto mt-3 max-w-xl text-sm sm:text-base font-medium leading-relaxed text-slate-600">
               {awardsHeading.subtitle || DEFAULT_AWARDS_HEADING.subtitle}
             </p>
           </div>
@@ -708,7 +720,7 @@ export default function AboutPage() {
               <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight leading-tight sm:leading-tight text-white font-heading drop-shadow-md">
                 {cta.heading || DEFAULT_CTA.heading}
               </h2>
-              <p className="mt-3 text-xs sm:text-sm md:text-base text-white/90 font-medium leading-relaxed max-w-xl mx-auto">
+              <p className="mt-3 text-sm sm:text-base md:text-lg text-white/90 font-medium leading-relaxed max-w-xl mx-auto">
                 {cta.subtitle || DEFAULT_CTA.subtitle}
               </p>
 
