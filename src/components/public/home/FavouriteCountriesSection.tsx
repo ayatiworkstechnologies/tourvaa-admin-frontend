@@ -162,18 +162,13 @@ export default function FavouriteCountriesSection({
             onTouchEnd={handleTouchEnd}
           >
             {destinations.map((country, idx) => {
-              const count = destinations.length;
               const isActive = idx === activeIndex;
-              const isNext = idx === (activeIndex + 1) % count;
-              const isSecondNext = idx === (activeIndex + 2) % count;
 
-              let stackClasses = "opacity-0 pointer-events-none translate-x-12 scale-90 z-0";
+              // Do not leave inactive cards peeking out from the active card:
+              // their pale edges break the rounded-card boundary on mobile.
+              let stackClasses = "hidden";
               if (isActive) {
-                stackClasses = "opacity-100 pointer-events-auto translate-x-0 scale-100 z-30 shadow-2xl";
-              } else if (isNext) {
-                stackClasses = "opacity-60 pointer-events-none translate-x-3.5 -translate-y-1 scale-[0.94] z-20 shadow-lg";
-              } else if (isSecondNext) {
-                stackClasses = "opacity-25 pointer-events-none translate-x-7 -translate-y-2 scale-[0.88] z-10 shadow-sm";
+                stackClasses = "block animate-in fade-in slide-in-from-right-2 duration-300";
               }
 
               return (

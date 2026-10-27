@@ -14,6 +14,9 @@ import {
 } from "react-icons/lu";
 
 const CONSENT_KEY = "tourvaa_cookie_consent";
+// Show the banner only after the visitor has had time to use the fully
+// loaded site. 150 seconds keeps the requested two-to-three minute window.
+const BANNER_DELAY_MS = 150_000;
 
 type CookiePreferences = {
   necessary: boolean;
@@ -36,9 +39,23 @@ export default function CookieConsentBanner() {
     try {
       const stored = localStorage.getItem(CONSENT_KEY);
       if (!stored) {
-        // Small initial delay for smooth entrance
-        const timer = setTimeout(() => setVisible(true), 800);
-        return () => clearTimeout(timer);
+        let timer: ReturnType<typeof window.setTimeout> | undefined;
+        const scheduleBanner = () => {
+          timer = window.setTimeout(() => setVisible(true), BANNER_DELAY_MS);
+        };
+
+        // The delay begins only after page resources have finished loading,
+        // rather than competing with the first visible content.
+        if (document.readyState === "complete") {
+          scheduleBanner();
+        } else {
+          window.addEventListener("load", scheduleBanner, { once: true });
+        }
+
+        return () => {
+          window.removeEventListener("load", scheduleBanner);
+          if (timer) window.clearTimeout(timer);
+        };
       }
     } catch {
       // localStorage unavailable (private mode / blocked)

@@ -89,6 +89,10 @@ const nextConfig: NextConfig = {
     NEXT_PUBLIC_WS_URL: publicWsUrl,
   },
   images: {
+    // Serve optimized responsive hero/media assets in the browser's best
+    // supported format, then retain them long enough for repeat visits.
+    formats: ["image/avif", "image/webp"],
+    minimumCacheTTL: 86_400,
     remotePatterns: [
       { protocol: "https", hostname: "images.unsplash.com" },
       // Admin-uploaded tour/media assets (banner images, highlight photos,

@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import PublicLayout from "@/components/public/PublicLayout";
 import AffiliateReferralTracker from "@/components/public/AffiliateReferralTracker";
-import ElfsightTranslator from "@/components/public/ElfsightTranslator";
 import { DEFAULT_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/seo/pageMetadata";
 import { cmsMetadataFor } from "@/lib/seo/cmsSeo";
 
@@ -41,7 +40,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }} />
       <AffiliateReferralTracker />
-      <ElfsightTranslator />
       {children}
     </PublicLayout>
   );

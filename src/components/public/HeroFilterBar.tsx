@@ -587,7 +587,8 @@ function DatePanel({
 
       {mode === "flexible" ? (
         <div>
-          {/* Month Calendars View */}
+          {/* One calendar is shown on phones to keep the date panel compact;
+              larger layouts retain the paired-month planning view. */}
           <div className="grid gap-6 sm:grid-cols-2">
             <CalendarMonth
               {...monthMeta(monthOffset)}
@@ -597,15 +598,17 @@ function DatePanel({
               onNext={() => setMonthOffset((v) => v + 1)}
               canPrev={monthOffset > 0}
             />
-            <CalendarMonth
-              {...monthMeta(monthOffset + 1)}
-              selected={selected}
-              onSelect={onApply}
-              onPrev={() => setMonthOffset((v) => Math.max(0, v - 1))}
-              onNext={() => setMonthOffset((v) => v + 1)}
-              canPrev={false}
-              showNextOnly
-            />
+            <div className="hidden sm:block">
+              <CalendarMonth
+                {...monthMeta(monthOffset + 1)}
+                selected={selected}
+                onSelect={onApply}
+                onPrev={() => setMonthOffset((v) => Math.max(0, v - 1))}
+                onNext={() => setMonthOffset((v) => v + 1)}
+                canPrev={false}
+                showNextOnly
+              />
+            </div>
           </div>
 
           <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3 text-xs">

@@ -4,7 +4,7 @@ import DynamicFavicon from "@/components/public/DynamicFavicon";
 import PublicFooter from "@/components/public/PublicFooter";
 import PublicHeader from "@/components/public/PublicHeader";
 import { TravelStoreProvider } from "@/providers/TravelStoreProvider";
-import ChatWidget from "@/components/public/ChatWidget";
+import DeferredPublicWidgets from "@/components/public/DeferredPublicWidgets";
 import { PublicSettingsProvider } from "@/providers/PublicSettingsProvider";
 import NetworkStatusBanner from "@/components/public/NetworkStatusBanner";
 
@@ -34,7 +34,7 @@ export default function PublicLayout({
           <PublicHeader />
           <div id="main-content" tabIndex={-1} className="public-page-enter">{children}</div>
           {showFooter && <div className="print:hidden"><PublicFooter /></div>}
-          <div className="print:hidden"><ChatWidget /></div>
+          <div className="print:hidden"><DeferredPublicWidgets /></div>
           <div className="print:hidden"><CookieConsentBanner /></div>
           <div className="print:hidden"><NetworkStatusBanner /></div>
         </div>

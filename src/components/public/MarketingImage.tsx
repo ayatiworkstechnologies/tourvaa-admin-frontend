@@ -10,6 +10,9 @@ export default function MarketingImage(props: ImageProps) {
   // A local, non-CMS fallback prevents a broken CMS hero/showcase image from
   // causing another remote request or an image-error loop.
   const src = failed ? "/images/tour-card-fallback.jpg" : originalSrc;
-  const optimized = src.startsWith("/") && !src.startsWith("//") || src.startsWith("https://images.unsplash.com/");
+  const optimized =
+    (src.startsWith("/") && !src.startsWith("//")) ||
+    src.startsWith("https://images.unsplash.com/") ||
+    src.startsWith("https://res.cloudinary.com/");
   return <Image {...props} src={src} alt={props.alt} unoptimized={!optimized} onError={() => setFailed(true)} />;
 }

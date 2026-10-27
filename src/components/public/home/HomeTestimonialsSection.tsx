@@ -138,7 +138,7 @@ export default function HomeTestimonialsSection({
         </div>
 
         {/* Outer Carousel Container with Left and Right Arrows */}
-        <div className="relative px-2 sm:px-6">
+        <div className="relative sm:px-6">
           <button
             type="button"
             aria-label="Previous reviews"
@@ -159,7 +159,7 @@ export default function HomeTestimonialsSection({
 
           <div
             ref={ref}
-            className="no-scrollbar flex snap-x snap-mandatory scroll-px-2 scroll-smooth touch-pan-x gap-5 overflow-x-auto overscroll-x-contain px-2 py-2"
+            className="no-scrollbar -mr-5 flex snap-x snap-mandatory scroll-px-0 scroll-smooth touch-pan-x gap-5 overflow-x-auto overscroll-x-contain py-2 pr-5 sm:mr-0 sm:scroll-px-2 sm:px-2"
           >
             {loading
               ? Array.from({ length: 3 }).map((_, index) => (
