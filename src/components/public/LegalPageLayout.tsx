@@ -373,7 +373,7 @@ export default function LegalPageLayout({
                     <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#0B1F3A] text-xs font-black text-white shadow-2xs">
                       {s.number}
                     </span>
-                    <h2 className="text-base sm:text-lg font-bold text-slate-950 tracking-tight font-heading">
+                    <h2 className="text-xl sm:text-2xl font-bold text-slate-950 tracking-tight font-heading">
                       {s.label}
                     </h2>
                   </div>

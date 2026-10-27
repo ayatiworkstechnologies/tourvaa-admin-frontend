@@ -208,7 +208,7 @@ export default function FavouriteCountriesSection({
                           className="mt-0.5 shrink-0 text-white"
                         />
                         <p
-                          className="line-clamp-2 !text-white text-white drop-shadow text-[11px] leading-relaxed"
+                          className="line-clamp-2 !text-white text-white drop-shadow text-xs leading-relaxed"
                           style={{ color: "#ffffff" }}
                         >
                           {country.snippet || "Explore historic landmarks, scenic landscapes and vibrant local culture."}
@@ -307,7 +307,7 @@ export default function FavouriteCountriesSection({
                     className="mt-0.5 shrink-0 text-white"
                   />
                   <p
-                    className="line-clamp-2 !text-white text-white drop-shadow text-[11px] leading-relaxed"
+                    className="line-clamp-2 !text-white text-white drop-shadow text-xs leading-relaxed"
                     style={{ color: "#ffffff" }}
                   >
                     {country.snippet || "Explore historic landmarks, scenic landscapes and vibrant local culture."}

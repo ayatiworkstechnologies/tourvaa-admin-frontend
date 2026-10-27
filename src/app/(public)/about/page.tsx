@@ -551,7 +551,7 @@ export default function AboutPage() {
                   ? "mx-auto max-w-5xl grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
                   : values.length === 4
                     ? "mx-auto max-w-6xl grid-cols-1 sm:grid-cols-2 lg:grid-cols-4"
-                    : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-5"
+                    : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5"
           }`}>
             {values.map((v, index) => {
               const Icon = v.icon;
@@ -621,7 +621,7 @@ export default function AboutPage() {
                 key={index}
                 data-reveal
                 style={delay(index * 60)}
-                className="group w-full sm:basis-[calc(50%-0.625rem)] lg:basis-[calc(20%-1rem)] overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-4 shadow-xs hover:border-slate-300 hover:shadow-md transition-all duration-200"
+                className="group w-full sm:basis-[calc(50%-0.625rem)] lg:basis-[calc(33.333%-1rem)] xl:basis-[calc(25%-1rem)] overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-4 shadow-xs hover:border-slate-300 hover:shadow-md transition-all duration-200"
               >
                 <div className="relative h-60 w-full overflow-hidden rounded-xl bg-slate-100">
                   <img
@@ -634,13 +634,13 @@ export default function AboutPage() {
                   </span>
                 </div>
                 <div className="mt-4 px-1">
-                  <h3 className="text-base font-bold text-slate-950 font-heading">
+                  <h3 className="text-base sm:text-lg font-bold text-slate-950 font-heading">
                     {member.name}
                   </h3>
                   <p className="text-xs font-bold text-sky-700 mt-0.5">
                     {member.role}
                   </p>
-                  <p className="mt-2.5 text-xs text-slate-600 leading-relaxed font-normal">
+                  <p className="mt-2.5 text-xs sm:text-sm text-slate-600 leading-relaxed font-normal">
                     {member.bio}
                   </p>
                 </div>
@@ -663,7 +663,7 @@ export default function AboutPage() {
             </p>
           </div>
 
-          <div className="mx-auto mt-8 grid max-w-md grid-cols-1 gap-4 min-[480px]:max-w-none min-[480px]:grid-cols-2 sm:mt-10 sm:grid-cols-3 lg:grid-cols-5">
+          <div className="mx-auto mt-8 grid max-w-md grid-cols-1 gap-4 min-[480px]:max-w-none min-[480px]:grid-cols-2 sm:mt-10 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-5">
             {awards.map((item, index) => {
               const Icon = item.icon;
               return (
@@ -676,10 +676,10 @@ export default function AboutPage() {
                   <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-sky-50 text-sky-700">
                     <Icon size={20} />
                   </span>
-                  <h3 className="mt-4 text-base font-bold leading-snug text-slate-950 font-heading sm:text-sm">
+                  <h3 className="mt-4 text-base font-bold leading-snug text-slate-950 font-heading">
                     {item.title}
                   </h3>
-                  <p className="mt-2 text-sm font-medium leading-relaxed text-slate-600 sm:text-xs">
+                  <p className="mt-2 text-xs sm:text-sm font-medium leading-relaxed text-slate-600">
                     {item.text}
                   </p>
                 </div>
@@ -705,7 +705,7 @@ export default function AboutPage() {
               <span className="inline-block rounded-full bg-white/20 px-3 py-1 text-xs font-bold text-white backdrop-blur-xs mb-3">
                 {cta.badge_text || DEFAULT_CTA.badge_text}
               </span>
-              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-white font-heading drop-shadow-md">
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight leading-tight sm:leading-tight text-white font-heading drop-shadow-md">
                 {cta.heading || DEFAULT_CTA.heading}
               </h2>
               <p className="mt-3 text-xs sm:text-sm md:text-base text-white/90 font-medium leading-relaxed max-w-xl mx-auto">

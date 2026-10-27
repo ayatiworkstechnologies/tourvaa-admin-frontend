@@ -81,7 +81,7 @@ export default function CountryDestinationHero({
             </div>
 
             {/* Main Destination Heading */}
-            <h1 className="mt-3.5 text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl lg:text-5xl">
+            <h1 className="mt-3.5 text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl lg:text-5xl leading-tight sm:leading-tight lg:leading-[1.15]">
               {info.hero_title || info.country_name}
             </h1>
 

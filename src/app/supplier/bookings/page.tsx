@@ -182,10 +182,10 @@ export default function SupplierBookingsPage() {
     { key: "tour", header: "Tour", className: "max-w-[200px]", render: (b) => <p className="truncate font-semibold text-dash-text">{b.tour_name ?? b.tour_title ?? "-"}</p> },
     { key: "travel_date", header: "Travel Date", className: "whitespace-nowrap text-dash-muted", render: (b) => b.tour_date ?? b.travel_date ?? "-" },
     { key: "travellers", header: "Travellers", className: "text-center text-dash-muted", render: (b) => b.total_travellers ?? b.num_travellers ?? b.total_pax ?? "-" },
-    { key: "status", header: "Booking Status", render: (b) => <span className={`rounded-full px-2.5 py-1 text-xs font-bold capitalize ${statusColors(b.booking_status)}`}>{supplierBookingStatus(b)}</span> },
+    { key: "status", header: "Booking Status", className: "min-w-[10.5rem] whitespace-nowrap", render: (b) => <span className={`inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-bold capitalize ${statusColors(b.booking_status)}`}>{supplierBookingStatus(b)}</span> },
     { key: "payment", header: "Supplier Payment Status", render: (b) => {
       const status = b.supplier_payment_summary?.payment_status;
-      return status ? <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${paymentColors(status)}`}>{status.replaceAll("_", " ")}</span> : <span className="text-xs text-dash-subtle">-</span>;
+      return status ? <span className={`inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-bold ${paymentColors(status)}`}>{status.replaceAll("_", " ")}</span> : <span className="text-xs text-dash-subtle">-</span>;
     } },
     {
       key: "due_date",

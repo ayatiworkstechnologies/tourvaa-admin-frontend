@@ -170,12 +170,12 @@ export default function HeroFilterBar({
   };
 
   const fieldClass = (name: typeof open) =>
-    `hero-filter-field group flex min-h-[58px] w-full items-center justify-start rounded-xl px-4 py-2.5 text-left outline-none transition hover:bg-slate-50/80 focus:outline-none focus-visible:outline-none sm:px-6 md:min-h-[72px] lg:min-h-[58px] ${
+    `hero-filter-field group flex min-h-[58px] w-full items-center justify-start rounded-xl px-4 py-2.5 text-left outline-none transition hover:bg-slate-50/80 focus:outline-none focus-visible:outline-none sm:px-6 md:min-h-[72px] lg:min-h-[56px] lg:px-5 lg:py-2 ${
       open === name ? "is-active bg-slate-50/95" : "bg-white"
     }`;
 
   const fieldWrapClass = (name: typeof open) =>
-    `relative rounded-xl border border-slate-200 m-0.5 md:m-1 ${open === name ? "z-[110]" : "z-0"}`;
+    `relative rounded-xl border border-slate-200 m-0.5 md:m-1 ${name === "duration" ? "lg:w-[224px]" : "lg:w-[176px]"} ${open === name ? "z-[110]" : "z-0"}`;
 
   const displayDestination = destination || "Select country";
   const displayDate = travelDate === "Anytime" ? "Flexible / Anytime" : travelDate || "Select date";
@@ -208,7 +208,7 @@ export default function HeroFilterBar({
   }, [destination]);
 
   return (
-    <div ref={wrapperRef} className="hero-filter-enter relative z-50 mx-auto w-full max-w-[980px] lg:w-fit text-slate-900">
+    <div ref={wrapperRef} className="hero-filter-enter relative z-50 mx-auto w-full max-w-[980px] lg:w-fit lg:max-w-[920px] text-slate-900">
       <form
         onSubmit={submit}
         className="hero-filter-bar grid grid-cols-1 overflow-visible rounded-[18px] border border-white/90 bg-white/95 p-2 shadow-[0_18px_45px_rgba(15,23,42,0.2)] backdrop-blur-sm md:grid-cols-2 lg:flex lg:items-center"
@@ -369,7 +369,7 @@ export default function HeroFilterBar({
         <div className="p-1 md:col-span-2 lg:col-auto">
           <button
             type="submit"
-            className="hero-search-button relative flex h-12 min-w-[130px] w-full items-center justify-center gap-2 overflow-hidden rounded-[10px] bg-pub-primary px-7 text-sm font-extrabold text-white shadow-[0_8px_18px_rgba(11,31,58,0.2)] transition duration-200 hover:-translate-y-0.5 hover:bg-pub-primary-dark hover:shadow-[0_12px_24px_rgba(11,31,58,0.28)] active:scale-[0.98] md:h-14 lg:h-12 lg:w-auto"
+            className="hero-search-button relative flex h-12 min-w-[130px] w-full items-center justify-center gap-2 overflow-hidden rounded-[10px] bg-pub-primary px-7 text-sm font-extrabold text-white shadow-[0_8px_18px_rgba(11,31,58,0.2)] transition duration-200 hover:-translate-y-0.5 hover:bg-pub-primary-dark hover:shadow-[0_12px_24px_rgba(11,31,58,0.28)] active:scale-[0.98] md:h-14 lg:h-[56px] lg:min-w-[118px] lg:w-auto lg:px-5"
           >
             <Search size={16} className="stroke-[2.5]" />
             <span>Search</span>
@@ -381,7 +381,7 @@ export default function HeroFilterBar({
 }
 
 const basePanelClass =
-  "hero-filter-panel absolute top-[calc(100%+14px)] z-[100] rounded-2xl sm:rounded-3xl border border-slate-150 bg-white p-3 sm:p-4 lg:p-5 text-left shadow-[0_24px_60px_rgba(15,23,42,0.25)] ring-1 ring-slate-900/5 animate-in fade-in zoom-in-95 duration-200";
+  "hero-filter-panel absolute top-[calc(100%+12px)] z-[100] rounded-2xl sm:rounded-3xl border border-slate-150 bg-white p-3 sm:p-4 text-left shadow-[0_24px_60px_rgba(15,23,42,0.25)] ring-1 ring-slate-900/5 animate-in fade-in zoom-in-95 duration-200";
 
 /* -------------------------------------------------------------
  * 1. UPGRADED DESTINATION PANEL
@@ -545,7 +545,7 @@ function DatePanel({
   ];
 
   return (
-    <div className={`${basePanelClass} left-1/2 w-[calc(100vw-3rem)] max-w-[340px] -translate-x-1/2 md:left-auto md:right-0 md:w-[560px] md:max-w-[calc(100vw-3rem)] md:translate-x-0 lg:w-auto lg:min-w-[660px] lg:max-w-none`}>
+    <div className={`${basePanelClass} left-1/2 w-[calc(100vw-3rem)] max-w-[340px] -translate-x-1/2 md:left-auto md:right-0 md:w-[540px] md:max-w-[calc(100vw-3rem)] md:translate-x-0 lg:w-[540px] lg:max-w-[calc(100vw-3rem)]`}>
       {/* Switcher Tabs */}
       <div className="mb-4 flex items-center justify-between gap-4 border-b border-slate-100 pb-3">
         <div className="flex rounded-xl bg-slate-100/90 p-1 text-xs font-bold">
@@ -590,7 +590,7 @@ function DatePanel({
         <div>
           {/* One calendar is shown on phones to keep the date panel compact;
               larger layouts retain the paired-month planning view. */}
-          <div className="grid gap-6 sm:grid-cols-2">
+          <div className="grid gap-5 sm:grid-cols-2">
             <CalendarMonth
               {...monthMeta(monthOffset)}
               selected={selected}

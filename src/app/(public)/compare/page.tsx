@@ -278,9 +278,16 @@ export default function ComparePage() {
     [countries],
   );
 
-  // Default comparison set: whatever the user has added to Compare elsewhere on the site
+  // Only load tours the visitor explicitly added with a Compare control.
   useEffect(() => {
-    if (!hydrated || compareList.length === 0) return;
+    if (!hydrated) return;
+    if (compareList.length === 0) {
+      // A comparison must always be visitor-driven.  Do not populate the
+      // page with catalogue tours merely because the visitor opened /compare.
+      setActiveItems([]);
+      setLoading(false);
+      return;
+    }
     let active = true;
     setLoading(true);
     Promise.allSettled(
@@ -322,31 +329,6 @@ export default function ComparePage() {
       active = false;
     };
   }, [hydrated, compareList, format]);
-
-  // When there's nothing in the compare list yet, show real tours (not hardcoded samples)
-  useEffect(() => {
-    if (!hydrated || compareList.length > 0) return;
-    let active = true;
-    setLoading(true);
-    fetchPublicTours({ limit: MAX_COMPARE_ITEMS, sort: "newest" })
-      .then((res) =>
-        loadCompareItemsFromTours(
-          res.items || [],
-          format,
-          detailCacheRef.current,
-        ),
-      )
-      .then((mapped) => {
-        if (active) setActiveItems(mapped);
-      })
-      .catch(() => {})
-      .finally(() => {
-        if (active) setLoading(false);
-      });
-    return () => {
-      active = false;
-    };
-  }, [hydrated, compareList.length, format]);
 
   // Remove a tour from comparison
   const handleRemoveTour = (tourId: number) => {
@@ -447,25 +429,13 @@ export default function ComparePage() {
     }
   };
 
-  const resetToDefaults = () => {
+  const clearFilters = () => {
     setSearchQuery("");
     setDestinationFilter("All Destinations");
     setDurationFilter("Any Duration");
     setBudgetFilter("Any Budget");
     setLevelFilter("Any Level");
     setSearchError(null);
-    setIsSearching(true);
-    fetchPublicTours({ limit: MAX_COMPARE_ITEMS, sort: "newest" })
-      .then((res) =>
-        loadCompareItemsFromTours(
-          res.items || [],
-          format,
-          detailCacheRef.current,
-        ),
-      )
-      .then((mapped) => setActiveItems(mapped))
-      .catch(() => {})
-      .finally(() => setIsSearching(false));
   };
 
   const busy = loading || isSearching;
@@ -657,16 +627,16 @@ export default function ComparePage() {
               No tours currently selected for comparison
             </h2>
             <p className="max-w-md text-xs sm:text-sm text-slate-500">
-              Reset the comparison or browse all tours to pick and compare up to{" "}
+              Browse all tours and use the Compare action to pick up to{" "}
               {MAX_COMPARE_ITEMS} destinations.
             </p>
             <div className="flex flex-wrap items-center justify-center gap-3">
               <button
                 type="button"
-                onClick={resetToDefaults}
-                className="rounded-lg bg-pub-primary px-5 py-2.5 text-xs font-bold text-white transition hover:bg-pub-primary-dark"
+                onClick={clearFilters}
+                className="rounded-lg border border-slate-200 bg-white px-5 py-2.5 text-xs font-bold text-slate-700 transition hover:bg-slate-50"
               >
-                Reset Comparison
+                Clear filters
               </button>
               <Link
                 href="/tours"

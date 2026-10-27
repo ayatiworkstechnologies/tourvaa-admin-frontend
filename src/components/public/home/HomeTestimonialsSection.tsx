@@ -227,10 +227,10 @@ export default function HomeTestimonialsSection({
                             </span>
                           )}
                           <div className="min-w-0">
-                            <h3 className="truncate text-xs sm:text-sm font-semibold text-slate-900 transition-colors duration-200 group-hover:text-pub-secondary">
+                            <h3 className="truncate text-sm sm:text-base font-bold text-slate-900 transition-colors duration-200 group-hover:text-pub-secondary">
                               {review.name}
                             </h3>
-                            <p className="truncate text-[11px] text-slate-400">
+                            <p className="truncate text-xs text-slate-500">
                               {review.city}
                             </p>
                           </div>

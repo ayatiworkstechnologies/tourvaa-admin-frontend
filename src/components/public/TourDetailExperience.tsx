@@ -692,7 +692,10 @@ function RatingGuide({
       </div>
 
       {/* Saved pace/rating timeline */}
-      <div className="mt-5 flex gap-2 sm:gap-2.5">
+      <div
+        className="mt-5 grid gap-2 sm:gap-2.5"
+        style={{ gridTemplateColumns: `repeat(${steps.length}, minmax(0, 1fr))` }}
+      >
         {steps.map((step, index) => {
           const isActive =
             matchedIndices.length > 0
@@ -716,7 +719,10 @@ function RatingGuide({
       </div>
 
       {/* Step labels */}
-      <div className="mt-3 flex justify-between text-xs">
+      <div
+        className="mt-3 grid gap-2 text-xs sm:gap-2.5"
+        style={{ gridTemplateColumns: `repeat(${steps.length}, minmax(0, 1fr))` }}
+      >
         {steps.map((step, index) => {
           const isActive =
             matchedIndices.length > 0
@@ -3872,7 +3878,7 @@ export default function TourDetailExperience({
 
       <aside
         aria-label="Tour booking summary"
-        className="pointer-events-none fixed inset-x-0 bottom-0 z-40 bg-gradient-to-t from-slate-950/10 via-white/75 to-transparent px-2 pb-2 pt-7 sm:px-4 sm:pb-3"
+        className="pointer-events-none fixed inset-x-0 bottom-0 z-40 max-w-full bg-gradient-to-t from-slate-950/10 via-white/75 to-transparent px-2 pb-2 pt-7 sm:px-4 sm:pb-3"
       >
         <div className="pointer-events-auto mx-auto flex min-h-[76px] max-w-[1690px] items-center gap-3 overflow-hidden rounded-2xl border border-slate-200/90 bg-white/95 px-3 py-2.5 shadow-[0_14px_45px_rgba(11,31,58,0.16)] backdrop-blur-xl sm:gap-5 sm:px-5 sm:py-3 lg:px-7">
           <div className="relative hidden h-11 w-11 shrink-0 overflow-hidden rounded-xl bg-gradient-to-br from-[#0B2A52] to-[#155C9D] text-white shadow-md shadow-blue-950/20 sm:flex">
@@ -3888,9 +3894,9 @@ export default function TourDetailExperience({
               <span className="flex h-full w-full items-center justify-center"><Ticket size={21} className="stroke-[2.2]" /></span>
             )}
           </div>
-          <div className="min-w-0 flex-1">
-            <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-              <p className="truncate text-sm font-black tracking-tight text-slate-950 sm:text-base">{title}</p>
+          <div className="min-w-0 flex-1 overflow-hidden">
+            <div className="flex min-w-0 flex-nowrap items-center gap-x-2">
+              <p className="min-w-0 flex-1 truncate text-sm font-black tracking-tight text-slate-950 sm:text-base">{title}</p>
               {hasBookingDate && (
                 <span className="hidden shrink-0 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700 ring-1 ring-emerald-600/15 md:inline-flex">
                   Date selected

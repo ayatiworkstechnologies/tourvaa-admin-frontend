@@ -347,6 +347,7 @@ const portalPublicFooter = read("src/components/public/portal/PortalPublicFooter
 const wishlist = read("src/app/customer/wishlist/page.tsx");
 const wishlistStore = read("src/providers/TravelStoreProvider.tsx");
 const legacyWishlist = read("src/app/(public)/wishlist/page.tsx");
+const comparePage = read("src/app/(public)/compare/page.tsx");
 const retiredCart = read("src/app/(public)/cart/page.tsx");
 const contactPage = read("src/app/(public)/contact/page.tsx");
 const publicTourCard = read("src/components/public/TourCard.tsx");
@@ -388,6 +389,7 @@ check("wishlist mutations persist to the user API when logged in", wishlistStore
 // of being blocked - it's merged into the account on login.
 check("wishlist falls back to local storage for guests", wishlistStore.includes("WISHLIST_STORAGE_KEY") && wishlistStore.includes("readLocalWishlist") && wishlistStore.includes("writeLocalWishlist"));
 check("compare list still uses local storage (by design, unlike wishlist for logged-in users)", wishlistStore.includes("COMPARE_STORAGE_KEY") && wishlistStore.includes("window.localStorage"));
+check("compare page remains empty until a visitor explicitly adds tours", comparePage.includes("A comparison must always be visitor-driven") && !comparePage.includes("show real tours (not hardcoded samples)") && comparePage.includes("setActiveItems([])"));
 check("public wishlist page renders the store directly instead of redirecting", legacyWishlist.includes("useTravelStore") && !legacyWishlist.includes("redirect("));
 check("retired cart route permanently redirects to tours", retiredCart.includes('permanentRedirect("/tours")'));
 check(

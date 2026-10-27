@@ -153,7 +153,7 @@ export default function DocumentsTab() {
           {docTypes.map(({ key, label }) => {
             const doc = docMap[key];
             return (
-              <div key={key} className="rounded-xl border border-dash-border bg-white p-5 shadow-sm transition-shadow hover:shadow-md">
+              <div key={key} className="rounded-xl border border-dash-border bg-white p-4 shadow-sm transition-shadow hover:shadow-md sm:p-5">
                 <div className="flex flex-wrap items-center justify-between gap-4">
                   <div className="flex items-center gap-3">
                     <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${doc ? "bg-purple-50" : "bg-dash-bg-muted"}`}>
@@ -162,22 +162,22 @@ export default function DocumentsTab() {
                     <div>
                       <p className="font-semibold text-dash-text">{label}</p>
                       {doc ? (
-                        <div className="mt-0.5 flex items-center gap-2">
+                        <div className="mt-0.5 flex flex-wrap items-center gap-2">
                           <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${statusCls(doc.status)}`}>{doc.status}</span>
                           {doc.uploaded_at && <span className="text-xs text-dash-subtle">{new Date(doc.uploaded_at).toLocaleDateString()}</span>}
-                          <button type="button" onClick={() => void viewDocument(doc)} className="text-xs font-bold text-purple-600 hover:underline">View file</button>
+                          <button type="button" onClick={() => void viewDocument(doc)} className="text-xs font-bold text-blue-600 hover:text-blue-700 hover:underline">View file</button>
                         </div>
                       ) : (
                         <p className="text-xs text-dash-subtle">Not uploaded yet</p>
                       )}
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex w-full items-center gap-2 sm:w-auto">
                     <input ref={el => { fileRefs.current[key] = el; }} type="file" accept={IMAGE_DOCUMENT_ACCEPT} className="hidden"
                       aria-label={`Upload ${label}`}
                       onChange={e => { if (e.target.files?.[0]) void upload(key, e.target.files[0]); }} />
                     <button type="button" onClick={() => fileRefs.current[key]?.click()} disabled={uploading === key}
-                      className="inline-flex items-center gap-2 rounded-xl border border-purple-200 bg-purple-50 px-4 py-2 text-sm font-bold text-purple-700 hover:bg-purple-100 disabled:opacity-60 transition-colors">
+                      className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-purple-200 bg-purple-50 px-4 py-2 text-sm font-bold text-purple-700 hover:bg-purple-100 disabled:opacity-60 transition-colors sm:w-auto">
                       {uploading === key ? <Loader2 className="animate-spin" size={14} /> : <Upload size={14} />}
                       {doc ? "Replace" : "Upload"}
                     </button>

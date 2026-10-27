@@ -259,17 +259,17 @@ export default function AgencyDetailsTab({ onSaved }: { onSaved?: () => void }) 
         </div>
       )}
       {/* agency details */}
-      <form onSubmit={saveAgency} className="rounded-2xl border border-dash-border bg-white p-6 shadow-sm">
-        <div className="mb-5 flex items-center justify-between">
+      <form onSubmit={saveAgency} className="rounded-2xl border border-dash-border bg-white p-4 shadow-sm sm:p-6">
+        <div className="mb-5 flex flex-col gap-3 border-b border-dash-border pb-4 sm:flex-row sm:items-center sm:justify-between">
           <h3 className="text-lg font-bold text-dash-text">Business Details</h3>
           <button type="submit" disabled={saving}
-            className="inline-flex items-center gap-2 rounded-xl bg-dash-brand px-4 py-2 text-sm font-bold text-white hover:bg-dash-brand-hover disabled:opacity-60 transition-colors">
+            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-dash-brand px-4 py-2 text-sm font-bold text-white hover:bg-dash-brand-hover disabled:opacity-60 transition-colors sm:w-auto">
             {saving ? <Loader2 className="animate-spin" size={15} /> : <CheckCircle2 size={15} />}
             Save Changes
           </button>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-5 sm:space-y-4">
           {/* Logo */}
           <div>
             <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Agency Logo</span>

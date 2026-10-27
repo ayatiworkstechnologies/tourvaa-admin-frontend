@@ -250,17 +250,14 @@ export default function SupplierDiscountsPage() {
     };
   }, [rows]);
 
-  const filtered = useMemo(() => {
+  // Search and offer-type selection define the current result set.  Status
+  // tabs then show accurate counts within that set instead of stale global
+  // campaign totals.
+  const filterBaseRows = useMemo(() => {
     const query = search.trim().toLowerCase();
 
     return rows
       .filter((row) => {
-        // Status filter
-        if (statusFilter !== "all") {
-          const meta = getComputedStatus(row);
-          if (meta.key !== statusFilter) return false;
-        }
-
         // Type filter
         if (typeFilter === "percentage" && row.discount_type !== "percentage") return false;
         if (typeFilter === "fixed" && row.discount_type !== "fixed") return false;
@@ -280,7 +277,21 @@ export default function SupplierDiscountsPage() {
         }
 
         return true;
-      })
+      });
+  }, [rows, search, typeFilter]);
+
+  const filteredCounts = useMemo(() => {
+    const result = { all: filterBaseRows.length, active: 0, scheduled: 0, expired: 0, inactive: 0 };
+    filterBaseRows.forEach((row) => {
+      const status = getComputedStatus(row).key;
+      result[status] += 1;
+    });
+    return result;
+  }, [filterBaseRows]);
+
+  const filtered = useMemo(() => {
+    return filterBaseRows
+      .filter((row) => statusFilter === "all" || getComputedStatus(row).key === statusFilter)
       .sort((a, b) => {
         if (sortBy === "highest") {
           return Number(b.discount_value || 0) - Number(a.discount_value || 0);
@@ -296,7 +307,7 @@ export default function SupplierDiscountsPage() {
         // Default newest
         return (b.created_at ?? "").localeCompare(a.created_at ?? "");
       });
-  }, [rows, search, statusFilter, typeFilter, sortBy]);
+  }, [filterBaseRows, statusFilter, sortBy]);
 
   const toggleHistory = async (row: DiscountRow) => {
     if (!row.id || !row.tourId) return;
@@ -503,11 +514,11 @@ export default function SupplierDiscountsPage() {
             {/* Bottom row: Status Filter Tabs */}
             <div className="flex gap-1.5 overflow-x-auto pb-1 pt-1 text-xs">
               {[
-                { id: "all", label: "All Campaigns", count: counts.all },
-                { id: "active", label: "Active", count: counts.active },
-                { id: "scheduled", label: "Scheduled", count: counts.scheduled },
-                { id: "expired", label: "Expired", count: counts.expired },
-                { id: "inactive", label: "Inactive", count: counts.inactive },
+                { id: "all", label: "All Campaigns", count: filteredCounts.all },
+                { id: "active", label: "Active", count: filteredCounts.active },
+                { id: "scheduled", label: "Scheduled", count: filteredCounts.scheduled },
+                { id: "expired", label: "Expired", count: filteredCounts.expired },
+                { id: "inactive", label: "Inactive", count: filteredCounts.inactive },
               ].map((tab) => {
                 const isSelected = statusFilter === tab.id;
                 return (

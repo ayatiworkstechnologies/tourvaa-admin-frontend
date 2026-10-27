@@ -238,7 +238,7 @@ export default function TourCard({ tour, format, variant = "search", href, view 
           </div>
 
           {/* 2-Column Specifications Grid with sky blue icons */}
-          <div className="mt-3.5 grid grid-cols-2 gap-x-2 gap-y-1.5 text-[11px] text-slate-600 font-medium">
+          <div className="mt-3.5 grid grid-cols-2 gap-x-2 gap-y-1.5 text-xs text-slate-600 font-medium">
             {/* Left Column */}
             <div className="space-y-1.5">
               {days > 0 && (

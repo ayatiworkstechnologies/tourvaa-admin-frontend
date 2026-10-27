@@ -191,7 +191,7 @@ export default function DataTable<T extends { id?: number | string }>({
                   <th
                     key={col.key}
                     scope="col"
-                    className={`px-4.5 py-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-500 ${
+                    className={`px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-500 sm:px-4.5 sm:py-3.5 ${
                       col.className?.includes("text-right") ? "text-right" : ""
                     } ${col.className?.includes("text-center") ? "text-center" : ""}`}
                   >
@@ -201,7 +201,7 @@ export default function DataTable<T extends { id?: number | string }>({
                 {actions && (
                   <th
                     scope="col"
-                    className="px-4.5 py-3.5 text-right text-[11px] font-bold uppercase tracking-wider text-slate-500"
+                    className="px-3 py-3 text-right text-[11px] font-bold uppercase tracking-wider text-slate-500 sm:px-4.5 sm:py-3.5"
                   >
                     Actions
                   </th>
@@ -216,7 +216,7 @@ export default function DataTable<T extends { id?: number | string }>({
                 Array.from({ length: 5 }).map((_, rIdx) => (
                   <tr key={`skeleton-${rIdx}`} className="animate-pulse">
                     {Array.from({ length: totalCols }).map((_, cIdx) => (
-                      <td key={`cell-${rIdx}-${cIdx}`} className="px-4.5 py-4">
+                      <td key={`cell-${rIdx}-${cIdx}`} className="px-3 py-3 sm:px-4.5 sm:py-4">
                         <div
                           className="h-4 rounded-md bg-slate-100"
                           style={{
@@ -234,7 +234,7 @@ export default function DataTable<T extends { id?: number | string }>({
                 ))
               ) : rows.length === 0 ? (
                 <tr>
-                  <td colSpan={totalCols} className="px-4.5 py-16">
+                  <td colSpan={totalCols} className="px-3 py-12 sm:px-4.5 sm:py-16">
                     <EmptyState
                       title={emptyTitle}
                       description={emptyDescription}
@@ -249,7 +249,7 @@ export default function DataTable<T extends { id?: number | string }>({
                       {columns.map((col) => (
                         <td
                           key={col.key}
-                          className={`px-4.5 py-3.5 text-sm text-slate-700 align-middle ${
+                          className={`px-3 py-3 text-xs text-slate-700 align-middle sm:px-4.5 sm:py-3.5 sm:text-sm ${
                             col.className ?? ""
                           }`}
                         >
@@ -261,7 +261,7 @@ export default function DataTable<T extends { id?: number | string }>({
                         </td>
                       ))}
                       {actions && (
-                        <td className="px-4.5 py-3.5 text-right align-middle">
+                        <td className="px-3 py-3 text-right align-middle sm:px-4.5 sm:py-3.5">
                           {actions(row)}
                         </td>
                       )}
@@ -276,7 +276,7 @@ export default function DataTable<T extends { id?: number | string }>({
 
         {/* Modern Pagination Footer */}
         {hasPagination && (
-          <div className="flex flex-col gap-3 border-t border-slate-200/90 bg-white px-4.5 py-3.5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-3 border-t border-slate-200/90 bg-white px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-4.5 sm:py-3.5">
             <span className="text-xs font-medium text-slate-500">
               {total === 0 ? (
                 "No records found"
