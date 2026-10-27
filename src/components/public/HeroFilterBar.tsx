@@ -990,13 +990,13 @@ function PassengerPanel({
   onApply: () => void;
 }) {
   return (
-    <div className={`${basePanelClass} left-1/2 w-[calc(100vw-3rem)] max-w-[300px] -translate-x-1/2 sm:left-auto sm:right-0 sm:w-[360px] sm:max-w-[calc(100vw-3rem)] sm:translate-x-0 lg:w-full lg:min-w-[330px] lg:max-w-sm`}>
-      <div className="mb-3 px-1">
+    <div className={`${basePanelClass} left-1/2 w-[calc(100vw-3rem)] max-w-[280px] -translate-x-1/2 md:left-auto md:right-0 md:w-[360px] md:max-w-[calc(100vw-3rem)] md:translate-x-0 lg:w-full lg:min-w-[330px] lg:max-w-sm`}>
+      <div className="mb-2 px-1 md:mb-3">
         <h4 className="text-xs font-bold text-slate-900">Traveller Details</h4>
         <p className="text-[11px] text-slate-400">Select number of passengers</p>
       </div>
 
-      <div className="space-y-3 divide-y divide-slate-100">
+      <div className="space-y-2 divide-y divide-slate-100 md:space-y-3">
         <PassengerRow
           title="Adults"
           subtitle="Ages 12 and above"
@@ -1006,7 +1006,7 @@ function PassengerPanel({
           onChange={setAdults}
         />
 
-        <div className="pt-3">
+        <div className="pt-2 md:pt-3">
           <PassengerRow
             title="Children"
             subtitle="Ages 3 to 11 years"
@@ -1018,11 +1018,11 @@ function PassengerPanel({
         </div>
       </div>
 
-      <div className="mt-5 border-t border-slate-100 pt-3">
+      <div className="mt-3 border-t border-slate-100 pt-2 md:mt-5 md:pt-3">
         <button
           type="button"
           onClick={onApply}
-          className="w-full rounded-xl bg-pub-primary py-3 text-xs font-bold text-white shadow-md transition hover:bg-pub-primary-dark hover:shadow-lg"
+          className="w-full rounded-xl bg-pub-primary py-2.5 text-xs font-bold text-white shadow-md transition hover:bg-pub-primary-dark hover:shadow-lg md:py-3"
         >
           Confirm Travellers
         </button>
@@ -1047,19 +1047,19 @@ function PassengerRow({
   onChange: (value: number) => void;
 }) {
   return (
-    <div className="flex items-center justify-between py-1">
+    <div className="flex items-center justify-between py-0.5 md:py-1">
       <div>
         <span className="block text-xs font-bold text-slate-900">{title}</span>
         <span className="block text-[11px] text-slate-400">{subtitle}</span>
       </div>
 
-      <div className="flex items-center gap-2.5">
+      <div className="flex items-center gap-2 md:gap-2.5">
         <button
           type="button"
           aria-label={`Decrease ${title}`}
           disabled={value <= min}
           onClick={() => onChange(Math.max(min, value - 1))}
-          className={`flex h-8 w-8 items-center justify-center rounded-xl border border-slate-200 transition ${
+          className={`flex h-7 w-7 items-center justify-center rounded-xl border border-slate-200 transition md:h-8 md:w-8 ${
             value <= min
               ? "opacity-30 cursor-not-allowed text-slate-300"
               : "hover:bg-slate-100 text-slate-700 active:scale-95"
@@ -1077,7 +1077,7 @@ function PassengerRow({
           aria-label={`Increase ${title}`}
           disabled={value >= max}
           onClick={() => onChange(Math.min(max, value + 1))}
-          className={`flex h-8 w-8 items-center justify-center rounded-xl border border-slate-200 transition ${
+          className={`flex h-7 w-7 items-center justify-center rounded-xl border border-slate-200 transition md:h-8 md:w-8 ${
             value >= max
               ? "opacity-30 cursor-not-allowed text-slate-300"
               : "hover:bg-slate-100 text-slate-700 active:scale-95"

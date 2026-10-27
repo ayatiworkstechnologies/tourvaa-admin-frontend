@@ -1937,7 +1937,7 @@ export default function DynamicTourBookingPage() {
                                       className="h-full w-full object-cover"
                                     />
                                   ) : (
-                                    <div className="flex h-full w-full items-center justify-center text-slate-400" aria-label="Accommodation image unavailable">
+                                    <div role="img" aria-label="Accommodation image unavailable" className="flex h-full w-full items-center justify-center text-slate-400">
                                       <Bed size={22} aria-hidden="true" />
                                     </div>
                                   )}

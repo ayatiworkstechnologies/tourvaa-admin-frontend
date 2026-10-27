@@ -44,7 +44,7 @@ type CompareTourItem = {
   days: string;
   durationTag: string;
   snippet: string;
-  rating: number;
+  rating: number | null;
   reviewsCount: number;
   priceFormatted: string;
   rawPrice: number;
@@ -120,8 +120,11 @@ function buildCompareItem(
       detail?.short_description ||
       base.fallbackSubtitle ||
       "Scenic marvels and cultural adventures.",
-    rating: detail?.rating_average ?? 4.8,
-    reviewsCount: detail?.rating_count ?? 120,
+    rating:
+      (detail?.rating_count ?? 0) > 0 && detail?.rating_average != null
+        ? detail.rating_average
+        : null,
+    reviewsCount: detail?.rating_count ?? 0,
     priceFormatted: format(priceNum, currency),
     rawPrice: priceNum,
     currency,
@@ -148,9 +151,9 @@ function buildCompareItem(
     },
     inclusionsMap: {
       flights: incTexts.includes("flight"),
-      transfers: incTexts.includes("transfer") || true,
-      accommodation: incTexts.includes("hotel") || true,
-      breakfast: incTexts.includes("breakfast") || true,
+      transfers: incTexts.includes("transfer"),
+      accommodation: incTexts.includes("hotel") || incTexts.includes("accommodation"),
+      breakfast: incTexts.includes("breakfast"),
       guidedTours: incTexts.includes("guide") || true,
       adventure: incTexts.includes("activity") || idx % 2 === 0,
       insurance: incTexts.includes("insurance"),
@@ -736,36 +739,19 @@ export default function ComparePage() {
                           </p>
 
                           {/* Rating Row */}
-                          <div className="mt-2 flex items-center gap-1 text-xs">
-                            <div className="flex items-center text-amber-400">
-                              <Star
-                                size={11}
-                                className="fill-amber-400 text-amber-400"
-                              />
-                              <Star
-                                size={11}
-                                className="fill-amber-400 text-amber-400"
-                              />
-                              <Star
-                                size={11}
-                                className="fill-amber-400 text-amber-400"
-                              />
-                              <Star
-                                size={11}
-                                className="fill-amber-400 text-amber-400"
-                              />
-                              <Star
-                                size={11}
-                                className="fill-amber-400 text-amber-400"
-                              />
+                          {tour.rating != null ? (
+                            <div className="mt-2 flex items-center gap-1 text-xs">
+                              <div role="img" className="flex items-center text-amber-400" aria-label={`${tour.rating.toFixed(1)} out of 5`}>
+                                {Array.from({ length: 5 }, (_, index) => (
+                                  <Star key={index} size={11} className={index < Math.round(tour.rating ?? 0) ? "fill-amber-400 text-amber-400" : "text-slate-300"} />
+                                ))}
+                              </div>
+                              <span className="font-bold text-slate-900 text-[11px]">{tour.rating.toFixed(1)}</span>
+                              <span className="text-slate-400 text-[10px]">{tour.reviewsCount.toLocaleString()} reviews</span>
                             </div>
-                            <span className="font-bold text-slate-900 text-[11px]">
-                              {tour.rating.toFixed(1)}
-                            </span>
-                            <span className="text-slate-400 text-[10px]">
-                              {tour.reviewsCount.toLocaleString()} reviews
-                            </span>
-                          </div>
+                          ) : (
+                            <p className="mt-2 text-[10px] font-medium text-slate-400">No reviews yet</p>
+                          )}
 
                           {/* Price Row */}
                           <div className="mt-3 flex items-baseline gap-1 text-xs border-t border-slate-100 pt-2.5">

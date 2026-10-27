@@ -22,7 +22,7 @@ export interface HomeTestimonialsSectionProps {
 function TestimonialStars({ rating }: { rating: number }) {
   const normalizedRating = Math.max(0, Math.min(5, rating));
   return (
-    <div className="flex items-center gap-0.5 shrink-0" aria-label={`${normalizedRating} out of 5 stars`}>
+    <div role="img" className="flex items-center gap-0.5 shrink-0" aria-label={`${normalizedRating} out of 5 stars`}>
       {Array.from({ length: 5 }, (_, index) => {
         const fill = Math.max(0, Math.min(1, normalizedRating - index));
         return (

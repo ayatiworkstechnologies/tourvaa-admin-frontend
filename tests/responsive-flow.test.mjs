@@ -35,13 +35,13 @@ check("public header preserves a shrinkable flex row", publicHeader.includes("ma
 check("desktop header exposes account and trip tools navigation", publicHeader.includes('aria-label="Account and trip tools"'));
 check(
   "mobile public header pins the logo left and utility controls to the real right edge",
-  publicHeader.includes("justify-between gap-6 px-4 sm:pl-8 sm:pr-[148px]") &&
+  publicHeader.includes("justify-between gap-6 px-4 sm:px-8") &&
     publicHeader.includes('className="flex items-center gap-3 lg:hidden"'),
 );
 check(
   "mobile trust highlights begin with a complete first item and loop continuously while desktop remains static",
   publicHeader.includes("mobile-trust-marquee") &&
-    publicHeader.includes("sm:hidden flex h-11 w-full items-center justify-start") &&
+    publicHeader.includes("flex h-11 w-full items-center justify-start overflow-hidden text-xs font-semibold whitespace-nowrap lg:hidden") &&
     publicHeader.includes("flex shrink-0 items-center gap-4 px-4") &&
     globals.includes("@keyframes mobileTrustMarquee") &&
     globals.includes("@media (prefers-reduced-motion: reduce)"),

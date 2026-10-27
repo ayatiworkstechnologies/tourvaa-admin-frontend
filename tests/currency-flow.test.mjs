@@ -47,7 +47,7 @@ check(
   "public-header mobile location menu is viewport anchored and stays within screen gutters",
   publicHeader.includes("mobileViewportMenu") &&
     publicSelector.includes('mobileViewportMenu ? "static sm:relative" : "relative"') &&
-    publicSelector.includes("max-sm:inset-x-2 max-sm:top-full max-sm:w-auto max-sm:max-w-none"),
+    publicSelector.includes("max-sm:inset-x-3 max-sm:top-full max-sm:w-auto max-sm:max-w-none"),
 );
 check("public country selector updates the local currency without changing the current page", publicSelector.includes("setCountry(country.country_code, country.currency_code)") && !publicSelector.includes("router.push(") && !publicSelector.includes("destinationUrl"));
 check("public location selector presents one searchable country and currency list", publicSelector.includes('placeholder={showCountry ? "Search country or currency..."') && publicSelector.includes('setCountry(country.country_code, country.currency_code)') && !publicSelector.includes('activeTab === "country"') && !publicSelector.includes('role="tablist"'));

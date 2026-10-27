@@ -83,7 +83,7 @@ function toTravelItem(deal: DealCardItem): TravelItem {
 
 function DealsSkeleton() {
   return (
-    <div className="flex gap-4 sm:gap-5" aria-label="Loading deals">
+    <div role="status" aria-label="Loading deals" className="flex gap-4 sm:gap-5">
       {Array.from({ length: 4 }).map((_, index) => (
         <div key={index} className="h-[300px] min-w-[260px] animate-pulse rounded-2xl border border-slate-200 bg-slate-100 sm:min-w-[300px]" />
       ))}
