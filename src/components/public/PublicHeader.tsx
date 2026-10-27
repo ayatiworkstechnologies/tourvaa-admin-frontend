@@ -192,7 +192,7 @@ export default function PublicHeader() {
 
   return (
     <header
-      className={`print:hidden sticky top-0 z-50 bg-white/95 text-pub-primary backdrop-blur-md transition-all duration-300 ease-in-out ${
+      className={`print:hidden sticky top-0 z-[1000001] bg-white/95 text-pub-primary backdrop-blur-md transition-all duration-300 ease-in-out ${
         visible
           ? "translate-y-0 opacity-100"
           : "-translate-y-full opacity-0 pointer-events-none"
@@ -329,6 +329,7 @@ export default function PublicHeader() {
         <div className="flex items-center gap-3 lg:hidden">
           <LanguageCurrencySelector showCountry mobileViewportMenu />
           <button
+            type="button"
             onClick={() => setOpen(!open)}
             aria-label="Toggle navigation"
             className="group p-1.5 rounded-lg text-pub-primary transition-colors hover:text-pub-secondary hover:bg-blue-50"

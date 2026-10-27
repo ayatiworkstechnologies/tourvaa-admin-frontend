@@ -506,14 +506,31 @@ export default function PublicFooter({ contentBlockKey }: { contentBlockKey?: st
         </div>
 
         {/* Bottom Copyright Text */}
-        <div className="mt-10 sm:mt-12 pt-6 border-t border-white/10 text-center text-xs text-white">
-          {/* Colour set on the <p> itself -- a global paragraph colour was
-              overriding the inherited one and rendering this near-black on
-              the dark footer. */}
+        <div className="mt-10 flex flex-wrap items-center justify-center gap-x-2 gap-y-2 border-t border-white/10 pt-6 text-center text-xs text-white sm:mt-12">
+          {/* Keep an explicit light text colour because generic paragraph
+              styles otherwise render footer copy near-black. */}
           <p className="text-white">
             Copyright © {new Date().getFullYear()} by Tourvaa Private Limited -
-            All Right Reserved | Design & Developed by Ayatiworks
+            All Right Reserved
           </p>
+          <span aria-hidden="true" className="hidden h-4 w-px bg-white/35 sm:block" />
+          <a
+            href="https://ayatiworks.com/"
+            target="_blank"
+            rel="noreferrer"
+            aria-label="Visit Ayatiworks"
+            className="inline-flex transition-opacity hover:opacity-85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-pub-primary"
+          >
+            {/* The Ayatiworks mark is supplied in the public asset folder. */}
+            {/* eslint-disable-next-line @next/next/no-img-element -- static partner brand asset */}
+            <span className="block h-6 w-[50px] shrink-0 overflow-hidden" aria-hidden="true">
+              <img
+                src="/ayati-logo.png"
+                alt=""
+                className="block h-[50px] w-[50px] max-w-none -translate-y-[13px] brightness-0 invert"
+              />
+            </span>
+          </a>
         </div>
       </div>
     </footer>

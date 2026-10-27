@@ -3411,7 +3411,7 @@ export default function TourDetailExperience({
             {/* Group Rate Highlights from Backend Pricing Table */}
             {pricingRows.length > 0 && (
               <div className="mt-3 border-t border-slate-100 pt-2.5">
-                <div className="mb-1.5 flex items-center justify-between gap-2">
+                <div className="mb-1.5 flex flex-col gap-0.5 sm:flex-row sm:items-center sm:justify-between sm:gap-2">
                   <h4 className="text-xs font-bold uppercase tracking-wide text-slate-700">
                     Group Rate Highlights
                   </h4>
@@ -3455,7 +3455,7 @@ export default function TourDetailExperience({
                           setAdults(target);
                           setChildren(0);
                         }}
-                        className={`grid min-h-10 w-full grid-cols-[minmax(90px,1fr)_auto] items-center gap-2 rounded-lg border px-3 py-2 text-xs transition cursor-pointer ${
+                        className={`grid min-h-10 w-full grid-cols-1 gap-1 rounded-lg border px-3 py-2 text-xs transition sm:grid-cols-[minmax(90px,1fr)_auto] sm:items-center sm:gap-2 cursor-pointer ${
                           isSelected
                             ? "border-blue-600 bg-blue-50/70 ring-1 ring-blue-600/30 font-bold"
                             : "border-slate-200 bg-white hover:border-slate-300"
@@ -3464,7 +3464,7 @@ export default function TourDetailExperience({
                         <span className="truncate text-left font-bold text-slate-900">
                           {groupTierLabel(row.persons_from, row.persons_to)}
                         </span>
-                        <span className="flex min-w-0 items-center justify-end gap-1 whitespace-nowrap text-right leading-none">
+                        <span className="flex min-w-0 flex-wrap items-center gap-x-1 gap-y-1 text-left leading-none sm:justify-end sm:text-right">
                           {rowDiscounted && (
                             <span className="text-[10px] font-semibold text-red-500 line-through decoration-red-500">
                               {format(

@@ -925,6 +925,18 @@ body.mobile-nav-open [data-chat-widget] {
   display: none !important;
 }
 
+/* Elfsight's language control is a fixed desktop widget. On phones it sits
+   over the trust strip and can intercept the real header controls, including
+   the navigation toggle. The public header keeps the country/currency picker;
+   keep this external control out of the compact layout. */
+@media (max-width: 1023px) {
+  [class*="elfsight-app"],
+  [class*="eapps-website-translator"],
+  [class*="eapp-website-translator"] {
+    display: none !important;
+  }
+}
+
 /* The translator belongs to the public storefront. Its external runtime can
    survive a Next.js client-side route change and render an empty fixed canvas
    above an Admin page. It must never be active in the private Admin console. */

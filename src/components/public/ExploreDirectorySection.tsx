@@ -91,8 +91,12 @@ export default function ExploreDirectorySection({
         Explore destinations
       </h2>
       <div className="rounded-2xl border border-slate-100 bg-white px-5 py-6 shadow-[0_18px_50px_rgba(15,23,42,0.06)] sm:rounded-3xl sm:px-10 sm:py-9 lg:px-12">
-        <div className="overflow-x-auto border-b border-slate-200" role="tablist" aria-label="Explore directory">
-          <div className="flex min-w-max gap-7 sm:gap-9">
+        <div
+          className="no-scrollbar -mx-1 overflow-x-auto border-b border-slate-200 px-1 [-webkit-overflow-scrolling:touch] [scrollbar-width:none]"
+          role="tablist"
+          aria-label="Explore directory"
+        >
+          <div className="flex min-w-max snap-x snap-mandatory gap-7 sm:gap-9">
             {directoryTabs.map((tab) => {
               const isActive = activeTab === tab.id;
               return (
@@ -104,7 +108,7 @@ export default function ExploreDirectorySection({
                   aria-selected={isActive}
                   aria-controls={`${tab.id}-directory-panel`}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`relative whitespace-nowrap px-0.5 pb-3.5 text-sm font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-pub-secondary focus-visible:ring-offset-2 sm:text-base ${
+                  className={`relative snap-start whitespace-nowrap px-0.5 pb-3.5 text-sm font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-pub-secondary focus-visible:ring-offset-2 sm:text-base ${
                     isActive
                       ? "text-slate-950"
                       : "text-slate-500 hover:text-slate-800"
