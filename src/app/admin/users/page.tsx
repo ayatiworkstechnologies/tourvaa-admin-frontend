@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { LuSquarePen as Edit, LuMail as Mail, LuPlus as Plus, LuTrash2 as Trash2, LuX as X, LuEye as Eye } from "react-icons/lu";
+import { LuSquarePen as Edit, LuMail as Mail, LuPlus as Plus, LuTrash2 as Trash2, LuX as X, LuEye as Eye, LuEyeOff as EyeOff } from "react-icons/lu";
 
 import ModuleWrapper from "@/components/common/ModuleWrapper";
 import { useDashboard } from "@/hooks/useDashboard";
@@ -77,6 +77,7 @@ export default function UsersPage() {
       userType: userTypeFilter,
     });
   const { roles } = useRoles({ enabled: canLoadProtectedData });
+  const [showNewUserPassword, setShowNewUserPassword] = useState(false);
 
   const [open, setOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
@@ -506,16 +507,21 @@ export default function UsersPage() {
 
                   <label className="block">
                     <span className="mb-1 block text-xs font-semibold text-gray-500">Password</span>
+                    <div className="relative">
                     <input
-                      type="password"
+                      type={showNewUserPassword ? "text" : "password"}
                       value={form.password || ""}
                       onChange={(e) => updateForm("password", e.target.value)}
                       placeholder="Min. 8 characters"
-                      className={fieldInputClass(Boolean(fieldErrors.password))}
+                      className={`${fieldInputClass(Boolean(fieldErrors.password))} pr-11`}
                       required
                       aria-invalid={Boolean(fieldErrors.password)}
                       aria-describedby={fieldErrors.password ? "user-password-error" : undefined}
                     />
+                    <button type="button" onClick={() => setShowNewUserPassword((value) => !value)} aria-label={showNewUserPassword ? "Hide password" : "Show password"} aria-pressed={showNewUserPassword} className="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-gray-500 hover:text-dash-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-dash-brand">
+                      {showNewUserPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                    </div>
                     {fieldErrors.password && (
                       <p id="user-password-error" className="mt-1 text-xs text-red-600">{fieldErrors.password}</p>
                     )}
@@ -523,16 +529,21 @@ export default function UsersPage() {
 
                   <label className="block">
                     <span className="mb-1 block text-xs font-semibold text-gray-500">Confirm Password</span>
+                    <div className="relative">
                     <input
-                      type="password"
+                      type={showNewUserPassword ? "text" : "password"}
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       placeholder="Re-enter password"
-                      className={fieldInputClass(Boolean(fieldErrors.confirm_password))}
+                      className={`${fieldInputClass(Boolean(fieldErrors.confirm_password))} pr-11`}
                       required
                       aria-invalid={Boolean(fieldErrors.confirm_password)}
                       aria-describedby={fieldErrors.confirm_password ? "user-confirm-password-error" : undefined}
                     />
+                    <button type="button" onClick={() => setShowNewUserPassword((value) => !value)} aria-label={showNewUserPassword ? "Hide confirm password" : "Show confirm password"} aria-pressed={showNewUserPassword} className="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-gray-500 hover:text-dash-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-dash-brand">
+                      {showNewUserPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                    </div>
                     {fieldErrors.confirm_password && (
                       <p id="user-confirm-password-error" className="mt-1 text-xs text-red-600">{fieldErrors.confirm_password}</p>
                     )}

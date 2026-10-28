@@ -97,7 +97,7 @@ export type PublicTour = {
 
 export type PublicReview = {
   id: number;
-  customer_name: string;
+  reviewer_name: string;
   rating: number;
   review_text: string | null;
   created_at: string;

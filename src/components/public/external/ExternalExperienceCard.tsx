@@ -31,7 +31,7 @@ export default function ExternalExperienceCard({
   source: ExternalCampaignSource;
   className?: string;
 }) {
-  const { formatExact } = useCurrency();
+  const { code: displayCurrency, format } = useCurrency();
   const reviews = item.review_count ? item.review_count.toLocaleString() : null;
 
   return (
@@ -90,13 +90,17 @@ export default function ExternalExperienceCard({
             {item.from_price != null && item.currency ? (
               <p className="flex items-baseline gap-1.5 text-slate-900">
                 <span className="text-xs text-slate-500">From</span>
-                {/* Viator's own price, shown as-is (no Tourvaa markup or FX). */}
-                <strong className="text-sm font-bold sm:text-base">{formatExact(item.from_price, item.currency)}</strong>
+                {/* Viator does not support every Tourvaa display currency
+                    (notably QAR/AED), so convert its returned USD price for
+                    consistent browsing while keeping the provider disclosure. */}
+                <strong className="text-sm font-bold sm:text-base">{format(item.from_price, item.currency)}</strong>
               </p>
             ) : (
               <p className="text-xs text-slate-500">See price on Viator</p>
             )}
-            <p className="mt-0.5 text-[10px] font-medium text-slate-400">via Viator</p>
+            <p className="mt-0.5 text-[10px] font-medium text-slate-400">
+              {item.currency?.toUpperCase() !== displayCurrency ? `Approx. in ${displayCurrency} · ` : ""}via Viator
+            </p>
           </div>
           <span className="inline-flex shrink-0 items-center gap-1 rounded-lg bg-pub-primary px-3 py-2 text-xs font-bold text-white transition group-hover:opacity-90">
             View Experience <ExternalLink size={12} />

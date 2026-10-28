@@ -27,6 +27,15 @@ type CurrencyState = {
 
 const STORAGE_KEY = "tourvaa_display_currency";
 const COUNTRY_STORAGE_KEY = "tourvaa_display_country";
+// Keep country/currency selection coherent during a partial or stale rates
+// response. The backend uses the same USD-pegged continuity values, while a
+// successful live response below always replaces these with current rates.
+const FALLBACK_DISPLAY_RATES: Record<string, number> = {
+  USD: 1,
+  AED: 3.6725,
+  INR: 86,
+  QAR: 3.64,
+};
 /** Initial countries enabled for the public selector. CMS country status is
  * authoritative after setup: enabling another country makes it available. */
 export const PUBLIC_HEADER_COUNTRY_CODES = [
@@ -95,7 +104,13 @@ async function loadCurrency() {
       }
     }
     const publicSettings = settingsResult.status === "fulfilled" ? settingsResult.value.data?.data : null;
-    const rates = rateData?.rates && typeof rateData.rates === "object" ? rateData.rates : { USD: 1 };
+    // Do not let a partial deployed rate payload make a selected country and
+    // its currency disagree (e.g. Qatar flag with INR). Merge the narrow
+    // continuity set first, then prefer every live backend value.
+    const rates = {
+      ...FALLBACK_DISPLAY_RATES,
+      ...(rateData?.rates && typeof rateData.rates === "object" ? rateData.rates : {}),
+    };
 
     const detectedCountry = String(contextData?.country_code || "").toUpperCase();
     const latestSavedCountry = typeof window !== "undefined" ? localStorage.getItem(COUNTRY_STORAGE_KEY) : null;

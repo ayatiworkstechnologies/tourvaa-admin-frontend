@@ -97,6 +97,7 @@ export default function Header({
     profileHref !== undefined
       ? !!profileHref
       : allowedMenus.some((m) => m.href === "/admin/profile");
+  const canNotifications = !pathname.startsWith("/admin") || hasPermission("notifications.view") || hasPermission("view-notifications");
 
   const avatarColors = AVATAR_BG[theme] ?? AVATAR_BG.sky;
   const initial = name?.charAt(0)?.toUpperCase() ?? "A";
@@ -202,7 +203,7 @@ export default function Header({
             </button>
           )}
 
-          <NotificationInbox />
+          {canNotifications && <NotificationInbox />}
 
           {/* vertical rule */}
           <div className="mx-1 hidden h-7 w-px bg-[#E8ECF3] sm:block" />

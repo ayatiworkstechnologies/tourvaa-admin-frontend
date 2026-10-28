@@ -62,6 +62,9 @@ function agentBookingStatusLabel(status?: string, cancellationSource?: string | 
 
 function agentPaymentStatusLabel(status?: string) {
   const value = (status || "").toLowerCase();
+  // Compatibility for an old API/database row until migration 0052 is run.
+  // Credit/bank review belongs to the payment method, not this status column.
+  if (["credit_approval_pending", "bank_transfer_pending"].includes(value)) return "Pending Payment";
   if (["partial", "partially_paid"].includes(value)) return "Deposit Paid";
   if (value === "authorized") return "Payment Authorized";
   if (value === "paid") return "Fully Paid";

@@ -50,6 +50,7 @@ import { mediaUrl } from "@/lib/utils/mediaUrl";
 import MarketingImage from "@/components/public/MarketingImage";
 import ExternalExperiencesSection from "@/components/public/external/ExternalExperiencesSection";
 import {
+  MAX_COMPARE_ITEMS,
   useTravelStore,
   type TravelItem,
 } from "@/providers/TravelStoreProvider";
@@ -1658,7 +1659,7 @@ export default function TourDetailExperience({
   const handleCompareToggle = () => {
     const res = toggleCompare(travelItem);
     if (res.limitReached) {
-      setCompareNotice("Compare limit reached (max 4 tours)");
+      setCompareNotice(`Compare limit reached (max ${MAX_COMPARE_ITEMS} tours)`);
       setTimeout(() => setCompareNotice(null), 3000);
     } else if (res.added) {
       setCompareNotice("Added to comparison!");
@@ -3195,11 +3196,11 @@ export default function TourDetailExperience({
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2.5">
                           <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-600 font-bold text-xs text-white">
-                            {rev.customer_name?.charAt(0) || "G"}
+                            {rev.reviewer_name?.charAt(0) || "G"}
                           </div>
                           <div>
                             <p className="text-xs font-bold text-slate-900">
-                              {rev.customer_name}
+                              {rev.reviewer_name || "Verified traveller"}
                             </p>
                             {rev.created_at && (
                               <p className="text-[10px] text-slate-500 font-medium">

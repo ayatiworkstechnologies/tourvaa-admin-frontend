@@ -107,6 +107,18 @@ function bookingDate(value?: string) {
     : date.toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short", year: "numeric" });
 }
 
+function dueDateLabel(value?: string | null) {
+  if (!value) return null;
+  // API dates are ISO dates. Split them rather than constructing a Date with
+  // a date-only value, which can shift the visible day in some time zones.
+  const isoDate = /^(\d{4})-(\d{2})-(\d{2})/.exec(value);
+  if (isoDate) return `${isoDate[2]}/${isoDate[3]}/${isoDate[1]}`;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime())
+    ? null
+    : `${String(date.getMonth() + 1).padStart(2, "0")}/${String(date.getDate()).padStart(2, "0")}/${date.getFullYear()}`;
+}
+
 function Field({ label, value }: { label: string; value?: React.ReactNode }) {
   return (
     <div>
@@ -530,8 +542,15 @@ export default function CustomerBookingDetailPage() {
   const paymentCoveredByAuthorization = pendingAmount > 0 && payableAmount <= 0 && authorizedAmount > 0;
   const canPay = booking && payableAmount > 0 && !["cancelled", "declined", "completed", "cancellation_requested", "postponed"].includes(booking.booking_status);
   const canReview = booking && booking.booking_status === "completed" && !booking.has_review && !reviewSubmitted;
+  const canDownloadConfirmationReceipt = Boolean(
+    booking && ["confirmed", "ready_to_travel", "upcoming", "ongoing", "completed"].includes(booking.booking_status),
+  );
+  const balanceDueDate = dueDateLabel(booking?.balance_due_date);
+  const balanceDeadlineDays = booking?.deposit_config?.balance_payment_deadline_days;
   const nextStep = canPay
-    ? `Complete the outstanding balance of ${format(payableAmount, booking?.currency)} to keep this booking moving.`
+    ? balanceDueDate
+      ? `Please remember to pay by the due date of ${balanceDueDate}${balanceDeadlineDays ? ` (the due date being ${balanceDeadlineDays} days prior to the tour date)` : ""}.`
+      : `Please remember to pay the outstanding balance of ${format(payableAmount, booking?.currency)} by its due date.`
     : paymentCoveredByAuthorization
       ? BOOKING_PAYMENT_AUTHORIZED_MESSAGE
     : isBookingRequestReceived
@@ -752,7 +771,10 @@ export default function CustomerBookingDetailPage() {
               <div>
                 <p className="font-bold">
                   {paymentCoveredByAuthorization
-                    ? "Booking Request Received"
+                    // This is payment progress, not a booking status. The
+                    // booking-status badge above remains "Booking Request
+                    // Received" until a valid lifecycle transition occurs.
+                    ? "Payment Authorized - Awaiting Tourvaa Confirmation"
                     : "Booking Request Received"}
                 </p>
                 <p className="mt-1 text-sm leading-6">
@@ -819,7 +841,7 @@ export default function CustomerBookingDetailPage() {
                 <a href={`/api/customer/bookings/${booking.id}/itinerary`} className="mt-1 flex w-full items-center justify-center gap-2 rounded-xl bg-dash-brand px-3 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-dash-brand-hover active:scale-[0.98]">
                   <FileText size={13} /> Download Itinerary
                 </a>
-                {booking.booking_status === "confirmed" && (
+                {canDownloadConfirmationReceipt && (
                   <button type="button" onClick={() => void downloadBookingConfirmationReceipt(booking.id).catch(() => setError("The booking confirmation receipt could not be downloaded."))} className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl border border-dash-border px-3 py-2 text-xs font-bold text-dash-body hover:bg-[#F3F8FC]">
                     <Download size={13} /> Download Confirmation Receipt
                   </button>

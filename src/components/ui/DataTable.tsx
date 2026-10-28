@@ -59,16 +59,19 @@ export default function DataTable<T extends { id?: number | string }>({
   minWidthClass,
 }: Props<T>) {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const topScrollRef = useRef<HTMLDivElement>(null);
   const tableRef = useRef<HTMLTableElement>(null);
   const [horizontalOverflow, setHorizontalOverflow] = useState(false);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
+  const [tableScrollWidth, setTableScrollWidth] = useState(0);
 
   const updateHorizontalScrollState = useCallback(() => {
     const container = scrollRef.current;
     if (!container) return;
     const hasOverflow = container.scrollWidth > container.clientWidth + 1;
     setHorizontalOverflow(hasOverflow);
+    setTableScrollWidth(container.scrollWidth);
     setCanScrollLeft(container.scrollLeft > 1);
     setCanScrollRight(container.scrollLeft + container.clientWidth < container.scrollWidth - 1);
   }, []);
@@ -84,12 +87,19 @@ export default function DataTable<T extends { id?: number | string }>({
     // the visible top navigation controls.
     if (tableRef.current) resizeObserver.observe(tableRef.current);
     container.addEventListener("scroll", updateHorizontalScrollState, { passive: true });
+    const syncTopScrollbar = () => {
+      if (topScrollRef.current && topScrollRef.current.scrollLeft !== container.scrollLeft) {
+        topScrollRef.current.scrollLeft = container.scrollLeft;
+      }
+    };
+    container.addEventListener("scroll", syncTopScrollbar, { passive: true });
     const animationFrame = window.requestAnimationFrame(updateHorizontalScrollState);
 
     return () => {
       window.cancelAnimationFrame(animationFrame);
       resizeObserver.disconnect();
       container.removeEventListener("scroll", updateHorizontalScrollState);
+      container.removeEventListener("scroll", syncTopScrollbar);
     };
   }, [columns.length, rows.length, updateHorizontalScrollState]);
 
@@ -100,6 +110,14 @@ export default function DataTable<T extends { id?: number | string }>({
       left: (direction === "left" ? -1 : 1) * Math.max(260, Math.round(container.clientWidth * 0.75)),
       behavior: "smooth",
     });
+  };
+
+  const syncTableFromTopScrollbar = () => {
+    const tableScroller = scrollRef.current;
+    const topScroller = topScrollRef.current;
+    if (tableScroller && topScroller && tableScroller.scrollLeft !== topScroller.scrollLeft) {
+      tableScroller.scrollLeft = topScroller.scrollLeft;
+    }
   };
 
   const hasPagination =
@@ -156,26 +174,36 @@ export default function DataTable<T extends { id?: number | string }>({
       {/* Main Table Card */}
       <div className="overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-[0_1px_3px_0_rgba(15,23,42,0.04)]">
         {horizontalOverflow && (
-          <div className="flex items-center justify-end gap-2 border-b border-slate-200/90 bg-slate-50/90 px-4 py-2">
-            <span className="mr-auto text-xs font-medium text-slate-500">More columns available</span>
-            <button
-              type="button"
-              onClick={() => scrollHorizontally("left")}
-              disabled={!canScrollLeft}
-              aria-label="Show previous table columns"
-              className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-600 shadow-2xs transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40"
+          <div className="border-b border-slate-200/90 bg-slate-50/90 px-4 py-2">
+            <div className="flex items-center justify-end gap-2">
+              <span className="mr-auto text-xs font-medium text-slate-500">More columns available</span>
+              <button
+                type="button"
+                onClick={() => scrollHorizontally("left")}
+                disabled={!canScrollLeft}
+                aria-label="Show previous table columns"
+                className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-600 shadow-2xs transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                <ChevronLeft size={15} />
+              </button>
+              <button
+                type="button"
+                onClick={() => scrollHorizontally("right")}
+                disabled={!canScrollRight}
+                aria-label="Show more table columns"
+                className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-600 shadow-2xs transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                <ChevronRight size={15} />
+              </button>
+            </div>
+            <div
+              ref={topScrollRef}
+              onScroll={syncTableFromTopScrollbar}
+              aria-label="Horizontal table scrollbar"
+              className="mt-1.5 h-3 overflow-x-auto overflow-y-hidden [-webkit-overflow-scrolling:touch]"
             >
-              <ChevronLeft size={15} />
-            </button>
-            <button
-              type="button"
-              onClick={() => scrollHorizontally("right")}
-              disabled={!canScrollRight}
-              aria-label="Show more table columns"
-              className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-600 shadow-2xs transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              <ChevronRight size={15} />
-            </button>
+              <div aria-hidden="true" style={{ width: tableScrollWidth, height: 1 }} />
+            </div>
           </div>
         )}
         <div ref={scrollRef} className="overflow-x-auto [-webkit-overflow-scrolling:touch]">

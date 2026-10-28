@@ -2648,9 +2648,9 @@ export default function DynamicTourBookingPage() {
                           Terms &amp; Conditions
                         </Link>{" "}
                         and{" "}
-                        <Link href="/terms#cancellation-terms" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline font-semibold hover:text-blue-700">
+                        <a href="/terms#cancellation-terms" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline font-semibold hover:text-blue-700">
                           tour cancellation policies
-                        </Link>
+                        </a>
                       </span>
                     </label>
 

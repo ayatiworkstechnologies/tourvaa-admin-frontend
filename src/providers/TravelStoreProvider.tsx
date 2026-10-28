@@ -15,7 +15,7 @@ export type TravelItem = {
   href?: string;
 };
 
-export const MAX_COMPARE_ITEMS = 4;
+export const MAX_COMPARE_ITEMS = 3;
 const COMPARE_STORAGE_KEY = "tourvaa_compare";
 const WISHLIST_STORAGE_KEY = "tourvaa_wishlist";
 

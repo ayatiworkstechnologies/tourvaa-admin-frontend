@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import axios from "axios";
-import { LuCheck as Check, LuLoaderCircle as Loader2 } from "react-icons/lu";
+import { LuCheck as Check, LuEye as Eye, LuEyeOff as EyeOff, LuLoaderCircle as Loader2 } from "react-icons/lu";
 import api from "@/lib/api/client";
 import { useAuthContext } from "@/providers/AuthProvider";
 import { useToast } from "@/hooks/useToast";
@@ -106,6 +106,7 @@ export default function CustomerProfilePage() {
   const [saving, setSaving] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [savingPassword, setSavingPassword] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [passwordForm, setPasswordForm] = useState({
     current_password: "",
     new_password: "",
@@ -145,7 +146,10 @@ export default function CustomerProfilePage() {
           setCity(d.city_name || d.city || "");
           setPostalCode(d.postal_code || d.pincode || "");
           const savedNationality = d.nationality || "";
-          const savedCountry = d.country_name || d.country || LEGACY_NATIONALITY_COUNTRIES[savedNationality] || "";
+          // Prefer the customer's saved Country text. Older profiles can
+          // retain a stale country_id/nationality value from before Country
+          // replaced Nationality, so it must not overwrite a newer save.
+          const savedCountry = d.country || d.country_name || LEGACY_NATIONALITY_COUNTRIES[savedNationality] || "";
           setCountry(savedCountry);
           if (d.date_of_birth || d.dob) setDob(d.date_of_birth || d.dob);
           if (d.gender) setGender(d.gender);
@@ -746,21 +750,21 @@ export default function CustomerProfilePage() {
           <div className="mt-5 grid gap-4 md:grid-cols-3">
             <label className="block">
               <span className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-400">Current password</span>
-              <input type="password" required autoComplete="current-password" value={passwordForm.current_password}
+              <span className="relative block"><input type={showPassword ? "text" : "password"} required autoComplete="current-password" value={passwordForm.current_password}
                 onChange={(event) => setPasswordForm((form) => ({ ...form, current_password: event.target.value }))}
-                className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-semibold outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-100" />
+                className="w-full rounded-xl border border-slate-200 px-4 py-2.5 pr-10 text-xs font-semibold outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-100" /><button type="button" onClick={() => setShowPassword((value) => !value)} aria-label={showPassword ? "Hide passwords" : "Show passwords"} aria-pressed={showPassword} className="absolute inset-y-0 right-0 flex w-10 items-center justify-center text-slate-400 hover:text-blue-600">{showPassword ? <EyeOff size={16} /> : <Eye size={16} />}</button></span>
             </label>
             <label className="block">
               <span className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-400">New password</span>
-              <input type="password" required minLength={8} autoComplete="new-password" value={passwordForm.new_password}
+              <span className="relative block"><input type={showPassword ? "text" : "password"} required minLength={8} autoComplete="new-password" value={passwordForm.new_password}
                 onChange={(event) => setPasswordForm((form) => ({ ...form, new_password: event.target.value }))}
-                className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-semibold outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-100" />
+                className="w-full rounded-xl border border-slate-200 px-4 py-2.5 pr-10 text-xs font-semibold outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-100" /><button type="button" onClick={() => setShowPassword((value) => !value)} aria-label={showPassword ? "Hide passwords" : "Show passwords"} aria-pressed={showPassword} className="absolute inset-y-0 right-0 flex w-10 items-center justify-center text-slate-400 hover:text-blue-600">{showPassword ? <EyeOff size={16} /> : <Eye size={16} />}</button></span>
             </label>
             <label className="block">
               <span className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-400">Confirm password</span>
-              <input type="password" required minLength={8} autoComplete="new-password" value={passwordForm.confirm_password}
+              <span className="relative block"><input type={showPassword ? "text" : "password"} required minLength={8} autoComplete="new-password" value={passwordForm.confirm_password}
                 onChange={(event) => setPasswordForm((form) => ({ ...form, confirm_password: event.target.value }))}
-                className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-semibold outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-100" />
+                className="w-full rounded-xl border border-slate-200 px-4 py-2.5 pr-10 text-xs font-semibold outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-100" /><button type="button" onClick={() => setShowPassword((value) => !value)} aria-label={showPassword ? "Hide passwords" : "Show passwords"} aria-pressed={showPassword} className="absolute inset-y-0 right-0 flex w-10 items-center justify-center text-slate-400 hover:text-blue-600">{showPassword ? <EyeOff size={16} /> : <Eye size={16} />}</button></span>
             </label>
           </div>
           <p className="mt-2 text-[10px] text-slate-400">{passwordHelp}</p>

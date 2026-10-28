@@ -148,16 +148,26 @@ function ResetPasswordForm() {
           </button>
         </div>
 
-        <AuthInput
-          label="Confirm Password"
-          icon={Lock}
-          type={showPassword ? "text" : "password"}
-          placeholder="Confirm password"
-          value={confirmPassword}
-          onChange={(event) => setConfirmPassword(event.target.value)}
-          autoComplete="new-password"
-          required
-        />
+        <div className="relative">
+          <AuthInput
+            label="Confirm Password"
+            icon={Lock}
+            type={showPassword ? "text" : "password"}
+            placeholder="Confirm password"
+            value={confirmPassword}
+            onChange={(event) => setConfirmPassword(event.target.value)}
+            autoComplete="new-password"
+            required
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword((value) => !value)}
+            className="absolute bottom-3 right-3 text-gray-500 hover:text-[#009FE3]"
+            aria-label={showPassword ? "Hide password" : "Show password"}
+          >
+            {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+          </button>
+        </div>
 
         {message && (
           <p className="rounded bg-emerald-50 px-3 py-2 text-sm text-emerald-700">

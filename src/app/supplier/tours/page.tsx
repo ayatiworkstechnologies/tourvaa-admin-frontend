@@ -20,7 +20,6 @@ import {
   LuSendHorizontal as SendHorizontal,
 } from "react-icons/lu";
 import { SupplierPageHeader, SupplierPageShell, SupplierSection } from "@/components/supplier/SupplierPage";
-import TourExcelImportButton from "@/components/tours/TourExcelImportButton";
 import api from "@/lib/api/client";
 import { exportTourExcel } from "@/lib/api/services/tourImportExportService";
 import { mediaUrl } from "@/lib/utils/mediaUrl";
@@ -214,7 +213,6 @@ export default function SupplierToursPage() {
             <span className="rounded-full bg-emerald-50 px-3 py-2 font-bold text-emerald-700">{total} tour{total === 1 ? "" : "s"} in this view</span>
             <span className="rounded-full bg-slate-50 px-3 py-2 font-bold text-[#61776A]">Edit drafts anytime · Published changes return to review</span>
           </div>
-          <TourExcelImportButton theme="supplier" onImported={() => void load()} />
         </div>
       </SupplierPageHeader>
 

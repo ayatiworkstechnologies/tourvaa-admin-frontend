@@ -164,7 +164,7 @@ export default function CustomerDashboardPage() {
   const email = profile?.email || user?.email || "";
   const phone = profile?.phone || user?.phone || "";
   const passportNo = profile?.passport_no || profile?.passport_number || "";
-  const nationality = profile?.nationality || profile?.country_name || profile?.country || "";
+  const country = profile?.country || profile?.country_name || profile?.nationality || "";
   const homeAddress = profile?.address || profile?.address_line_1 || "";
 
   // Wishlist items from real travel store
@@ -332,15 +332,15 @@ export default function CustomerDashboardPage() {
                 <input
                   type="text"
                   readOnly
-                  value={nationality}
+                  value={country}
                   placeholder="Not provided"
                   className={`w-full rounded-xl border px-4 py-2.5 text-xs outline-none transition cursor-default ${
-                    nationality
+                    country
                       ? "border-slate-200 bg-white font-semibold text-slate-800"
                       : "border-dashed border-slate-200 bg-slate-50/70 font-normal italic text-slate-400"
                   }`}
                 />
-                {!nationality && (
+                {!country && (
                   <Link
                     href="/customer/profile"
                     className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[10px] font-bold text-[#1464F4] hover:underline"

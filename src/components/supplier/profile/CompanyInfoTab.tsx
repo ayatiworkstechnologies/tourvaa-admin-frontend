@@ -497,10 +497,10 @@ export default function CompanyInfoTab({ onSaved }: { onSaved?: () => void }) {
 
           <label className="block">
             <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Confirm New Password</span>
-            <input type={showNew ? "text" : "password"} required minLength={8} value={pwForm.confirm_password}
-              onChange={e => setPwForm(f => ({ ...f, confirm_password: e.target.value }))}
-              placeholder="Confirm new password"
-              className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 transition-all" />
+            <div className="relative"><input type={showNew ? "text" : "password"} required minLength={8} value={pwForm.confirm_password}
+                onChange={e => setPwForm(f => ({ ...f, confirm_password: e.target.value }))}
+                placeholder="Confirm new password"
+                className="w-full rounded-xl border border-dash-border px-4 py-2.5 pr-11 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 transition-all" /><button type="button" onClick={() => setShowNew(v => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-dash-muted hover:text-emerald-600" aria-label={showNew ? "Hide password" : "Show password"}>{showNew ? <EyeOff size={16} /> : <Eye size={16} />}</button></div>
           </label>
         </div>
       </form>

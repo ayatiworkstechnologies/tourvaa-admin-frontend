@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef } from "react";
 import { issueWsTicket, BookingConversation, BookingMessage, ChatMessage, Conversation } from "@/lib/api/services/messagingService";
+import { useAuthContext } from "@/providers/AuthProvider";
 
 type Envelope = { id?: string; schema_version?: "1"; occurred_at?: string };
 export type MessagingSocketEvent = Envelope & (
@@ -98,10 +99,20 @@ function shutdown() {
 /** Shared authenticated connection: multiple components subscribe without
  * repeatedly minting tickets or opening duplicate WebSockets. */
 export function useMessagingSocket(onMessage: (event: MessagingSocketEvent) => void) {
+  const { isLoggedIn, loading: sessionLoading, dashboard } = useAuthContext();
+  const isAdminWorkspace = dashboard?.dashboard_type === "admin" || dashboard?.dashboard_type === "super_admin" || dashboard?.dashboard_type === "sub_admin";
+  const canUseAdminMessages = dashboard?.permissions?.some((permission) => permission.slug === "messages.view" || permission.slug === "messages.reply") ?? false;
   const listenerRef = useRef(onMessage);
   useEffect(() => { listenerRef.current = onMessage; }, [onMessage]);
 
   useEffect(() => {
+    // Ticket minting requires the httpOnly session cookie. On a cold page
+    // load AuthProvider restores that session asynchronously; opening a
+    // socket before it completes caused repeat 401 ws-ticket requests.
+    // Public portal users retain their scoped messaging channel. A custom
+    // back-office role must be explicitly given a Messages permission before
+    // it can create a ticket/socket.
+    if (sessionLoading || !isLoggedIn || (isAdminWorkspace && !canUseAdminMessages)) return;
     const listener = (event: MessagingSocketEvent) => listenerRef.current(event);
     listeners.add(listener);
     start();
@@ -115,7 +126,7 @@ export function useMessagingSocket(onMessage: (event: MessagingSocketEvent) => v
       window.removeEventListener("offline", offline);
       if (listeners.size === 0) shutdown();
     };
-  }, []);
+  }, [canUseAdminMessages, isAdminWorkspace, isLoggedIn, sessionLoading]);
 
   return useCallback((event: Record<string, unknown>) => {
     if (socket?.readyState !== WebSocket.OPEN) return false;

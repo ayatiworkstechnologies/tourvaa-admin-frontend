@@ -1,5 +1,3 @@
-import { LuCompass as Compass } from "react-icons/lu";
-
 // Partner attribution shown wherever Viator inventory appears, so these
 // experiences are never presented as Tourvaa-operated products.
 export default function PoweredByViator({ tone = "light", className = "" }: { tone?: "light" | "dark"; className?: string }) {
@@ -9,7 +7,10 @@ export default function PoweredByViator({ tone = "light", className = "" }: { to
         tone === "dark" ? "border border-white/20 bg-white/10 text-white/90" : "border border-slate-200 bg-white text-slate-600"
       } ${className}`}
     >
-      <Compass size={12} className={tone === "dark" ? "text-teal-200" : "text-teal-600"} aria-hidden="true" />
+      <svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" className={tone === "dark" ? "text-teal-200" : "text-[#2563eb]"}>
+        <circle cx="12" cy="12" r="8.25" fill="none" stroke="currentColor" strokeWidth="1.8" />
+        <path d="M8.25 14.9 15.9 8.25l-2.45 7.45-5.2-.8Z" fill="currentColor" />
+      </svg>
       Powered by <strong className={tone === "dark" ? "text-white" : "text-slate-900"}>Viator</strong>
     </span>
   );

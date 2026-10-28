@@ -65,7 +65,10 @@ export default function PublicHeader() {
   const { wishlistCount, compareCount } = useTravelStore();
   const dashboardPath = getDashboardPath(dashboard?.user?.role?.slug ?? "");
   const roleSlug = dashboard?.user?.role?.slug ?? "";
-  const isAdminRole = ["admin", "super-admin", "sub-admin"].includes(roleSlug.toLowerCase());
+  // An empty role means a public visitor, not an administrator. The old
+  // inverse check therefore hid the Wishlist and Compare shortcuts before
+  // sign-in, even on a wide desktop header.
+  const isAdminRole = ["admin", "super-admin", "super_admin"].includes(roleSlug.toLowerCase());
   const profilePath =
     roleSlug === "customer"
       ? "/customer/profile"
@@ -493,18 +496,6 @@ export default function PublicHeader() {
   );
 }
 
-const partnerPortals = [
-  {
-    label: "Affiliate Partner",
-    note: "Earn commissions on every referral",
-    href: "/affiliate-portal/login",
-    registerHref: "/affiliate-portal/login?tab=register",
-    registerLabel: "Register",
-    icon: Handshake,
-    accent: "text-emerald-600 bg-emerald-50 group-hover:bg-emerald-600",
-  },
-].filter((portal) => AFFILIATE_ENABLED || !portal.href.startsWith("/affiliate"));
-
 function ProfileLoginMenu({ onClose }: { onClose: () => void }) {
   return (
     <div
@@ -564,54 +555,6 @@ function ProfileLoginMenu({ onClose }: { onClose: () => void }) {
       </div>
 
       <PortalNavigationLinks onClose={onClose} />
-
-      {/* Partner Portals Section */}
-      {partnerPortals.length > 0 && <div className="mt-3">
-        <p className="px-3 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
-          Partner & Business Portals
-        </p>
-        <div className="mt-1 space-y-1">
-          {partnerPortals.map((partner) => {
-            const Icon = partner.icon;
-            return (
-              <div
-                key={partner.label}
-                className="group flex items-center justify-between gap-2 rounded-xl px-2.5 py-2 transition hover:bg-slate-50"
-              >
-                <Link
-                  role="menuitem"
-                  href={partner.href}
-                  onClick={onClose}
-                  className="flex min-w-0 flex-1 items-center gap-2.5 py-0.5"
-                >
-                  <span
-                    className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition group-hover:text-white ${partner.accent}`}
-                  >
-                    <Icon size={16} />
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <b className="block text-xs font-bold text-slate-900 group-hover:text-pub-secondary transition-colors">
-                      {partner.label}
-                    </b>
-                    <span className="block truncate text-[10px] text-slate-400 font-normal">
-                      {partner.note}
-                    </span>
-                  </span>
-                </Link>
-
-                <Link
-                  role="menuitem"
-                  href={partner.registerHref}
-                  onClick={onClose}
-                  className="shrink-0 rounded-md border border-slate-200 bg-white px-2 py-1 text-[10px] font-bold text-slate-600 transition hover:border-pub-secondary hover:text-pub-secondary"
-                >
-                  {partner.registerLabel}
-                </Link>
-              </div>
-            );
-          })}
-        </div>
-      </div>}
 
       {/* Bottom Help & Trust */}
       <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between px-3 text-[11px] text-slate-500">

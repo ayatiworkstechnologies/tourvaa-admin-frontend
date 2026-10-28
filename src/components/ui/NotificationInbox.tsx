@@ -68,7 +68,7 @@ function notificationPath(notification: Notification): string | null {
   if (!entityType) return null;
 
   const portalListRoutes: Record<string, Record<string, string>> = {
-    supplier: { conversation: '/supplier/messages', supplier_payout: '/supplier/payouts', payout: '/supplier/payouts', invoice: '/supplier/invoices' },
+    supplier: { conversation: '/supplier/messages', supplier_payout: '/supplier/payouts', payout: '/supplier/payouts', invoice: '/supplier/bookings' },
     agent: { conversation: '/agent/messages', agent_payout: '/agent/payouts', payout: '/agent/payouts', invoice: '/agent/invoices', payment: '/agent/bookings' },
     affiliate: { affiliate_conversion: '/affiliate/conversions', affiliate_commission: '/affiliate/commissions', affiliate_link: '/affiliate/referral-links', affiliate_payout: '/affiliate/payouts', payout: '/affiliate/payouts' },
     customer: { invoice: '/customer/invoices', payment: '/customer/payments', conversation: '/customer/support' },

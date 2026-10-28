@@ -336,19 +336,16 @@ export default function ProfilePage() {
                 <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">
                   Confirm New Password
                 </span>
-                <input
-                  type={showNewPassword ? "text" : "password"}
-                  value={passwordForm.confirm_password}
-                  onChange={(event) =>
-                    setPasswordForm((current) => ({
-                      ...current,
-                      confirm_password: event.target.value,
-                    }))
-                  }
-                  className="w-full rounded-xl border border-dash-border px-4 py-2.5 text-sm outline-none focus:border-dash-brand"
-                  minLength={8}
-                  required
-                />
+                <div className="relative"><input
+                    type={showNewPassword ? "text" : "password"}
+                    value={passwordForm.confirm_password}
+                    onChange={(event) =>
+                      setPasswordForm((current) => ({ ...current, confirm_password: event.target.value }))
+                    }
+                    className="w-full rounded-xl border border-dash-border px-4 py-2.5 pr-11 text-sm outline-none focus:border-dash-brand"
+                    minLength={8}
+                    required
+                  /><button type="button" onClick={() => setShowNewPassword((value) => !value)} className="absolute right-3 top-1/2 -translate-y-1/2 text-dash-muted hover:text-dash-brand-hover" aria-label={showNewPassword ? "Hide password" : "Show password"}>{showNewPassword ? <EyeOff size={16} /> : <Eye size={16} />}</button></div>
               </label>
             </div>
             <button

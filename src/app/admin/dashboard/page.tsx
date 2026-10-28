@@ -75,8 +75,13 @@ function dateRangeFor(period: "today" | "week" | "month") {
 }
 
 // main content
-function AdminDashboardContent({ user }: { user: { name: string; role: { name: string } } }) {
+function AdminDashboardContent({ user, permissionSlugs }: { user: { name: string; role: { name: string } }; permissionSlugs: string[] }) {
   const { formatCompact } = useCurrency();
+  const hasPermission = (...permissions: string[]) => permissions.some((permission) => permissionSlugs.includes(permission));
+  const canViewSuppliers = hasPermission("suppliers.view", "view-suppliers");
+  const canViewAgents = hasPermission("agents.view", "view-agents");
+  const canViewSettings = hasPermission("settings.view", "view-settings");
+  const hasDashboardAccess = hasPermission("dashboard.view", "view-dashboard", "dashboard.summary", "dashboard.charts", "dashboard.activities");
 
   // data state
   const [summary,          setSummary]          = useState<Summary>({});
@@ -124,8 +129,8 @@ function AdminDashboardContent({ user }: { user: { name: string; role: { name: s
       const [sumRes, suppRes, agentRes, chartRes, actRes, snapRes, countryRes] =
         await Promise.allSettled([
           api.get("/dashboard/summary", { params: p }),
-          api.get("/suppliers",  { params: { limit: 1000 } }),
-          api.get("/agents",     { params: { limit: 1000 } }),
+          canViewSuppliers ? api.get("/suppliers", { params: { limit: 1000 } }) : Promise.resolve(null),
+          canViewAgents ? api.get("/agents", { params: { limit: 1000 } }) : Promise.resolve(null),
           api.get("/dashboard/charts",           { params: p }),
           api.get("/dashboard/recent-activities", { params: p }),
           api.get("/reports/snapshot"),
@@ -134,11 +139,11 @@ function AdminDashboardContent({ user }: { user: { name: string; role: { name: s
 
       if (sumRes.status     === "fulfilled") setSummary(sumRes.value.data?.data ?? {});
       const pendingStatuses = new Set(["pending", "email_verification_pending", "profile_incomplete", "documents_pending", "admin_review_pending", "partial_approved", "partially_approved"]);
-      if (suppRes.status    === "fulfilled") {
+      if (suppRes.status === "fulfilled" && suppRes.value) {
         const items = suppRes.value.data?.items ?? suppRes.value.data?.data ?? [];
         setPendingSuppliers(items.filter((item: PendingSupplier) => pendingStatuses.has(String(item.approval_status || "").toLowerCase())));
       }
-      if (agentRes.status   === "fulfilled") {
+      if (agentRes.status === "fulfilled" && agentRes.value) {
         const items = agentRes.value.data?.items ?? agentRes.value.data?.data ?? [];
         setPendingAgents(items.filter((item: PendingAgent) => pendingStatuses.has(String(item.approval_status || "").toLowerCase())));
       }
@@ -159,14 +164,21 @@ function AdminDashboardContent({ user }: { user: { name: string; role: { name: s
     } finally {
       setLoading(false);
     }
-  }, [activeFilters]);
+  }, [activeFilters, canViewAgents, canViewSuppliers]);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    if (!hasDashboardAccess) {
+      setLoading(false);
+      return;
+    }
+    void load();
+  }, [hasDashboardAccess, load]);
 
   // Platform setup checklist progress (company profile, payment gateway,
   // etc.) - fetched once, separately from the main dashboard load() above so
   // it never blocks/fails the rest of the dashboard.
   useEffect(() => {
+    if (!hasDashboardAccess || !canViewSettings) return;
     api
       .get("/settings/setup-progress")
       .then((res) => {
@@ -183,7 +195,7 @@ function AdminDashboardContent({ user }: { user: { name: string; role: { name: s
         }
       })
       .catch(() => {});
-  }, []);
+  }, [canViewSettings, hasDashboardAccess]);
 
   // Clamp back to the last valid page when the list shrinks (e.g. after an
   // approve/reject removes the last item on the current page).
@@ -237,12 +249,30 @@ function AdminDashboardContent({ user }: { user: { name: string; role: { name: s
     { label: "Total Customers",  value: summary.total_customers ?? 0,                        icon: Users,            sub: "Platform",           href: "/admin/customers" },
     { label: "Pending Payments", value: summary.pending_payments ?? 0,                       icon: Clock3,             sub: "Awaiting payment",   href: "/admin/payments" },
     { label: "Total Revenue",    value: formatCompact(summary.total_revenue),                icon: CircleDollarSign, sub: "Captured",           href: "/admin/reports" },
-    { label: "Suppliers",        value: summary.total_suppliers ?? 0,                        icon: Building2,     sub: `${summary.pending_suppliers ?? 0} pending`, href: "/admin/suppliers" },
-    { label: "Agents",           value: summary.total_agents    ?? 0,                        icon: Briefcase,          sub: `${summary.pending_agents ?? 0} pending`,    href: "/admin/agents" },
+    ...(canViewSuppliers ? [{ label: "Suppliers", value: summary.total_suppliers ?? 0, icon: Building2, sub: `${summary.pending_suppliers ?? 0} pending`, href: "/admin/suppliers" }] : []),
+    ...(canViewAgents ? [{ label: "Agents", value: summary.total_agents ?? 0, icon: Briefcase, sub: `${summary.pending_agents ?? 0} pending`, href: "/admin/agents" }] : []),
   ];
 
   // chart colours
   const PIE_COLORS = ["#43A9F6", "#1D3E64", "#F59E0B", "#EF4444", "#10B981"];
+
+  if (!hasDashboardAccess) {
+    return (
+      <div className="mx-auto max-w-2xl space-y-6 pb-10 font-sans">
+        <div className="rounded-3xl border border-dash-border bg-white p-8 shadow-[0_2px_12px_rgb(0,0,0,0.03)]">
+          <p className="text-xs font-black uppercase tracking-widest text-dash-muted">Account</p>
+          <h1 className="mt-2 text-2xl font-black text-dash-text">{user.name}</h1>
+          <p className="mt-1 text-sm font-semibold text-dash-muted">{user.role.name}</p>
+          <div className="mt-6 rounded-xl bg-dash-bg p-4 text-sm text-dash-muted">
+            No workspace permissions have been assigned to this role yet. Your administrator can enable only the modules you need.
+          </div>
+          <Link href="/admin/profile" className="mt-5 inline-flex rounded-xl bg-dash-brand px-4 py-2.5 text-sm font-bold text-white hover:bg-dash-brand-hover">
+            View Profile
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 pb-10 font-sans">
@@ -649,9 +679,9 @@ function AdminDashboardContent({ user }: { user: { name: string; role: { name: s
       </div>
 
       {/* 6. approval queues */}
-      <div className="grid gap-6 lg:grid-cols-2">
+      {(canViewSuppliers || canViewAgents) && <div className="grid gap-6 lg:grid-cols-2">
         {/* Supplier approvals */}
-        <div className="rounded-3xl border border-dash-border/60 bg-white p-6 shadow-[0_2px_12px_rgb(0,0,0,0.03)]">
+        {canViewSuppliers && <div className="rounded-3xl border border-dash-border/60 bg-white p-6 shadow-[0_2px_12px_rgb(0,0,0,0.03)]">
           <div className="mb-4 flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
               <Warehouse size={20} strokeWidth={2} />
@@ -735,10 +765,10 @@ function AdminDashboardContent({ user }: { user: { name: string; role: { name: s
               )}
             </>
           )}
-        </div>
+        </div>}
 
         {/* Agent approvals */}
-        <div className="rounded-3xl border border-dash-border/60 bg-white p-6 shadow-[0_2px_12px_rgb(0,0,0,0.03)]">
+        {canViewAgents && <div className="rounded-3xl border border-dash-border/60 bg-white p-6 shadow-[0_2px_12px_rgb(0,0,0,0.03)]">
           <div className="mb-4 flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--portal-soft)] text-dash-brand">
               <Users size={20} strokeWidth={2} />
@@ -771,8 +801,8 @@ function AdminDashboardContent({ user }: { user: { name: string; role: { name: s
               ))}
             </ul>
           )}
-        </div>
-      </div>
+        </div>}
+      </div>}
 
       {/* 7. bottom row */}
       <div className="grid gap-6 lg:grid-cols-3">
@@ -944,7 +974,7 @@ function AdminDashboardShell() {
 
   return (
     <DashboardLayout title="Dashboard" menus={dashboard.menus} user={dashboard.user}>
-      <AdminDashboardContent user={dashboard.user} />
+      <AdminDashboardContent user={dashboard.user} permissionSlugs={dashboard.permissions.map((permission: { slug: string }) => permission.slug)} />
     </DashboardLayout>
   );
 }
