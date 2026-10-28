@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import Link from "next/link";
 import {
   LuArrowRight as ArrowRight,
+  LuFileText as FileText,
   LuSlidersHorizontal as SlidersHorizontal,
 } from "react-icons/lu";
 import DashboardLayout from "@/components/layout/DashboardLayout";
@@ -34,7 +35,6 @@ const groupLabels: Record<string, string> = {
   smtp: "Email / SMTP",
   currency: "Currency",
   security: "Security Status",
-  invoice_pdf: "Invoice PDF Template",
 };
 
 const booleanSettingKeys = new Set([
@@ -43,43 +43,6 @@ const booleanSettingKeys = new Set([
 ]);
 
 const imageSettingKeys = new Set(["logo", "favicon"]);
-
-const invoicePdfSettingFields = [
-  { key: "invoice_brand_name", label: "Brand name", helper: "Shown at the top-left of every invoice." },
-  { key: "invoice_brand_tagline", label: "Brand tagline", helper: "Shown directly below the brand name." },
-  { key: "invoice_column_description", label: "Description column", helper: "Table heading for the invoice line description." },
-  { key: "invoice_column_quantity", label: "Quantity column", helper: "Table heading for quantity." },
-  { key: "invoice_column_unit_price", label: "Unit price column", helper: "Table heading for the unit price." },
-  { key: "invoice_column_tax", label: "Tax column", helper: "Table heading for tax." },
-  { key: "invoice_column_total", label: "Total column", helper: "Table heading for the line total." },
-  { key: "invoice_label_amount_due", label: "Amount due label", helper: "Summary label next to the outstanding balance." },
-  { key: "invoice_footer_thanks", label: "Footer thank-you", helper: "Shown above the contact line." },
-  { key: "invoice_footer_legal", label: "Footer legal notice", helper: "Shown as the final line on every invoice." },
-] as const;
-
-const INVOICE_THEME_PRESETS = [
-  {
-    name: "Tourvaa Brand (Email Style)",
-    description: "Sleek Midnight Navy header with Vibrant Teal accent",
-    primary: "#07566A",
-    header: "#0B263D",
-    accent: "#159C96",
-  },
-  {
-    name: "Modern Slate & Indigo",
-    description: "Executive slate table with indigo accent",
-    primary: "#1E293B",
-    header: "#0F172A",
-    accent: "#2563EB",
-  },
-  {
-    name: "Classic Forest Emerald",
-    description: "Traditional deep green header and borders",
-    primary: "#1B5E46",
-    header: "#0F3D2C",
-    accent: "#1E7A3D",
-  },
-] as const;
 
 // Two AppSetting rows whose values are fixed in Python code (money rounding
 // is hardcoded, not actually driven by these settings) -- the backend now
@@ -435,7 +398,7 @@ export default function SettingsPage() {
   }
   if (!dashboard) return null;
 
-  const activeGenericGroup = activeGroup === "invoice_pdf" ? undefined : grouped[activeGroup];
+  const activeGenericGroup = grouped[activeGroup];
 
   return (
     <ProtectedRoute requiredPermission="settings.view">
@@ -898,372 +861,24 @@ export default function SettingsPage() {
         )}
 
         {activeGroup === "invoice_pdf" && (
-          <form onSubmit={saveSettings}>
-            <section className="rounded-2xl border border-dash-border bg-white p-6">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-1">
-                <h3 className="text-lg font-bold text-dash-text">Invoice Template & Design</h3>
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-dash-brand/10 text-dash-brand">
-                  Tourvaa Email Template Style
-                </span>
-              </div>
-              <p className="mb-6 text-sm text-dash-muted">
-                Customize both the visual design format (brand colors, table bars, accents) and text copy. Booking financial values and statutory tax details are populated dynamically from the invoice record.
-              </p>
-
-              <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_390px]">
-                <div className="space-y-6">
-                  {/* Theme Presets */}
-                  <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
-                    <span className="block text-xs font-bold uppercase tracking-wider text-dash-text mb-2">
-                      Design Theme Presets
-                    </span>
-                    <p className="text-xs text-dash-muted mb-3">
-                      Select a pre-configured palette or click the color pickers below to customize your brand styling.
-                    </p>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                      {INVOICE_THEME_PRESETS.map((preset) => {
-                        const isSelected =
-                          (form.invoice_primary_color || "#07566A") === preset.primary &&
-                          (form.invoice_header_color || "#0B263D") === preset.header;
-                        return (
-                          <button
-                            key={preset.name}
-                            type="button"
-                            onClick={() => {
-                              setForm((current) => ({
-                                ...current,
-                                invoice_primary_color: preset.primary,
-                                invoice_header_color: preset.header,
-                                invoice_accent_color: preset.accent,
-                              }));
-                            }}
-                            className={`flex flex-col text-left p-3 rounded-xl border text-xs transition-all ${
-                              isSelected
-                                ? "border-dash-brand bg-white shadow-sm ring-2 ring-dash-brand/20"
-                                : "border-slate-200 bg-white hover:border-slate-300"
-                            }`}
-                          >
-                            <span className="font-bold text-slate-800">{preset.name}</span>
-                            <div className="flex items-center gap-1.5 mt-2">
-                              <span className="w-4 h-4 rounded-full border border-black/10" style={{ backgroundColor: preset.header }} title="Table Bar" />
-                              <span className="w-4 h-4 rounded-full border border-black/10" style={{ backgroundColor: preset.primary }} title="Primary Accent" />
-                              <span className="w-4 h-4 rounded-full border border-black/10" style={{ backgroundColor: preset.accent }} title="Highlight Accent" />
-                            </div>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Color Pickers */}
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <label className="block">
-                      <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-dash-muted">Primary Brand Accent</span>
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="color"
-                          value={form.invoice_primary_color || "#07566A"}
-                          onChange={(e) => setForm((c) => ({ ...c, invoice_primary_color: e.target.value }))}
-                          className="h-10 w-12 cursor-pointer rounded-lg border border-dash-border p-1 bg-white"
-                        />
-                        <input
-                          type="text"
-                          value={form.invoice_primary_color || "#07566A"}
-                          onChange={(e) => setForm((c) => ({ ...c, invoice_primary_color: e.target.value }))}
-                          className="w-full rounded-xl border border-dash-border px-3 py-2 text-xs font-mono text-dash-text outline-none"
-                        />
-                      </div>
-                      <span className="mt-1 block text-[11px] text-dash-subtle">Dividers & section accents</span>
-                    </label>
-
-                    <label className="block">
-                      <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-dash-muted">Header & Bar Color</span>
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="color"
-                          value={form.invoice_header_color || "#0B263D"}
-                          onChange={(e) => setForm((c) => ({ ...c, invoice_header_color: e.target.value }))}
-                          className="h-10 w-12 cursor-pointer rounded-lg border border-dash-border p-1 bg-white"
-                        />
-                        <input
-                          type="text"
-                          value={form.invoice_header_color || "#0B263D"}
-                          onChange={(e) => setForm((c) => ({ ...c, invoice_header_color: e.target.value }))}
-                          className="w-full rounded-xl border border-dash-border px-3 py-2 text-xs font-mono text-dash-text outline-none"
-                        />
-                      </div>
-                      <span className="mt-1 block text-[11px] text-dash-subtle">Table bar & brand title</span>
-                    </label>
-
-                    <label className="block">
-                      <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-dash-muted">Highlight & Badge</span>
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="color"
-                          value={form.invoice_accent_color || "#159C96"}
-                          onChange={(e) => setForm((c) => ({ ...c, invoice_accent_color: e.target.value }))}
-                          className="h-10 w-12 cursor-pointer rounded-lg border border-dash-border p-1 bg-white"
-                        />
-                        <input
-                          type="text"
-                          value={form.invoice_accent_color || "#159C96"}
-                          onChange={(e) => setForm((c) => ({ ...c, invoice_accent_color: e.target.value }))}
-                          className="w-full rounded-xl border border-dash-border px-3 py-2 text-xs font-mono text-dash-text outline-none"
-                        />
-                      </div>
-                      <span className="mt-1 block text-[11px] text-dash-subtle">Logo square & paid pill</span>
-                    </label>
-                  </div>
-
-                  {/* Text Copy Fields & Header Brand Display */}
-                  <div className="space-y-4 pt-2 border-t border-slate-100">
-                    <div className="space-y-3">
-                      <div>
-                        <span className="block text-xs font-bold uppercase tracking-wider text-dash-text mb-1.5">
-                          Header Display Format
-                        </span>
-                        <div className="flex flex-wrap gap-2">
-                          {[
-                            { value: "both", label: "Logo + Brand Name" },
-                            { value: "logo", label: "Logo Image Only" },
-                            { value: "brand_name", label: "Brand Name Only" },
-                          ].map((mode) => {
-                            const active = (form.invoice_header_layout || "both") === mode.value;
-                            return (
-                              <button
-                                key={mode.value}
-                                type="button"
-                                onClick={() => setForm((c) => ({ ...c, invoice_header_layout: mode.value }))}
-                                className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${
-                                  active
-                                    ? "bg-dash-brand text-white border-dash-brand shadow-sm"
-                                    : "bg-white text-slate-700 border-slate-200 hover:border-slate-300"
-                                }`}
-                              >
-                                {mode.label}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-
-                      {(form.invoice_header_layout || "both") !== "brand_name" && (
-                        <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-3.5 space-y-2">
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs font-bold uppercase tracking-wider text-dash-text">
-                              Invoice Header Logo Image
-                            </span>
-                            {form.logo && form.invoice_logo_url !== form.logo && (
-                              <button
-                                type="button"
-                                onClick={() => setForm((c) => ({ ...c, invoice_logo_url: form.logo }))}
-                                className="text-xs font-bold text-dash-brand hover:underline"
-                              >
-                                Use system logo
-                              </button>
-                            )}
-                          </div>
-                          <AdminAssetUpload
-                            label="Upload or change invoice logo"
-                            value={form.invoice_logo_url || ""}
-                            onChange={(val) => setForm((c) => ({ ...c, invoice_logo_url: val }))}
-                          />
-                        </div>
-                      )}
-                    </div>
-
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-dash-text pt-2">Template Copy & Labels</h4>
-                    {invoicePdfSettingFields.map(({ key, label, helper }) => (
-                      <label key={key} className="block">
-                        <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-dash-muted">{label}</span>
-                        <textarea
-                          rows={key.includes("footer") ? 3 : 2}
-                          value={form[key] || ""}
-                          onChange={(event) => setForm((current) => ({ ...current, [key]: event.target.value }))}
-                          className="w-full resize-y rounded-xl border border-dash-border px-4 py-2.5 text-sm text-dash-text outline-none focus:border-dash-brand focus:ring-4 focus:ring-dash-brand/10"
-                        />
-                        <span className="mt-1.5 block text-xs text-dash-subtle">{helper}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-
-                {/* PDF Live Preview Styled in Tourvaa Email Style */}
-                <aside className="rounded-xl border border-slate-200 bg-slate-50 p-5 shadow-sm sticky top-6 self-start">
-                  <div className="flex items-center justify-between mb-3">
-                    <p className="text-[11px] font-bold uppercase tracking-widest text-dash-muted">PDF Live Preview</p>
-                    <span className="text-[10px] font-semibold text-slate-600 bg-white px-2 py-0.5 rounded border border-slate-200">
-                      Email Template Style
-                    </span>
-                  </div>
-                  <div className="bg-white p-5 shadow-sm rounded-lg border border-slate-100 text-slate-800">
-                    {/* Header */}
-                    <div
-                      className="flex items-start justify-between gap-3 pb-3 border-b-2"
-                      style={{ borderColor: form.invoice_primary_color || "#07566A" }}
-                    >
-                      <div>
-                        {(form.invoice_header_layout || "both") === "logo" ? (
-                          <div>
-                            {form.invoice_logo_url || form.logo ? (
-                              // eslint-disable-next-line @next/next/no-img-element
-                              <img
-                                src={form.invoice_logo_url || form.logo}
-                                alt="Invoice Logo"
-                                className="h-7 w-auto max-w-[140px] object-contain mb-1"
-                              />
-                            ) : (
-                              <div className="flex items-center gap-1.5 mb-1">
-                                <span
-                                  className="inline-flex items-center justify-center w-5 h-5 rounded text-[10px] font-black text-white"
-                                  style={{ backgroundColor: form.invoice_accent_color || "#159C96" }}
-                                >
-                                  T
-                                </span>
-                                <span className="text-xs font-bold text-slate-400 italic">No logo uploaded</span>
-                              </div>
-                            )}
-                          </div>
-                        ) : (form.invoice_header_layout || "both") === "brand_name" ? (
-                          <p
-                            className="text-base font-black tracking-tight"
-                            style={{ color: form.invoice_header_color || "#0B263D" }}
-                          >
-                            {form.invoice_brand_name || "Tourvaa"}
-                          </p>
-                        ) : (
-                          <div className="flex items-center gap-2">
-                            {form.invoice_logo_url || form.logo ? (
-                              // eslint-disable-next-line @next/next/no-img-element
-                              <img
-                                src={form.invoice_logo_url || form.logo}
-                                alt="Invoice Logo"
-                                className="h-6 w-auto max-w-[90px] object-contain"
-                              />
-                            ) : (
-                              <span
-                                className="inline-flex items-center justify-center w-5 h-5 rounded text-[10px] font-black text-white"
-                                style={{ backgroundColor: form.invoice_accent_color || "#159C96" }}
-                              >
-                                T
-                              </span>
-                            )}
-                            <p
-                              className="text-base font-black tracking-tight"
-                              style={{ color: form.invoice_header_color || "#0B263D" }}
-                            >
-                              {form.invoice_brand_name || "Tourvaa"}
-                            </p>
-                          </div>
-                        )}
-                        <p className="mt-0.5 text-[8px] text-slate-500">
-                          {form.invoice_brand_tagline || "Curated journeys, effortlessly booked."}
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-xs font-black text-slate-900">INVOICE</p>
-                        <p className="text-[8px] text-slate-500 font-mono">#TVAA-11</p>
-                        <p className="text-[7.5px] text-slate-400">Date: 2026-10-15</p>
-                      </div>
-                    </div>
-
-                    {/* Status Pill & Booking Code */}
-                    <div className="mt-3 flex items-center justify-between text-[8px]">
-                      <span
-                        className="px-2 py-0.5 font-bold rounded"
-                        style={{
-                          backgroundColor: `${form.invoice_accent_color || "#159C96"}20`,
-                          color: form.invoice_accent_color || "#159C96",
-                        }}
-                      >
-                        PAID
-                      </span>
-                      <span className="text-slate-500 font-mono">Booking Code: TVAA-11</span>
-                    </div>
-
-                    {/* Billed To / Trip details */}
-                    <div className="mt-3 grid grid-cols-2 gap-3 bg-[#F2FAFC] p-3 text-[8px] text-slate-600 rounded-md border border-slate-100">
-                      <div>
-                        <strong
-                          className="block text-[8px] font-bold uppercase tracking-wider mb-0.5"
-                          style={{ color: form.invoice_primary_color || "#07566A" }}
-                        >
-                          BILLED TO
-                        </strong>
-                        <p className="font-bold text-slate-800">AA AB</p>
-                        <p className="text-slate-500 truncate">Traveller(s): AA AB</p>
-                      </div>
-                      <div>
-                        <strong
-                          className="block text-[8px] font-bold uppercase tracking-wider mb-0.5"
-                          style={{ color: form.invoice_primary_color || "#07566A" }}
-                        >
-                          TRIP DETAILS
-                        </strong>
-                        <p className="font-bold text-slate-800 truncate">Auckland Highlights Tour</p>
-                        <p className="text-slate-500">Payment: Card (USD $)</p>
-                      </div>
-                    </div>
-
-                    {/* Line Items Table */}
-                    <div className="mt-4 text-[8px] rounded overflow-hidden">
-                      <div
-                        className="grid grid-cols-[1fr_32px_54px] px-2.5 py-1.5 font-bold text-white"
-                        style={{ backgroundColor: form.invoice_header_color || "#0B263D" }}
-                      >
-                        <span>{form.invoice_column_description || "Description"}</span>
-                        <span>{form.invoice_column_quantity || "Qty"}</span>
-                        <span className="text-right">{form.invoice_column_total || "Total"}</span>
-                      </div>
-                      <div className="grid grid-cols-[1fr_32px_54px] border-b border-slate-100 bg-white px-2.5 py-2 text-slate-600">
-                        <span>Auckland Highlights Tour</span>
-                        <span>1</span>
-                        <span className="text-right">USD 3,580.20</span>
-                      </div>
-                      <div className="ml-auto mt-3 w-44 space-y-1 text-right text-slate-600 text-[8px]">
-                        <div className="flex justify-between py-0.5">
-                          <span>Subtotal</span>
-                          <span>USD 3,034.07</span>
-                        </div>
-                        <div className="flex justify-between py-0.5">
-                          <span>Tax / GST (18%)</span>
-                          <span>USD 546.13</span>
-                        </div>
-                        <div
-                          className="flex justify-between py-1 font-bold text-[9px] border-y px-1 rounded-sm bg-[#F2FAFC]"
-                          style={{
-                            borderColor: form.invoice_primary_color || "#07566A",
-                            color: form.invoice_header_color || "#0B263D",
-                          }}
-                        >
-                          <span>{form.invoice_column_total || "Total"}</span>
-                          <span>USD 3,580.20</span>
-                        </div>
-                        <div className="flex justify-between py-0.5 text-red-600 font-bold">
-                          <span>{form.invoice_label_amount_due || "Amount Due"}</span>
-                          <span>USD 0.00</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Footer */}
-                    <div className="mt-5 border-t border-slate-100 pt-3 text-center text-[7.5px] text-slate-500 space-y-0.5">
-                      <p className="font-medium">{form.invoice_footer_thanks || "Thank you for booking with Tourvaa."}</p>
-                      <p className="text-slate-400">For queries contact support@tourvaa.com | tourvaa.vercel.app</p>
-                      <p className="text-slate-400">
-                        {form.invoice_footer_legal || "This is a system-generated invoice and does not require a signature."}
-                      </p>
-                    </div>
-                  </div>
-                </aside>
-              </div>
-            </section>
-            <div className="mt-6 flex justify-end">
-              <button disabled={saving} className="rounded-xl bg-dash-brand px-5 py-2.5 text-sm font-bold text-white hover:bg-dash-brand-hover disabled:opacity-60">
-                {saving ? "Saving..." : "Save Invoice Template & Design"}
-              </button>
+          <section className="rounded-2xl border border-dash-border bg-white p-8 text-center shadow-sm">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-dash-brand/10 text-dash-brand mb-4">
+              <FileText size={28} />
             </div>
-          </form>
+            <h3 className="text-xl font-bold text-dash-text">Invoice &amp; Receipt Templates Designer</h3>
+            <p className="mx-auto mt-2 max-w-lg text-sm text-dash-muted">
+              Invoice and payment receipt template configurations have been moved to their dedicated management hub with live PDF rendering, sample data simulation, and branding controls.
+            </p>
+            <div className="mt-6 flex justify-center">
+              <Link
+                href="/admin/invoice-templates"
+                className="inline-flex items-center gap-2 rounded-xl bg-dash-brand px-6 py-2.5 text-sm font-bold text-white hover:bg-dash-brand-hover shadow-sm transition-all"
+              >
+                <span>Open Invoice Templates</span>
+                <ArrowRight size={16} />
+              </Link>
+            </div>
+          </section>
         )}
 
         {activeGenericGroup && (

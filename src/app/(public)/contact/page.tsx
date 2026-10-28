@@ -193,16 +193,6 @@ type OfficeItem = {
   timezone?: string;
 };
 
-function legacyOfficeItemMatchesLocation(item: OfficeItem | undefined, officeId: string) {
-  if (!item) return false;
-  const address = `${item.address_line1 || ""} ${item.address_line2 || ""}`.toLowerCase();
-  const locationTokens: Record<string, string[]> = {
-    nz: ["auckland", "new zealand"],
-    lk: ["colombo", "sri lanka"],
-    in: ["chennai", "tamil nadu", "india"],
-  };
-  return (locationTokens[officeId] || []).some((token) => address.includes(token));
-}
 const DEFAULT_OFFICES_HEADING = { eyebrow: "GLOBAL FOOTPRINT", heading: "Our Regional Headquarters", subtitle: "Local knowledge. Worldwide coordination. Select an office below to inspect our regional headquarters and operational contact details." };
 
 // Fetches an admin-editable content block and returns its `data`, falling
@@ -274,10 +264,9 @@ export default function ContactPage({ audience }: { audience?: "supplier" | "age
     ? [0, 1, 2, 3].map((i) => ({ ...DEFAULT_PARTNERS[i], ...partnersBlock.items?.[i] }))
     : DEFAULT_PARTNERS;
   const officeItems = officesBlock.items ?? [];
-  // Current CMS records identify their office explicitly. Legacy rows lacked
-  // that identifier, so use their positional values only when the address
-  // itself matches the fixed office city/country. This prevents a reordered
-  // Chennai row from ever being shown as the Auckland office.
+  // CMS office details must identify their location explicitly. Never apply
+  // a row by list position: a single Chennai record must not become the
+  // Auckland card simply because it happens to be the first saved item.
   const officeItemsById = new Map(
     officeItems
       .filter((item) => item.office_id === "nz" || item.office_id === "lk" || item.office_id === "in")
@@ -1108,12 +1097,10 @@ export default function ContactPage({ audience }: { audience?: "supplier" | "age
         <div className="mt-10 grid grid-cols-1 lg:grid-cols-[340px_1fr] gap-8 items-center">
           {/* Left Column: Office Cards - city/country and map position stay fixed per office, contact details are CMS-editable */}
           <div className="space-y-3.5">
-            {OFFICES.map((office, index) => {
+            {OFFICES.map((office) => {
               const isSelected = activeOfficeId === office.id;
               const defaultMeta = OFFICE_CONTACT_META[office.id];
-              const positionalOffice = officeItems[index];
-              const cmsMeta = officeItemsById.get(office.id)
-                ?? (legacyOfficeItemMatchesLocation(positionalOffice, office.id) ? positionalOffice : undefined);
+              const cmsMeta = officeItemsById.get(office.id);
               const meta = {
                 phone: cmsMeta?.phone || defaultMeta.phone,
                 hours: cmsMeta?.hours || defaultMeta.hours,

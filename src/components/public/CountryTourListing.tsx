@@ -183,7 +183,11 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
   const queryDestination = searchParams.get("destination") || "";
   const queryRating = searchParams.get("rating") || "";
   const queryAvailableOnly = searchParams.get("available_only") === "true";
-  const querySort = (searchParams.get("sort") as "newest" | "price_asc" | "price_desc" | "duration_asc") || "newest";
+  const requestedSort = searchParams.get("sort");
+  const querySort: "newest" | "price_asc" | "price_desc" | "duration_asc" =
+    requestedSort === "price_asc" || requestedSort === "price_desc" || requestedSort === "duration_asc" || requestedSort === "newest"
+      ? requestedSort
+      : "newest";
   const { format } = useCurrency();
   const toursListingContent = useContentBlock<ToursListingContent>("tours_listing", DEFAULT_TOURS_LISTING_CONTENT);
 
@@ -256,8 +260,12 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
     setSelectedDepartureMonth(searchParams.get("departure_month") || searchParams.get("travel_date") || "");
     setSelectedSubcategory(searchParams.get("subcategory") || "");
     setAvailableOnly(searchParams.get("available_only") === "true");
-    const sortParam = searchParams.get("sort") as "newest" | "price_asc" | "price_desc" | "duration_asc";
-    if (sortParam) setSortOrder(sortParam);
+    const sortParam = searchParams.get("sort");
+    setSortOrder(
+      sortParam === "price_asc" || sortParam === "price_desc" || sortParam === "duration_asc" || sortParam === "newest"
+        ? sortParam
+        : "newest",
+    );
     setSelectedDestination(searchParams.get("destination") || "");
     setSelectedRating(searchParams.get("rating") || "");
   }, [searchParams]);
@@ -839,7 +847,7 @@ export default function CountryTourListing({ countrySlug }: { countrySlug?: stri
               <span className="text-slate-400 font-semibold mr-1">Sort:</span>
               <span className="text-slate-800 font-bold truncate max-w-[130px]">
                 {sortOrder === "newest"
-                  ? "Newest"
+                  ? "Newest First"
                   : sortOrder === "price_asc"
                   ? "Price: Low to High"
                   : sortOrder === "price_desc"

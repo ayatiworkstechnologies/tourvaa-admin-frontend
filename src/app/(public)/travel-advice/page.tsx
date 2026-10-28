@@ -410,12 +410,12 @@ export default function TravelAdvicePage() {
                       placeholder="Enter your email address"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="h-12 flex-1 rounded-xl border border-slate-200 bg-slate-50/70 px-4 text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:border-pub-secondary focus:bg-white focus:outline-none transition"
+                      className="min-h-[52px] flex-1 rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-3 text-base text-slate-900 placeholder:text-slate-400 focus:border-pub-secondary focus:bg-white focus:outline-none transition sm:h-12 sm:min-h-0 sm:py-0 sm:text-sm"
                     />
                     <button
                       type="submit"
                       disabled={subscribing}
-                      className="h-12 rounded-xl bg-[#0B1F3A] px-6 text-xs sm:text-sm font-bold text-white shadow-md hover:bg-slate-800 transition disabled:opacity-60 shrink-0"
+                      className="min-h-[52px] rounded-xl bg-[#0B1F3A] px-6 py-3 text-sm font-bold text-white shadow-md hover:bg-slate-800 transition disabled:opacity-60 shrink-0 sm:h-12 sm:min-h-0 sm:py-0"
                     >
                       {subscribing ? "Subscribing..." : "Join Club"}
                     </button>

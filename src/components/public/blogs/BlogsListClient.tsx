@@ -580,12 +580,12 @@ export default function BlogsListClient({ initialPosts }: BlogsListClientProps) 
                     placeholder="Enter your email address"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="h-11 min-w-0 flex-1 rounded-xl border border-white/80 bg-white px-4 text-sm font-medium text-slate-900 placeholder:text-slate-500 shadow-sm outline-none transition focus:border-pub-accent focus:ring-4 focus:ring-white/20 sm:h-12"
+                    className="min-h-[52px] min-w-0 flex-1 rounded-xl border border-white/80 bg-white px-4 py-3 text-base font-medium text-slate-900 placeholder:text-slate-500 shadow-sm outline-none transition focus:border-pub-accent focus:ring-4 focus:ring-white/20 sm:h-12 sm:min-h-0 sm:py-0 sm:text-sm"
                   />
                   <button
                     type="submit"
                     disabled={subscribing}
-                    className="h-11 w-full shrink-0 rounded-xl bg-pub-accent px-6 text-sm font-black text-white shadow-md transition hover:bg-pub-accent/90 disabled:opacity-60 cursor-pointer sm:h-12 sm:w-auto"
+                    className="min-h-[52px] w-full shrink-0 rounded-xl bg-pub-accent px-6 py-3 text-sm font-black text-white shadow-md transition hover:bg-pub-accent/90 disabled:opacity-60 cursor-pointer sm:h-12 sm:min-h-0 sm:w-auto sm:py-0"
                   >
                     {subscribing ? "Subscribing..." : "Subscribe"}
                   </button>

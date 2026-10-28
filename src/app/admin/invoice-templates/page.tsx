@@ -21,13 +21,14 @@ import ModuleWrapper from "@/components/common/ModuleWrapper";
 import api from "@/lib/api/client";
 import Loader from "@/components/ui/Loader";
 
-type TemplateKey = "agent_reserve" | "agent_full" | "customer_deposit" | "customer_full";
+export type TemplateKey = "customer_full" | "customer_deposit" | "agent_reserve" | "agent_full";
 
-interface TemplateConfig {
+export interface TemplateConfig {
   id: TemplateKey;
   apiType: string;
   name: string;
   scenario: string;
+  recipientCategory: "Customer" | "Travel Agent";
   docNumberPrefix: string;
   recipientType: "agent" | "customer";
   recipientHeader: "BILL TO" | "RECEIVED FROM";
@@ -37,37 +38,22 @@ interface TemplateConfig {
   sampleDueDate: string;
   bookingStatus: string;
   paymentStatus: string;
+  badgeText: string;
+  badgeColorClass: string;
+  description: string;
   noteText: string;
   closingDisclaimer: string;
 }
 
-const TEMPLATES: Record<TemplateKey, TemplateConfig> = {
-  agent_reserve: {
-    id: "agent_reserve",
-    apiType: "agent_reservation_invoice",
-    name: "BOOKING INVOICE",
-    scenario: "Agent Reserve Now",
-    docNumberPrefix: "Invoice No.",
-    recipientType: "agent",
-    recipientHeader: "BILL TO",
-    samplePaid: 0,
-    sampleDue: 1565.0,
-    sampleTotal: 1565.0,
-    sampleDueDate: "2026-11-05",
-    bookingStatus: "Booking Confirmed",
-    paymentStatus: "Outstanding",
-    noteText:
-      "Your booking has been reserved. Full payment of {{Currency}} {{Outstanding_Balance}} is due by {{Payment_Due_Date}}. Please ensure payment is received by the due date. Any consequences of late or non-payment are subject to the applicable Tourvaa terms and booking conditions.",
-    closingDisclaimer:
-      "This invoice reflects the booking and payment information available at the issue date. Please retain it for your records.",
-  },
-  agent_full: {
-    id: "agent_full",
-    apiType: "agent_full_receipt",
+export const TEMPLATES: Record<TemplateKey, TemplateConfig> = {
+  customer_full: {
+    id: "customer_full",
+    apiType: "customer_full_receipt",
     name: "PAYMENT RECEIPT",
-    scenario: "Agent Full Payment",
+    scenario: "Customer Full Payment",
+    recipientCategory: "Customer",
     docNumberPrefix: "Receipt No.",
-    recipientType: "agent",
+    recipientType: "customer",
     recipientHeader: "RECEIVED FROM",
     samplePaid: 1565.0,
     sampleDue: 0,
@@ -75,7 +61,10 @@ const TEMPLATES: Record<TemplateKey, TemplateConfig> = {
     sampleDueDate: "",
     bookingStatus: "Booking Confirmed",
     paymentStatus: "Paid in Full",
-    noteText: "Payment has been received in full for this booking. Thank you for booking through Tourvaa.",
+    badgeText: "PAID",
+    badgeColorClass: "bg-emerald-50 text-emerald-700 border-emerald-200",
+    description: "Official receipt acknowledging full online or card settlement by traveler",
+    noteText: "Payment has been received in full for this booking. Thank you for choosing Tourvaa.",
     closingDisclaimer:
       "This receipt confirms payment received; it does not by itself confirm supplier acceptance if the booking status above is not confirmed.",
   },
@@ -83,7 +72,8 @@ const TEMPLATES: Record<TemplateKey, TemplateConfig> = {
     id: "customer_deposit",
     apiType: "deposit_receipt",
     name: "BOOKING INVOICE & PAYMENT RECEIPT",
-    scenario: "Customer Deposit",
+    scenario: "Customer Deposit (Partial)",
+    recipientCategory: "Customer",
     docNumberPrefix: "Document No.",
     recipientType: "customer",
     recipientHeader: "BILL TO",
@@ -93,18 +83,45 @@ const TEMPLATES: Record<TemplateKey, TemplateConfig> = {
     sampleDueDate: "2026-11-10",
     bookingStatus: "Booking Confirmed",
     paymentStatus: "Deposit Received",
+    badgeText: "PARTIALLY PAID",
+    badgeColorClass: "bg-amber-50 text-amber-700 border-amber-200",
+    description: "Initial deposit receipt documenting paid amount and remaining balance deadline",
     noteText:
       "Your payment of {{Currency}} {{Amount_Paid_To_Date}} has been received. The remaining balance of {{Currency}} {{Outstanding_Balance}} must be paid by {{Balance_Due_Date}}.",
     closingDisclaimer:
       "This document records the payment received to date and the remaining balance as at the issue date.",
   },
-  customer_full: {
-    id: "customer_full",
-    apiType: "customer_full_receipt",
+  agent_reserve: {
+    id: "agent_reserve",
+    apiType: "agent_reservation_invoice",
+    name: "BOOKING INVOICE",
+    scenario: "Agent Reserve Now",
+    recipientCategory: "Travel Agent",
+    docNumberPrefix: "Invoice No.",
+    recipientType: "agent",
+    recipientHeader: "BILL TO",
+    samplePaid: 0,
+    sampleDue: 1565.0,
+    sampleTotal: 1565.0,
+    sampleDueDate: "2026-11-05",
+    bookingStatus: "Booking Confirmed",
+    paymentStatus: "Outstanding",
+    badgeText: "OUTSTANDING",
+    badgeColorClass: "bg-rose-50 text-rose-700 border-rose-200",
+    description: "Payment request invoice issued after travel agent confirms booking reservation",
+    noteText:
+      "Your booking has been reserved. Full payment of {{Currency}} {{Outstanding_Balance}} is due by {{Payment_Due_Date}}. Please ensure payment is received by the due date. Any consequences of late or non-payment are subject to the applicable Tourvaa terms and booking conditions.",
+    closingDisclaimer:
+      "This invoice reflects the booking and payment information available at the issue date. Please retain it for your records.",
+  },
+  agent_full: {
+    id: "agent_full",
+    apiType: "agent_full_receipt",
     name: "PAYMENT RECEIPT",
-    scenario: "Customer Full Payment",
+    scenario: "Agent Full Settlement",
+    recipientCategory: "Travel Agent",
     docNumberPrefix: "Receipt No.",
-    recipientType: "customer",
+    recipientType: "agent",
     recipientHeader: "RECEIVED FROM",
     samplePaid: 1565.0,
     sampleDue: 0,
@@ -112,7 +129,10 @@ const TEMPLATES: Record<TemplateKey, TemplateConfig> = {
     sampleDueDate: "",
     bookingStatus: "Booking Confirmed",
     paymentStatus: "Paid in Full",
-    noteText: "Payment has been received in full for this booking. Thank you for choosing Tourvaa.",
+    badgeText: "PAID",
+    badgeColorClass: "bg-emerald-50 text-emerald-700 border-emerald-200",
+    description: "B2B settlement payment receipt acknowledging agent balance clearance",
+    noteText: "Payment has been received in full for this booking. Thank you for booking through Tourvaa.",
     closingDisclaimer:
       "This receipt confirms payment received; it does not by itself confirm supplier acceptance if the booking status above is not confirmed.",
   },
@@ -189,8 +209,8 @@ type RealBooking = {
 };
 
 export default function InvoiceTemplatesPage() {
-  const [activeTemplate, setActiveTemplate] = useState<TemplateKey>("agent_reserve");
-  const [editorSection, setEditorSection] = useState<"company" | "branding" | "copy" | "sample">("sample");
+  const [activeTemplate, setActiveTemplate] = useState<TemplateKey>("customer_full");
+  const [editorSection, setEditorSection] = useState<"sample" | "company" | "branding" | "copy">("sample");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [downloadingPdf, setDownloadingPdf] = useState(false);
@@ -233,7 +253,7 @@ export default function InvoiceTemplatesPage() {
     addonsTotal: 180.0,
     discountTotal: 65.0,
     taxAmount: 156.5,
-    // Dynamic Recipient fields (BILL TO / RECEIVED FROM)
+    // Dynamic Recipient fields
     agentBusinessName: "Apex Voyages & Holidays Pty Ltd",
     agentContactName: "Sarah Jenkins",
     agentAddress: "45 St Georges Terrace, Perth WA 6000, Australia",
@@ -298,34 +318,29 @@ export default function InvoiceTemplatesPage() {
     const discount = typeof b.discount_amount === "number" ? b.discount_amount : parseFloat(String(b.discount_amount || 0));
     const tax = typeof b.tax_amount === "number" ? b.tax_amount : parseFloat(String(b.tax_amount || 0));
 
-    const agentBiz = b.agent?.agent_name || "";
-    const agentContact = b.agent?.user?.name || "";
-    const custName = b.customer?.full_name || "";
-    const custAddr = b.customer?.address || "";
-    const custEmail = b.customer?.email || "";
-    const custPhone = b.customer?.phone || "";
-
     setSampleData((prev) => ({
       ...prev,
       bookingCode: b.booking_code || `TVA-BK-${b.id}`,
       tourName: b.tour_name || prev.tourName,
       currency: b.currency || prev.currency,
-      travelDate: b.tour_start_date ? b.tour_start_date.substring(0, 10) : prev.travelDate,
-      adults: b.adults_count || 2,
-      children: b.children_count || 0,
+      travelDate: b.tour_start_date || prev.travelDate,
+      adults: b.adults_count || prev.adults,
+      children: b.children_count || prev.children,
       tourPrice: basePrice > 0 ? basePrice : prev.tourPrice,
       addonsTotal: addons,
       discountTotal: discount,
       taxAmount: tax,
-      agentBusinessName: agentBiz || prev.agentBusinessName,
-      agentContactName: agentContact || prev.agentContactName,
+      customerName: b.customer?.full_name || prev.customerName,
+      customerEmail: b.customer?.email || prev.customerEmail,
+      customerPhone: b.customer?.phone || prev.customerPhone,
+      customerAddress: b.customer?.address || prev.customerAddress,
+      agentBusinessName: b.agent?.agent_name || prev.agentBusinessName,
+      agentContactName: b.agent?.user?.name || prev.agentContactName,
       agentEmail: b.agent?.user?.email || prev.agentEmail,
-      customerName: custName || prev.customerName,
-      customerAddress: custAddr || prev.customerAddress,
-      customerEmail: custEmail || prev.customerEmail,
-      customerPhone: custPhone || prev.customerPhone,
-      leadTraveller: custName || prev.leadTraveller,
     }));
+
+    setMessage({ type: "success", text: `Loaded real booking data for ${b.booking_code || `#${b.id}`}` });
+    setTimeout(() => setMessage(null), 3000);
   };
 
   const handleSaveSettings = async () => {
@@ -333,10 +348,10 @@ export default function InvoiceTemplatesPage() {
     setMessage(null);
     try {
       await api.put("/settings/", { settings: form });
-      setMessage({ type: "success", text: "Invoice template settings saved successfully." });
+      setMessage({ type: "success", text: "Invoice template settings updated successfully across all 4 templates." });
       setTimeout(() => setMessage(null), 4000);
     } catch {
-      setMessage({ type: "error", text: "Could not save template settings. Please try again." });
+      setMessage({ type: "error", text: "Failed to save settings. Please verify administrator permissions." });
     } finally {
       setSaving(false);
     }
@@ -368,16 +383,23 @@ export default function InvoiceTemplatesPage() {
     try {
       const template = TEMPLATES[activeTemplate];
       const isAgent = template.recipientType === "agent";
+
+      const recBiz = isAgent ? sampleData.agentBusinessName : "";
+      const recContact = isAgent ? sampleData.agentContactName : sampleData.customerName;
+      const recAddr = isAgent ? sampleData.agentAddress : sampleData.customerAddress;
+      const recEmail = isAgent ? sampleData.agentEmail : sampleData.customerEmail;
+      const recPhone = isAgent ? sampleData.agentPhone : sampleData.customerPhone;
+
       const params = new URLSearchParams({
         template_type: template.apiType,
         currency: sampleData.currency,
         tour_name: sampleData.tourName,
         booking_code: sampleData.bookingCode,
-        recipient_business_name: isAgent ? sampleData.agentBusinessName : sampleData.customerName,
-        recipient_contact_name: isAgent ? sampleData.agentContactName : sampleData.customerName,
-        recipient_address: isAgent ? sampleData.agentAddress : sampleData.customerAddress,
-        recipient_email: isAgent ? sampleData.agentEmail : sampleData.customerEmail,
-        recipient_phone: isAgent ? sampleData.agentPhone : sampleData.customerPhone,
+        recipient_business_name: recBiz,
+        recipient_contact_name: recContact,
+        recipient_address: recAddr,
+        recipient_email: recEmail,
+        recipient_phone: recPhone,
         tour_price: sampleData.tourPrice.toString(),
         addons_total: sampleData.addonsTotal.toString(),
         discount_total: sampleData.discountTotal.toString(),
@@ -416,12 +438,19 @@ export default function InvoiceTemplatesPage() {
   const isDeposit = activeTemplate === "customer_deposit";
   const isFull = activeTemplate === "agent_full" || activeTemplate === "customer_full";
 
-  const displayPaid = isReserve ? 0 : isDeposit ? Math.min(calculatedBookingTotal * 0.3, calculatedBookingTotal) : calculatedBookingTotal;
+  const displayPaid = isReserve
+    ? 0
+    : isDeposit
+    ? Math.min(calculatedBookingTotal * 0.3, calculatedBookingTotal)
+    : calculatedBookingTotal;
+
   const displayDue = isFull ? 0 : Math.max(0, calculatedBookingTotal - displayPaid);
 
   const formatMoney = (val: number) => {
     return `${sampleData.currency} ${val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
+
+  const templateList = Object.values(TEMPLATES);
 
   if (loading) {
     return <Loader label="Loading invoice template settings..." fullScreen />;
@@ -442,7 +471,7 @@ export default function InvoiceTemplatesPage() {
                 Invoice &amp; Receipt Templates
               </h1>
               <p className="mt-1.5 max-w-2xl text-sm leading-6 text-dash-muted">
-                Edit legal entity details, branding, table colors, and payment rules. All four templates update dynamically below.
+                Review and customize Tourvaa&rsquo;s 4 core approved financial documents: Customer Full Payment Receipt, Customer Deposit &amp; Schedule, Agent Reservation Invoice, and Agent Settlement Receipt.
               </p>
             </div>
 
@@ -461,11 +490,11 @@ export default function InvoiceTemplatesPage() {
               <button
                 type="button"
                 onClick={handleResetDefaults}
-                className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs font-bold text-slate-600 transition hover:bg-slate-50"
-                title="Reset to template defaults"
+                className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs font-bold text-slate-700 shadow-sm transition hover:bg-slate-50"
+                title="Reset colors and company labels to defaults"
               >
                 <RotateCcw size={14} />
-                Reset
+                Reset Defaults
               </button>
 
               <button
@@ -475,55 +504,53 @@ export default function InvoiceTemplatesPage() {
                 className="inline-flex items-center gap-2 rounded-xl bg-[#07566A] px-4 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-[#0B263D] disabled:opacity-60"
               >
                 <Save size={15} />
-                {saving ? "Saving..." : "Save Template Settings"}
+                {saving ? "Saving Changes..." : "Save Template Settings"}
               </button>
             </div>
           </div>
 
           {message && (
             <div
-              className={`mt-4 flex items-center gap-2 rounded-xl px-4 py-3 text-xs font-medium ${
+              className={`mt-4 rounded-xl border p-3 text-xs font-semibold ${
                 message.type === "success"
-                  ? "border border-emerald-200 bg-emerald-50 text-emerald-800"
-                  : "border border-red-200 bg-red-50 text-red-800"
+                  ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+                  : "border-rose-200 bg-rose-50 text-rose-800"
               }`}
             >
-              {message.type === "success" ? <Check size={16} /> : <Info size={16} />}
-              <span>{message.text}</span>
+              {message.text}
             </div>
           )}
 
-          {/* Badges bar */}
-          <div className="mt-5 flex flex-wrap items-center gap-2 border-t border-slate-200/60 pt-4 text-[11px] text-slate-600">
+          {/* Compliance & Standards Badges */}
+          <div className="mt-5 flex flex-wrap items-center gap-2 pt-4 border-t border-sky-100/80 text-xs">
             <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 font-bold text-emerald-700">
-              <ShieldCheck size={14} /> Captured Payments Only
+              <ShieldCheck size={14} /> 4 Core Approved Templates
             </span>
             <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2.5 py-1 font-bold text-blue-700">
-              <CircleCheck size={14} /> Separate Booking &amp; Payment Status
+              <CircleCheck size={14} /> Booking &amp; Payment Status Separation
             </span>
             <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 font-bold text-slate-700">
-              Zero Commission Disclosed
+              Zero Internal Commission Disclosed
             </span>
             <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 font-bold text-amber-800">
-              Dynamic Currency &amp; Bill To
+              Multi-Currency &amp; Dynamic Bill-To
             </span>
           </div>
         </section>
 
-        {/* 4 Template Selector Tabs */}
-        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-          {(Object.keys(TEMPLATES) as TemplateKey[]).map((key) => {
-            const t = TEMPLATES[key];
-            const isSelected = activeTemplate === key;
+        {/* 4 Core Template Selector Cards */}
+        <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
+          {templateList.map((t) => {
+            const isSelected = activeTemplate === t.id;
             return (
               <button
-                key={key}
+                key={t.id}
                 type="button"
-                onClick={() => setActiveTemplate(key)}
+                onClick={() => setActiveTemplate(t.id)}
                 className={`relative flex flex-col items-start rounded-2xl border p-4 text-left transition-all ${
                   isSelected
-                    ? "border-[#07566A] bg-white shadow-md ring-2 ring-[#07566A]/10"
-                    : "border-slate-200 bg-white/70 hover:border-slate-300 hover:bg-white"
+                    ? "border-[#07566A] bg-white shadow-md ring-2 ring-[#07566A]/15"
+                    : "border-slate-200 bg-white/80 hover:border-slate-300 hover:bg-white"
                 }`}
               >
                 <div className="flex w-full items-center justify-between">
@@ -532,18 +559,21 @@ export default function InvoiceTemplatesPage() {
                       isSelected ? "bg-[#07566A] text-white" : "bg-slate-100 text-slate-600"
                     }`}
                   >
-                    {t.recipientType === "agent" ? "Agent" : "Customer"}
+                    {t.recipientCategory}
                   </span>
                   <FileText className={isSelected ? "text-[#07566A]" : "text-slate-400"} size={17} />
                 </div>
                 <h3 className="mt-2 text-sm font-bold text-slate-900">{t.name}</h3>
                 <span className="text-[11px] font-semibold text-slate-600">{t.scenario}</span>
-                <p className="mt-1 text-[11px] text-slate-500">
-                  {key === "agent_reserve" && "Payment request after reservation confirmed"}
-                  {key === "agent_full" && "Receipt after full settlement by agent"}
-                  {key === "customer_deposit" && "Deposit receipt & balance schedule"}
-                  {key === "customer_full" && "Full payment receipt for traveler"}
+                <p className="mt-1 text-[11px] text-slate-500 line-clamp-2">
+                  {t.description}
                 </p>
+                <div className="mt-3 flex items-center justify-between w-full pt-2 border-t border-slate-100 text-[10px]">
+                  <span className={`px-2 py-0.5 rounded font-bold border ${t.badgeColorClass}`}>
+                    {t.badgeText}
+                  </span>
+                  <span className="font-mono text-slate-400">{t.docNumberPrefix}</span>
+                </div>
               </button>
             );
           })}
@@ -648,15 +678,15 @@ export default function InvoiceTemplatesPage() {
                       type="text"
                       value={sampleData.tourName}
                       onChange={(e) => handleSampleChange("tourName", e.target.value)}
-                      placeholder="e.g. Rotorua Geothermal & Maori Experience"
+                      placeholder="e.g. Rotorua Geothermal & Maori Cultural Experience"
                       className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-xs font-medium text-slate-800 outline-none focus:border-[#07566A]"
                     />
                   </label>
 
-                  {/* Dynamic Pricing Fields */}
-                  <div>
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-600 block mb-1">
-                      PRICE BREAKDOWN ({sampleData.currency})
+                  {/* Price Calculation inputs */}
+                  <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-3 space-y-2">
+                    <span className="text-xs font-bold uppercase tracking-wider text-slate-800 block">
+                      Price Components ({sampleData.currency})
                     </span>
                     <div className="grid grid-cols-4 gap-2">
                       <label className="block">
@@ -701,12 +731,12 @@ export default function InvoiceTemplatesPage() {
                     </div>
                   </div>
 
-                  {/* Dynamic BILL TO / RECEIVED FROM Details */}
+                  {/* Dynamic Recipient Details */}
                   <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-3 space-y-2.5">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-bold uppercase tracking-wider text-slate-800 flex items-center gap-1.5">
                         <UserIcon size={14} className="text-[#07566A]" />
-                        {currentTemplate.recipientHeader} (Dynamic Recipient Details)
+                        {currentTemplate.recipientHeader} ({currentTemplate.recipientCategory})
                       </span>
                       <span className="text-[10px] font-semibold text-slate-500">
                         {isAgent ? "Agent Entity" : "Registered Customer"}
@@ -829,7 +859,7 @@ export default function InvoiceTemplatesPage() {
                               type="text"
                               value={sampleData.pickupLocation}
                               onChange={(e) => handleSampleChange("pickupLocation", e.target.value)}
-                              placeholder="08:30 AM Hotel Lobby Pick-up"
+                              placeholder="08:30 AM Hotel Lobby"
                               className="mt-0.5 w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-800 outline-none focus:border-[#07566A]"
                             />
                           </label>
@@ -838,7 +868,7 @@ export default function InvoiceTemplatesPage() {
                     )}
                   </div>
 
-                  {/* Travellers & Travel Date */}
+                  {/* Travel details */}
                   <div className="grid grid-cols-3 gap-2">
                     <label className="block">
                       <span className="text-[10px] font-bold uppercase text-slate-500">Travel Date</span>
@@ -936,7 +966,7 @@ export default function InvoiceTemplatesPage() {
                   <label className="block">
                     <div className="flex items-center justify-between">
                       <span className="text-[11px] font-bold uppercase tracking-wider text-slate-600">GST / Tax Number</span>
-                      <span className="text-[10px] text-slate-400">Omitted if blank (Rule 8)</span>
+                      <span className="text-[10px] text-slate-400">Omitted if blank (Statutory)</span>
                     </div>
                     <input
                       type="text"
@@ -955,7 +985,7 @@ export default function InvoiceTemplatesPage() {
               <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-4">
                 <div>
                   <h3 className="text-sm font-bold text-slate-900">Header Branding &amp; Palette</h3>
-                  <p className="text-xs text-slate-500">Customize the top-right brand logo and table bar colors.</p>
+                  <p className="text-xs text-slate-500">Customize the top brand logo and table bar colors.</p>
                 </div>
 
                 {/* Theme presets */}
@@ -1001,25 +1031,25 @@ export default function InvoiceTemplatesPage() {
                         type="text"
                         value={form.invoice_header_color || "#0B263D"}
                         onChange={(e) => handleFieldChange("invoice_header_color", e.target.value)}
-                        className="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-xs font-mono text-slate-700 outline-none"
+                        className="w-full rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-mono text-slate-800 outline-none focus:border-[#07566A]"
                       />
                     </div>
                   </label>
 
                   <label className="block">
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-600">Brand Primary</span>
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-600">Accent Highlight</span>
                     <div className="mt-1 flex items-center gap-2">
                       <input
                         type="color"
-                        value={form.invoice_primary_color || "#07566A"}
-                        onChange={(e) => handleFieldChange("invoice_primary_color", e.target.value)}
+                        value={form.invoice_accent_color || "#159C96"}
+                        onChange={(e) => handleFieldChange("invoice_accent_color", e.target.value)}
                         className="h-8 w-10 cursor-pointer rounded border border-slate-200 bg-transparent p-0.5"
                       />
                       <input
                         type="text"
-                        value={form.invoice_primary_color || "#07566A"}
-                        onChange={(e) => handleFieldChange("invoice_primary_color", e.target.value)}
-                        className="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-xs font-mono text-slate-700 outline-none"
+                        value={form.invoice_accent_color || "#159C96"}
+                        onChange={(e) => handleFieldChange("invoice_accent_color", e.target.value)}
+                        className="w-full rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-mono text-slate-800 outline-none focus:border-[#07566A]"
                       />
                     </div>
                   </label>
@@ -1027,7 +1057,7 @@ export default function InvoiceTemplatesPage() {
 
                 <div className="space-y-3 pt-2 border-t border-slate-100">
                   <label className="block">
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-600">Brand Title Text</span>
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-600">Brand Name</span>
                     <input
                       type="text"
                       value={form.invoice_brand_name || ""}
@@ -1049,12 +1079,12 @@ export default function InvoiceTemplatesPage() {
                   </label>
 
                   <label className="block">
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-600">Invoice Logo URL (Optional)</span>
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-600">Logo Image URL</span>
                     <input
-                      type="url"
+                      type="text"
                       value={form.invoice_logo_url || ""}
                       onChange={(e) => handleFieldChange("invoice_logo_url", e.target.value)}
-                      placeholder="https://.../logo.png"
+                      placeholder="https://... or /logo.png"
                       className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-xs font-medium text-slate-800 outline-none focus:border-[#07566A]"
                     />
                   </label>
@@ -1062,45 +1092,17 @@ export default function InvoiceTemplatesPage() {
               </div>
             )}
 
-            {/* Section: Copy, Policy & Footer */}
+            {/* Section: Text Copy & Footers */}
             {editorSection === "copy" && (
               <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-4">
                 <div>
-                  <h3 className="text-sm font-bold text-slate-900">Legal Copy, Links &amp; Notices</h3>
-                  <p className="text-xs text-slate-500">Configure clickable URLs and booking information statements.</p>
+                  <h3 className="text-sm font-bold text-slate-900">Standard Footers &amp; Disclaimers</h3>
+                  <p className="text-xs text-slate-500">Legal notices printed at the base of every document.</p>
                 </div>
 
                 <div className="space-y-3">
                   <label className="block">
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-600">
-                      Tourvaa Terms &amp; Conditions URL
-                    </span>
-                    <input
-                      type="url"
-                      value={form.terms_url || ""}
-                      onChange={(e) => handleFieldChange("terms_url", e.target.value)}
-                      placeholder="https://www.tourvaa.com/terms#cancellation-terms"
-                      className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-xs font-medium text-slate-800 outline-none focus:border-[#07566A]"
-                    />
-                    <span className="mt-1 block text-[10px] text-slate-400">Clickable in generated PDF (Rule 10)</span>
-                  </label>
-
-                  <label className="block">
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-600">Online Payment Link URL</span>
-                    <input
-                      type="url"
-                      value={form.payment_link || ""}
-                      onChange={(e) => handleFieldChange("payment_link", e.target.value)}
-                      placeholder="https://www.tourvaa.com/payments?booking_id=..."
-                      className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-xs font-medium text-slate-800 outline-none focus:border-[#07566A]"
-                    />
-                    <span className="mt-1 block text-[10px] text-slate-400">
-                      Rendered in footer when balance due &gt; 0 (Rule 3)
-                    </span>
-                  </label>
-
-                  <label className="block">
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-600">Footer Thank-You Note</span>
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-600">Thank-You Line</span>
                     <input
                       type="text"
                       value={form.invoice_footer_thanks || ""}
@@ -1111,42 +1113,47 @@ export default function InvoiceTemplatesPage() {
                   </label>
 
                   <label className="block">
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-600">Footer System Legal Notice</span>
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-600">Legal Disclaimer Notice</span>
                     <textarea
-                      rows={2}
+                      rows={3}
                       value={form.invoice_footer_legal || ""}
                       onChange={(e) => handleFieldChange("invoice_footer_legal", e.target.value)}
-                      placeholder="This document is generated by Tourvaa and reflects the financial status as of the issue date."
+                      placeholder="This is a system-generated invoice and does not require a signature."
+                      className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-xs font-medium text-slate-800 outline-none focus:border-[#07566A]"
+                    />
+                  </label>
+
+                  <label className="block">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-600">Terms &amp; Conditions URL</span>
+                    <input
+                      type="text"
+                      value={form.terms_url || ""}
+                      onChange={(e) => handleFieldChange("terms_url", e.target.value)}
+                      placeholder="https://www.tourvaa.com/terms#cancellation-terms"
+                      className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-xs font-medium text-slate-800 outline-none focus:border-[#07566A]"
+                    />
+                  </label>
+
+                  <label className="block">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-600">Payment Link Template</span>
+                    <input
+                      type="text"
+                      value={form.payment_link || ""}
+                      onChange={(e) => handleFieldChange("payment_link", e.target.value)}
+                      placeholder="https://www.tourvaa.com/payments?booking_id={booking_code}"
                       className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-xs font-medium text-slate-800 outline-none focus:border-[#07566A]"
                     />
                   </label>
                 </div>
               </div>
             )}
-
-            {/* Quick summary card */}
-            <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 text-xs text-slate-600 space-y-1.5">
-              <div className="flex items-center gap-2 font-bold text-slate-800">
-                <Info size={14} className="text-[#07566A]" />
-                Template Specifications Summary
-              </div>
-              <p>
-                <strong>Recipient:</strong> {isAgent ? "Agent Business & Billing Contact (Never Traveller)" : "Registered Customer Profile"}
-              </p>
-              <p>
-                <strong>Delivery Timing:</strong> Only after supplier acceptance is confirmed.
-              </p>
-              <p>
-                <strong>Tax Display:</strong> Configured for inclusive GST with red statutory label.
-              </p>
-            </div>
           </div>
 
-          {/* Right Column: Live High-Fidelity A4 Invoice Preview */}
+          {/* Right Column: Live Dynamic Preview */}
           <div className="space-y-3">
-            <div className="flex items-center justify-between px-1">
+            <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Eye size={16} className="text-[#07566A]" />
+                <span className="inline-block h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
                 <span className="text-xs font-bold uppercase tracking-wider text-slate-700">
                   Live Dynamic PDF Canvas ({sampleData.currency})
                 </span>
@@ -1185,7 +1192,7 @@ export default function InvoiceTemplatesPage() {
                   </div>
                 </div>
 
-                {/* 2. FROM & BILL TO Panels */}
+                {/* 2. FROM & BILL TO / RECEIVED FROM Panels */}
                 <div className="grid grid-cols-2 gap-4">
                   {/* FROM Box */}
                   <div className="overflow-hidden rounded-lg border border-slate-200">
@@ -1222,7 +1229,9 @@ export default function InvoiceTemplatesPage() {
                           : sampleData.customerName || "David & Emily Miller"}
                       </p>
                       {isAgent && sampleData.agentContactName && (
-                        <p className="text-slate-600">Attn: {sampleData.agentContactName}</p>
+                        <p className="text-slate-600">
+                          Attn: {sampleData.agentContactName}
+                        </p>
                       )}
                       {(isAgent ? sampleData.agentAddress : sampleData.customerAddress) && (
                         <p className="text-slate-600 whitespace-pre-line">
@@ -1436,7 +1445,9 @@ export default function InvoiceTemplatesPage() {
                             <td className="px-3 py-2 font-medium">
                               {isAgent ? "Stripe Credit Card" : isDeposit ? "Apple Pay" : "VISA Debit"}
                             </td>
-                            <td className="px-3 py-2 font-mono text-[11px] text-slate-600">ch_3Nxy1234567890abcdef</td>
+                            <td className="px-3 py-2 font-mono text-[11px] text-slate-600">
+                              ch_3Nxy1234567890abcdef
+                            </td>
                           </tr>
                         </tbody>
                       </table>
@@ -1463,7 +1474,6 @@ export default function InvoiceTemplatesPage() {
                     </span>
                   </div>
                 </div>
-
 
                 {/* 7. IMPORTANT BOOKING INFORMATION */}
                 <div className="space-y-1.5 pt-1 text-xs text-slate-700">
@@ -1504,7 +1514,7 @@ export default function InvoiceTemplatesPage() {
                   )}
                 </div>
 
-                {/* 8. Footer with Payment Link (Rule 3) */}
+                {/* 8. Footer with Payment Link */}
                 <div className="border-t border-slate-200 pt-3 text-center text-[11px] text-slate-500 space-y-1">
                   {displayDue > 0 && form.payment_link && (
                     <p className="font-bold text-[#07566A]">

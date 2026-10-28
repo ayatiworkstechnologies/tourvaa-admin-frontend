@@ -113,13 +113,13 @@ export default function HomeNewsletterBanner({
                     placeholder="Enter your email address"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="h-11 sm:h-12 w-full rounded-lg border border-pub-accent/25 bg-white px-4 text-sm text-slate-900 placeholder:text-slate-500 focus:outline-none focus:border-pub-accent transition-colors"
+                    className="min-h-[52px] w-full rounded-lg border border-pub-accent/25 bg-white px-4 py-3 text-base text-slate-900 placeholder:text-slate-500 focus:outline-none focus:border-pub-accent transition-colors sm:h-12 sm:min-h-0 sm:py-0 sm:text-sm"
                   />
                 </div>
                 <button
                   type="submit"
                   disabled={subscribing}
-                  className="inline-flex h-11 items-center justify-center gap-2 rounded-[10px] bg-pub-primary px-6 text-sm font-extrabold text-white shadow-[0_8px_18px_rgba(11,31,58,0.2)] transition-all hover:-translate-y-0.5 hover:bg-pub-primary-dark hover:shadow-[0_12px_24px_rgba(11,31,58,0.28)] active:scale-[0.98] disabled:opacity-60 sm:h-12 sm:px-7 whitespace-nowrap"
+                  className="inline-flex min-h-[52px] items-center justify-center gap-2 rounded-[10px] bg-pub-primary px-6 py-3 text-sm font-extrabold text-white shadow-[0_8px_18px_rgba(11,31,58,0.2)] transition-all hover:-translate-y-0.5 hover:bg-pub-primary-dark hover:shadow-[0_12px_24px_rgba(11,31,58,0.28)] active:scale-[0.98] disabled:opacity-60 sm:h-12 sm:min-h-0 sm:px-7 sm:py-0 whitespace-nowrap"
                 >
                   <span>{subscribing ? "Subscribing..." : "Subscribe"}</span>
                   <ArrowRight
