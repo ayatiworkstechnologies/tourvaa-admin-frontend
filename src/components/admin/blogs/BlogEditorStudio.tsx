@@ -243,7 +243,15 @@ export default function BlogEditorStudio({
     // during sanitisation, which used to expose that JSON publicly.
     const finalContent = form.content.trim();
 
-    const payload = { ...form, content: finalContent, slug: finalSlug, status: finalStatus };
+    // A datetime-local input returns an empty string until the editor chooses
+    // a schedule. The API correctly expects a datetime or null, never "".
+    const payload = {
+      ...form,
+      content: finalContent,
+      slug: finalSlug,
+      status: finalStatus,
+      scheduled_at: form.scheduled_at.trim() || null,
+    };
 
     setSaving(true);
     try {
