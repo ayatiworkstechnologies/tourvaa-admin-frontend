@@ -172,6 +172,8 @@ function LoginPanel({ config, safeRedirect, onSwitchToRegister }: { config: Port
   const [error, setError] = useState("");
   const [socialProviders, setSocialProviders] = useState<Record<string, boolean>>({});
   const { register, handleSubmit, formState: { errors } } = useForm<LoginFormValues>({ defaultValues: { identifier: "", password: "" } });
+  const activeRoleSlug = String(dashboard?.user?.role?.slug ?? "").toLowerCase();
+  const hasMatchingPortalSession = isLoggedIn && activeRoleSlug === config.roleSlug;
 
   function redirectTarget(roleSlug = config.roleSlug) {
     const allowed = safeRedirect && (
@@ -182,9 +184,15 @@ function LoginPanel({ config, safeRedirect, onSwitchToRegister }: { config: Port
   }
 
   useEffect(() => {
-    if (!sessionLoading && isLoggedIn && dashboard) router.replace(redirectTarget(dashboard.user.role?.slug));
+    // A user can intentionally open another portal's login while a different
+    // portal session exists in this browser. Do not send that user to the
+    // existing account's dashboard (especially Admin); only a matching portal
+    // session may bypass its own login form.
+    if (!sessionLoading && hasMatchingPortalSession && dashboard) {
+      router.replace(redirectTarget(dashboard.user.role?.slug));
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sessionLoading, isLoggedIn, dashboard, router, safeRedirect]);
+  }, [sessionLoading, hasMatchingPortalSession, dashboard, router, safeRedirect]);
 
   useEffect(() => {
     if (config.accountType !== "CUSTOMER") return;
@@ -212,7 +220,9 @@ function LoginPanel({ config, safeRedirect, onSwitchToRegister }: { config: Port
         // Login has already issued httpOnly cookies. Remove them before
         // leaving the user on the wrong portal's form, otherwise its stale
         // session bootstrap can race the next correct login attempt.
-        await api.post("/auth/logout").catch(() => {});
+        await api.post("/auth/logout", undefined, {
+          headers: { "X-Tourvaa-Portal": ["admin", "super-admin", "sub-admin"].includes(roleSlug) ? "admin" : "public" },
+        }).catch(() => {});
         setError(config.wrongRoleMessage);
         return;
       }
@@ -229,7 +239,7 @@ function LoginPanel({ config, safeRedirect, onSwitchToRegister }: { config: Port
     }
   };
 
-  if (!sessionLoading && isLoggedIn) return null;
+  if (!sessionLoading && hasMatchingPortalSession) return null;
   const forgotHref = `/forgot-password?role=${encodeURIComponent(config.roleSlug)}${safeRedirect ? `&redirect=${encodeURIComponent(safeRedirect)}` : ""}`;
 
   return (

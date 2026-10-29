@@ -254,7 +254,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // skip probing /dashboard/me to prevent spurious 401 Unauthorized errors in the console.
       const hasSession =
         typeof document !== "undefined" &&
-        (document.cookie.includes("tourvaa_csrf=") ||
+        (document.cookie.includes(pathname.startsWith("/admin") ? "tourvaa_admin_csrf=" : "tourvaa_csrf=") ||
           Boolean(window.localStorage.getItem("tourvaa_token")));
 
       if (!hasSession && isPublicRoute(pathname)) {

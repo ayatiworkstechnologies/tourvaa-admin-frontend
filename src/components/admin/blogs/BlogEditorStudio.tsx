@@ -231,12 +231,12 @@ export default function BlogEditorStudio({
   const handleSave = async (statusOverride?: "draft" | "published" | "scheduled") => {
     if (!form.title.trim()) { toast.error("Please enter an article title."); return; }
     if (!form.content.trim()) { toast.error("Please write some article content."); return; }
-    if (statusOverride === "scheduled" && !form.scheduled_at) {
+    const finalStatus = statusOverride || form.status;
+    if (finalStatus === "scheduled" && !form.scheduled_at.trim()) {
       toast.error("Please pick a scheduled publish date & time.");
       return;
     }
 
-    const finalStatus = statusOverride || form.status;
     const finalSlug = form.slug.trim() || slugifyBlogTitle(form.title);
     // FAQs travel in the dedicated `faqs` API field.  Never append their
     // JSON to article content: the backend quite correctly strips comments

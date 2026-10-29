@@ -77,7 +77,21 @@ function isPublicPagePath(pathname: string) {
 // request came from this app rather than a cross-site form/fetch.
 const CSRF_COOKIE_NAME = "tourvaa_csrf";
 const CSRF_HEADER_NAME = "X-CSRF-Token";
+const PORTAL_HEADER_NAME = "X-Tourvaa-Portal";
 const UNSAFE_METHODS = new Set(["post", "put", "patch", "delete"]);
+
+function isAdminPortalPath(pathname: string) {
+  return pathname === "/admin" || pathname.startsWith("/admin/");
+}
+
+function activePortalHeader() {
+  if (typeof window === "undefined") return "";
+  return isAdminPortalPath(window.location.pathname) ? "admin" : "public";
+}
+
+function activeCsrfCookieName() {
+  return activePortalHeader() === "admin" ? "tourvaa_admin_csrf" : CSRF_COOKIE_NAME;
+}
 
 function getCookie(name: string): string | null {
   if (typeof document === "undefined") return null;
@@ -137,6 +151,10 @@ api.interceptors.request.use((config) => {
   if (typeof window !== "undefined") {
     config.baseURL = API_PATH_PREFIX;
     config.url = normalizeApiUrl(config.url);
+    config.headers = config.headers ?? {};
+    if (!config.headers[PORTAL_HEADER_NAME]) {
+      config.headers[PORTAL_HEADER_NAME] = activePortalHeader();
+    }
 
     const method = (config.method || "get").toLowerCase();
     // Portal records are operational data (bookings, balances, messages,
@@ -151,9 +169,8 @@ api.interceptors.request.use((config) => {
       config.params = { ...config.params, _t: Date.now() };
     }
     if (UNSAFE_METHODS.has(method)) {
-      const csrfToken = getCookie(CSRF_COOKIE_NAME);
+      const csrfToken = getCookie(activeCsrfCookieName());
       if (csrfToken) {
-        config.headers = config.headers ?? {};
         config.headers[CSRF_HEADER_NAME] = csrfToken;
       }
     }
@@ -182,7 +199,7 @@ api.interceptors.response.use(
 
       // If the user has no session indicator (CSRF cookie), they are unauthenticated.
       // Probing /auth/refresh-token without session cookies is guaranteed to fail and log a secondary 401 error.
-      if (!getCookie(CSRF_COOKIE_NAME)) {
+      if (!getCookie(activeCsrfCookieName())) {
         if (!isPublicPagePath(window.location.pathname)) {
           hardLogout();
         }
@@ -212,7 +229,9 @@ api.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        await authAxios.post("/auth/refresh-token", { client_type: "web-cookie" });
+        await authAxios.post("/auth/refresh-token", { client_type: "web-cookie" }, {
+          headers: { [PORTAL_HEADER_NAME]: activePortalHeader() },
+        });
         drainQueue();
         isRefreshing = false;
 

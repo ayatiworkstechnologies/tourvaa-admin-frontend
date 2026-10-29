@@ -63,12 +63,16 @@ export default function PublicHeader() {
   const { settings } = usePublicSettings();
   const logoUrl = settings.logo?.trim() || "";
   const { wishlistCount, compareCount } = useTravelStore();
-  const dashboardPath = getDashboardPath(dashboard?.user?.role?.slug ?? "");
-  const roleSlug = dashboard?.user?.role?.slug ?? "";
+  const roleSlug = dashboard?.user?.role?.slug ?? user?.role?.slug ?? "";
+  const dashboardPath = getDashboardPath(roleSlug);
   // An empty role means a public visitor, not an administrator. The old
   // inverse check therefore hid the Wishlist and Compare shortcuts before
   // sign-in, even on a wide desktop header.
   const isAdminRole = ["admin", "super-admin", "super_admin"].includes(roleSlug.toLowerCase());
+  // A back-office session must never alter the public storefront's account
+  // controls or expose the administrator's name on customer-facing pages.
+  // The admin portal remains available at /admin under its own route guard.
+  const isPublicSession = isLoggedIn && !isAdminRole;
   const profilePath =
     roleSlug === "customer"
       ? "/customer/profile"
@@ -250,7 +254,7 @@ export default function PublicHeader() {
           aria-label="Account and trip tools"
           className="hidden shrink-0 items-center gap-5 lg:flex lg:gap-7"
         >
-          {!isAdminRole && <Link
+          <Link
             href="/wishlist"
             className="group relative flex flex-col items-center gap-1 text-[10px] font-semibold text-pub-primary transition-colors hover:text-pub-secondary"
           >
@@ -264,8 +268,8 @@ export default function PublicHeader() {
                 {wishlistCount > 99 ? "99+" : wishlistCount}
               </span>
             )}
-          </Link>}
-          {!isAdminRole && <Link
+          </Link>
+          <Link
             href="/compare"
             className="group relative flex flex-col items-center gap-1 text-[10px] font-semibold text-pub-primary transition-colors hover:text-pub-secondary"
           >
@@ -279,7 +283,7 @@ export default function PublicHeader() {
                 {compareCount}
               </span>
             )}
-          </Link>}
+          </Link>
           <LanguageCurrencySelector showCountry mobileViewportMenu />
           <div ref={profileRef} className="relative">
             <button
@@ -289,7 +293,7 @@ export default function PublicHeader() {
               aria-haspopup="menu"
               className="group flex flex-col items-center gap-1 text-[10px] font-semibold text-pub-primary transition-colors hover:text-pub-secondary"
             >
-              {isLoggedIn ? (
+              {isPublicSession ? (
                 <div className="flex h-[20px] w-[20px] items-center justify-center rounded-full bg-gradient-to-br from-pub-accent to-amber-500 text-[10px] font-black text-white shadow-xs">
                   {(user?.name || "T")[0]?.toUpperCase()}
                 </div>
@@ -300,7 +304,7 @@ export default function PublicHeader() {
                 />
               )}
               <span className="flex items-center gap-0.5">
-                {isLoggedIn
+                {isPublicSession
                   ? user?.name?.split(" ")[0] || "Profile"
                   : "Profile"}
                 <ChevronDown
@@ -314,7 +318,7 @@ export default function PublicHeader() {
               </span>
             </button>
             {profileOpen &&
-              (isLoggedIn ? (
+              (isPublicSession ? (
                 <AuthenticatedProfileMenu
                   user={user}
                   profilePath={profilePath}
@@ -358,8 +362,7 @@ export default function PublicHeader() {
           <div className="md:hidden">
             <HeaderTourSearch compact onSearch={() => setOpen(false)} />
           </div>
-          {!isAdminRole && (
-            <div className="mt-3 grid grid-cols-2 gap-2.5">
+          <div className="mt-3 grid grid-cols-2 gap-2.5">
               <Link
                 href="/wishlist"
                 onClick={() => setOpen(false)}
@@ -377,12 +380,11 @@ export default function PublicHeader() {
                 Compare {compareCount > 0 && `(${compareCount})`}
               </Link>
             </div>
-          )}
           <p className="mt-4 text-[10px] font-bold uppercase tracking-widest text-slate-400">
-            {isLoggedIn ? "Your account" : "Account & partner portals"}
+            {isPublicSession ? "Your account" : "Account & partner portals"}
           </p>
           <div className="mt-2 grid gap-2">
-            {isLoggedIn ? (
+            {isPublicSession ? (
               <>
                 <div className="flex items-center gap-3 rounded-xl bg-slate-50 p-3 border border-slate-100">
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-pub-accent to-amber-500 text-white font-semibold text-sm shadow-xs">

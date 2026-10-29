@@ -51,7 +51,10 @@ export function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  if (request.cookies.has(ACCESS_COOKIE)) {
+  const accessCookie = pathname === "/admin" || pathname.startsWith("/admin/")
+    ? "tourvaa_admin_access"
+    : ACCESS_COOKIE;
+  if (request.cookies.has(accessCookie)) {
     return NextResponse.next();
   }
 

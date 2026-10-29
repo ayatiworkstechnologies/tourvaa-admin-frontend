@@ -62,7 +62,9 @@ export default function LegalPageLayout({
   const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
   const tocNavRef = useRef<HTMLElement | null>(null);
   const tocItemRefs = useRef<Record<string, HTMLButtonElement | null>>({});
-  const dashboardHref = isLoggedIn && user
+  const roleSlug = user?.role?.slug?.toLowerCase() ?? "";
+  const isAdminRole = ["admin", "super-admin", "super_admin"].includes(roleSlug);
+  const dashboardHref = isLoggedIn && user && !isAdminRole
     ? user.dashboard_route || getDashboardPath(user.role?.slug || "")
     : null;
 
