@@ -24,7 +24,8 @@ import { dialCodeForIso, phoneValidationError } from "@/lib/utils/phoneCountries
 import { useCurrency } from "@/hooks/useCurrency";
 import { useGeoCountries } from "@/hooks/useGeo";
 import type { CountryCode } from "libphonenumber-js/min";
-import { FaApple, FaFacebookF, FaGoogle } from "react-icons/fa";
+import { FaApple, FaFacebookF } from "react-icons/fa";
+import { FcGoogle } from "react-icons/fc";
 
 // Traveller (customer) accounts only - agents and suppliers register through
 // their own dedicated portals (/agent-portal/login, /supplier-portal/login).
@@ -271,25 +272,24 @@ export default function RegisterPage() {
             </div>
 
             <form onSubmit={handleSubmit(submit)} noValidate className="space-y-4">
-              <div className="grid grid-cols-3 gap-2">
-                {[
-                  { key: "google", label: "Google", icon: FaGoogle },
-                  { key: "facebook", label: "Facebook", icon: FaFacebookF },
-                  { key: "apple", label: "Apple", icon: FaApple },
-                ].map(({ key, label, icon: Icon }) => {
-                  const enabled = Boolean(socialProviders[key]);
-                  return enabled ? (
+              {Object.values(socialProviders).some(Boolean) && (
+                <>
+                  <div className="grid grid-flow-col auto-cols-fr gap-2">
+                    {[
+                      { key: "google", label: "Google", icon: FcGoogle, iconClassName: "" },
+                      { key: "facebook", label: "Facebook", icon: FaFacebookF, iconClassName: "text-[#1877F2]" },
+                      { key: "apple", label: "Apple", icon: FaApple, iconClassName: "text-black" },
+                    ].filter(({ key }) => socialProviders[key]).map(({ key, label, icon: Icon, iconClassName }) => {
+                  return (
                     <a key={key} href={key === "google" ? `/api/auth/google${redirect ? `?redirect=${encodeURIComponent(redirect)}` : ""}` : `/api/auth/oauth/${key}/start${redirect ? `?redirect=${encodeURIComponent(redirect)}` : ""}`} className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-2 py-3 text-xs font-bold text-slate-700 transition hover:border-blue-300 hover:bg-blue-50">
-                      <Icon size={16} /> {label}
+                      <Icon size={18} className={iconClassName} aria-hidden="true" /> {label}
                     </a>
-                  ) : (
-                    <button key={key} type="button" disabled title={`${label} registration must be enabled in Admin Settings`} className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-2 py-3 text-xs font-bold text-slate-400">
-                      <Icon size={16} /> {label}
-                    </button>
                   );
                 })}
-              </div>
-              <div className="flex items-center gap-3"><span className="h-px flex-1 bg-slate-200" /><span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Or register manually</span><span className="h-px flex-1 bg-slate-200" /></div>
+                  </div>
+                  <div className="flex items-center gap-3"><span className="h-px flex-1 bg-slate-200" /><span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Or register manually</span><span className="h-px flex-1 bg-slate-200" /></div>
+                </>
+              )}
 
               {/* First name */}
               <div>

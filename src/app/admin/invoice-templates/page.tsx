@@ -873,7 +873,8 @@ export default function InvoiceTemplatesPage() {
                     <label className="block">
                       <span className="text-[10px] font-bold uppercase text-slate-500">Travel Date</span>
                       <input
-                        type="date"
+                        type="text"
+                        placeholder="YYYY-MM-DD"
                         value={sampleData.travelDate}
                         onChange={(e) => handleSampleChange("travelDate", e.target.value)}
                         className="mt-0.5 w-full rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs text-slate-800 outline-none focus:border-[#07566A]"

@@ -297,7 +297,7 @@ export default function ComparePage() {
     };
   }, []);
 
-  // Synchronize active comparison items with compareList
+  // Synchronize active comparison items with compareList. A comparison must always be visitor-driven.
   useEffect(() => {
     if (!hydrated) return;
 

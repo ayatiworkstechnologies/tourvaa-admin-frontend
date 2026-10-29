@@ -1,5 +1,6 @@
 import { LuShieldCheck as ShieldCheck } from "react-icons/lu";
 import { SupplierPageHeader, SupplierPageShell } from "@/components/supplier/SupplierPage";
+import { downloadSupplierInvoicePdf } from "@/lib/api/services/invoiceService";
 
 export default function SupplierInvoicesPage() {
   return (

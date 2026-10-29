@@ -68,7 +68,7 @@ export default function PublicHeader() {
   // An empty role means a public visitor, not an administrator. The old
   // inverse check therefore hid the Wishlist and Compare shortcuts before
   // sign-in, even on a wide desktop header.
-  const isAdminRole = ["admin", "super-admin", "super_admin"].includes(roleSlug.toLowerCase());
+  const isAdminRole = ["admin", "super-admin", "sub-admin"].includes(roleSlug.toLowerCase());
   // A back-office session must never alter the public storefront's account
   // controls or expose the administrator's name on customer-facing pages.
   // The admin portal remains available at /admin under its own route guard.
