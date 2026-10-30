@@ -96,9 +96,9 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       { protocol: "https", hostname: "images.unsplash.com" },
       // Admin-uploaded tour/media assets (banner images, highlight photos,
-      // gallery images) are hosted on Cloudinary, not served from the
-      // backend's own origin - relative /storage/:path* paths are the only
-      // case that's same-origin via the rewrite above and need no entry here.
+      // gallery images) can be hosted on Cloudinary, not
+      // served from the backend's own origin. Relative /storage/:path* paths
+      // are the only case that's same-origin via the rewrite above.
       { protocol: "https", hostname: "res.cloudinary.com" },
       {
         protocol: apiProxyUrl.protocol.replace(":", "") as "http" | "https",
