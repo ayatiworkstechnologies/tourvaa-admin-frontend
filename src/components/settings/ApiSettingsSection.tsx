@@ -53,6 +53,7 @@ export default function ApiSettingsSection() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
+  const [loadError, setLoadError] = useState("");
 
   // Same masked-secret pattern as PaymentSettingsSection: secret fields start
   // blank, GET's masked value is shown only as a hint via placeholder text.
@@ -70,6 +71,7 @@ export default function ApiSettingsSection() {
 
   const load = async () => {
     setLoading(true);
+    setLoadError("");
     try {
       const res = await api.get("/settings/api/summary");
       const data: ApiSummary = res.data.data;
@@ -80,6 +82,8 @@ export default function ApiSettingsSection() {
       setViatorEnv((data.viator_env as "production" | "sandbox") || "production");
       setViatorEnabled(Boolean(data.viator_enabled));
       setOauth((current) => ({ ...current, googleId: "", googleSecret: "", googleEnabled: Boolean(data.google_oauth_enabled), facebookId: "", facebookSecret: "", facebookEnabled: Boolean(data.facebook_oauth_enabled), appleServiceId: "", applePrivateKey: "", appleMetadata: data.apple_oauth_metadata || "", appleEnabled: Boolean(data.apple_oauth_enabled) }));
+    } catch {
+      setLoadError("API settings could not be loaded. Your saved settings have not been changed.");
     } finally {
       setLoading(false);
     }
@@ -121,7 +125,16 @@ export default function ApiSettingsSection() {
   };
 
   if (loading) return <Loader label="Loading API settings..." />;
-  if (!summary) return null;
+  if (!summary) {
+    return (
+      <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900" role="alert">
+        <p className="font-bold">{loadError || "API settings are unavailable."}</p>
+        <button type="button" onClick={() => void load()} className="mt-3 rounded-lg border border-amber-300 bg-white px-3 py-1.5 font-bold text-amber-900 hover:bg-amber-100">
+          Retry
+        </button>
+      </div>
+    );
+  }
 
   return (
     <form onSubmit={save} className="space-y-6">
