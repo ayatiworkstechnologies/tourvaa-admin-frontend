@@ -204,7 +204,7 @@ export default function ViatorIntegrationPage() {
   const canUpdate = hasPermission("settings.update") || hasPermission("update-settings");
   const [status, setStatus] = useState<Status | null>(null);
   const [clicks, setClicks] = useState<ClickSummary | null>(null);
-  const [busy, setBusy] = useState<"" | "test" | "sync" | SettingKey>("");
+  const [busy, setBusy] = useState<"" | "test" | "sync" | "env" | SettingKey>("");
   const [mappings, setMappings] = useState<{ items: Mapping[]; total: number; total_pages: number } | null>(null);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("");
@@ -277,6 +277,19 @@ export default function ViatorIntegrationPage() {
     }
   };
 
+  const switchEnvironment = async (env: "production" | "sandbox") => {
+    setBusy("env");
+    try {
+      const res = await api.put(`${BASE}/settings`, { environment: env });
+      setStatus(res.data.data);
+      toast.success(`Switched Viator environment to ${env === "production" ? "Live / Production" : "Sandbox / Test"}.`);
+    } catch (err) {
+      toast.error(getApiErrorMessage(err));
+    } finally {
+      setBusy("");
+    }
+  };
+
   const toggleActive = async (row: Mapping) => {
     try {
       const res = await api.put(`${BASE}/mappings/${row.id}`, { is_active: !row.is_active });
@@ -332,7 +345,19 @@ export default function ViatorIntegrationPage() {
               <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 <Fact label="Provider">{status.provider_name}</Fact>
                 <Fact label="Environment">
-                  <span className="capitalize">{status.environment}</span>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="capitalize">{status.environment}</span>
+                    {canUpdate && (
+                      <button
+                        type="button"
+                        disabled={!!busy}
+                        onClick={() => void switchEnvironment(status.environment === "production" ? "sandbox" : "production")}
+                        className="rounded bg-dash-brand/10 px-2 py-0.5 text-xs font-bold text-dash-brand hover:bg-dash-brand/20 disabled:opacity-50"
+                      >
+                        {busy === "env" ? "Switching…" : `Switch to ${status.environment === "production" ? "Sandbox" : "Live"}`}
+                      </button>
+                    )}
+                  </div>
                   <span className="block truncate text-xs font-normal text-dash-muted">{status.api_base_url}</span>
                 </Fact>
                 <Fact label="API key">{status.api_key_configured ? <span className="font-mono">{status.api_key_masked}</span> : <span className="text-red-600">Not set</span>}</Fact>

@@ -12,6 +12,7 @@ type ApiSummary = {
   brightlane_external_link: string;
   viator_api_key: string; // masked, display-only
   viator_affiliate_pid: string; // not a secret - shown in full
+  viator_env?: string;
   viator_enabled: boolean;
   google_oauth_client_id: string; google_oauth_client_secret: string; google_oauth_enabled: boolean;
   facebook_oauth_app_id: string; facebook_oauth_app_secret: string; facebook_oauth_enabled: boolean;
@@ -63,6 +64,7 @@ export default function ApiSettingsSection() {
   const [brightlaneLink, setBrightlaneLink] = useState("");
   const [viatorApiKey, setViatorApiKey] = useState("");
   const [viatorAffiliatePid, setViatorAffiliatePid] = useState("");
+  const [viatorEnv, setViatorEnv] = useState<"production" | "sandbox">("production");
   const [viatorEnabled, setViatorEnabled] = useState(false);
   const [oauth, setOauth] = useState({ googleId: "", googleSecret: "", googleEnabled: false, facebookId: "", facebookSecret: "", facebookEnabled: false, appleServiceId: "", applePrivateKey: "", appleMetadata: "", appleEnabled: false });
 
@@ -75,6 +77,7 @@ export default function ApiSettingsSection() {
       setBrightlaneLink(data.brightlane_external_link || "");
       setViatorApiKey("");
       setViatorAffiliatePid(data.viator_affiliate_pid || "");
+      setViatorEnv((data.viator_env as "production" | "sandbox") || "production");
       setViatorEnabled(Boolean(data.viator_enabled));
       setOauth((current) => ({ ...current, googleId: "", googleSecret: "", googleEnabled: Boolean(data.google_oauth_enabled), facebookId: "", facebookSecret: "", facebookEnabled: Boolean(data.facebook_oauth_enabled), appleServiceId: "", applePrivateKey: "", appleMetadata: data.apple_oauth_metadata || "", appleEnabled: Boolean(data.apple_oauth_enabled) }));
     } finally {
@@ -92,6 +95,7 @@ export default function ApiSettingsSection() {
       const payload: Record<string, unknown> = {
         brightlane_external_link: brightlaneLink,
         viator_affiliate_pid: viatorAffiliatePid,
+        viator_env: viatorEnv,
         viator_enabled: viatorEnabled,
       };
       if (viatorApiKey.trim()) payload.viator_api_key = viatorApiKey.trim();
@@ -138,6 +142,17 @@ export default function ApiSettingsSection() {
           <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Viator affiliate Partner ID (PID)</span>
           <input value={viatorAffiliatePid} onChange={(e) => setViatorAffiliatePid(e.target.value)} placeholder="P00000000" className={inputClass} />
         </label>
+        <label>
+          <span className="mb-1 block text-xs font-bold uppercase text-dash-muted">Viator Environment</span>
+          <select
+            value={viatorEnv}
+            onChange={(e) => setViatorEnv(e.target.value as "production" | "sandbox")}
+            className={inputClass}
+          >
+            <option value="production">Production / Live (api.viator.com)</option>
+            <option value="sandbox">Sandbox / Test (api.sandbox.viator.com)</option>
+          </select>
+        </label>
       </div>
       <label className="flex items-center gap-3 rounded-xl border border-dash-border px-4 py-3">
         <input type="checkbox" checked={viatorEnabled} onChange={(e) => setViatorEnabled(e.target.checked)} className="h-4 w-4 rounded border-dash-border" />
@@ -145,7 +160,7 @@ export default function ApiSettingsSection() {
           <span className="block text-sm font-bold text-dash-text">Enable Viator</span>
           <span className="block text-xs text-dash-muted">
             Turns on Viator day tours &amp; experiences (homepage option, country pages, free itinerary days). Test the connection, sync destinations and choose where experiences appear in{" "}
-            <Link href="/admin/integrations/viator" className="font-bold text-dash-brand underline">Integrations → Viator</Link>. The sandbox/production API host is set by VIATOR_ENV on the server.
+            <Link href="/admin/integrations/viator" className="font-bold text-dash-brand underline">Integrations → Viator</Link>.
           </span>
         </span>
       </label>
