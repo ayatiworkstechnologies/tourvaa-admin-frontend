@@ -1344,10 +1344,8 @@ export default function InvoiceTemplatesPage() {
                         {sampleData.taxAmount > 0 && (
                           <tr>
                             <td className="px-3 py-2">Including Tax</td>
-                            <td className="px-3 py-2 font-medium text-red-600">
-                              Included (do not add tax amount or percentage)
-                            </td>
-                            <td className="px-3 py-2 text-right font-medium">{formatMoney(sampleData.taxAmount)}</td>
+                            <td className="px-3 py-2">Included</td>
+                            <td className="px-3 py-2 text-right" />
                           </tr>
                         )}
                         <tr className="bg-[#EBF3F8] font-bold text-slate-900">
