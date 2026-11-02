@@ -7,6 +7,7 @@ import {
   FaFacebookF,
   FaInstagram,
   FaLinkedinIn,
+  FaTiktok,
   FaWhatsapp,
   FaXTwitter,
   FaYoutube,
@@ -106,6 +107,7 @@ type PortalFooterContent = {
   description?: string;
   sections?: { title?: string; link_lines?: string }[];
   facebook?: string; instagram?: string; youtube?: string; whatsapp?: string; twitter?: string; linkedin?: string;
+  tiktok?: string;
 };
 
 function portalSections(value?: PortalFooterContent["sections"]): CmsFooterSection[] | null {
@@ -500,6 +502,15 @@ export default function PublicFooter({ contentBlockKey }: { contentBlockKey?: st
                 className="transition-transform duration-200 hover:scale-125 hover:text-white"
               >
                 <FaLinkedinIn size={16} />
+              </a>}
+              {activeSocialLinks.tiktok && <a
+                href={activeSocialLinks.tiktok}
+                target="_blank"
+                rel="noreferrer"
+                aria-label="TikTok"
+                className="transition-transform duration-200 hover:scale-125 hover:text-white"
+              >
+                <FaTiktok size={16} />
               </a>}
             </div>
           </div>

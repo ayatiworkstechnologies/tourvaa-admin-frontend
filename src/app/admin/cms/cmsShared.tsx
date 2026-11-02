@@ -807,6 +807,7 @@ export const CONTENT_BLOCK_TABS: ContentBlockTabConfig[] = [
       { key: "whatsapp", label: "WhatsApp URL", type: "url" },
       { key: "twitter", label: "X (Twitter) URL", type: "url" },
       { key: "linkedin", label: "LinkedIn URL", type: "url" },
+      { key: "tiktok", label: "TikTok URL", type: "url" },
     ],
   },
 
@@ -1352,6 +1353,7 @@ export const CONTENT_BLOCK_TABS: ContentBlockTabConfig[] = [
       { key: "facebook", label: "Facebook URL", type: "url" as const }, { key: "instagram", label: "Instagram URL", type: "url" as const },
       { key: "youtube", label: "YouTube URL", type: "url" as const }, { key: "whatsapp", label: "WhatsApp URL", type: "url" as const },
       { key: "twitter", label: "X URL", type: "url" as const }, { key: "linkedin", label: "LinkedIn URL", type: "url" as const },
+      { key: "tiktok", label: "TikTok URL", type: "url" as const },
     ],
   })),
   // ---- Affiliate Portal (see AffiliatePortalPageEditor) --------------------
@@ -1432,6 +1434,7 @@ export const CONTENT_BLOCK_TABS: ContentBlockTabConfig[] = [
       { key: "facebook", label: "Facebook URL", type: "url" }, { key: "instagram", label: "Instagram URL", type: "url" },
       { key: "youtube", label: "YouTube URL", type: "url" }, { key: "whatsapp", label: "WhatsApp URL", type: "url" },
       { key: "twitter", label: "X URL", type: "url" }, { key: "linkedin", label: "LinkedIn URL", type: "url" },
+      { key: "tiktok", label: "TikTok URL", type: "url" },
     ],
   },
 ];
