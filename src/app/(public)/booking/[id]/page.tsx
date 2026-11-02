@@ -703,13 +703,14 @@ export default function DynamicTourBookingPage() {
     let active = true;
     const storageKey = `tourvaa_checkout_session_${tour.id}`;
     const existing = typeof window !== "undefined" ? window.sessionStorage.getItem(storageKey) : null;
-    api
-      .post("/checkout/start", {
+    const startSession = (resumeKey?: string | null) => api.post("/checkout/start", {
         tour_id: tour.id,
         tour_calendar_id: selectedCalendar?.id ?? null,
         travel_date: travelDate || undefined,
-        session_key: existing || undefined,
-      })
+        session_key: resumeKey || undefined,
+      });
+
+    startSession(existing)
       .then((res) => {
         if (!active) return;
         const key = res.data?.data?.session_key;
@@ -718,7 +719,27 @@ export default function DynamicTourBookingPage() {
           if (typeof window !== "undefined") window.sessionStorage.setItem(storageKey, key);
         }
       })
-      .catch(() => {
+      .catch((error) => {
+        // A session is intentionally bound to the account that first claims
+        // it. If this browser later signs in as another customer, discard the
+        // stale per-tab key and start a fresh checkout instead of exposing a
+        // confusing 403 to the new customer. Do not retry other errors.
+        if (existing && error?.response?.status === 403 && typeof window !== "undefined") {
+          window.sessionStorage.removeItem(storageKey);
+          startSession()
+            .then((res) => {
+              if (!active) return;
+              const key = res.data?.data?.session_key;
+              if (key) {
+                setSessionKey(key);
+                window.sessionStorage.setItem(storageKey, key);
+              }
+            })
+            .catch(() => {
+              if (active) setSessionError("Could not start checkout. Please refresh and try again.");
+            });
+          return;
+        }
         if (active) setSessionError("Could not start checkout. Please refresh and try again.");
       });
     return () => {
