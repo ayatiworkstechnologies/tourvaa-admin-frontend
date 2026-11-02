@@ -250,7 +250,7 @@ type CommissionPreviewData = {
 type SecurityStatus = {
   jwt_secrets: Record<string, string>;
   redis: string;
-  cloudinary: string;
+  public_media_storage: string;
   settings_encryption_key: string;
 };
 
@@ -846,8 +846,8 @@ export default function SettingsPage() {
                   <StatusBadge status={securityStatus.redis} />
                 </div>
                 <div className="flex items-center justify-between px-4 py-3">
-                  <span className="text-sm font-bold text-dash-text">Cloudinary</span>
-                  <StatusBadge status={securityStatus.cloudinary} />
+                  <span className="text-sm font-bold text-dash-text">Public Media Storage</span>
+                  <StatusBadge status={securityStatus.public_media_storage} />
                 </div>
                 <div className="flex items-center justify-between px-4 py-3">
                   <span className="text-sm font-bold text-dash-text">Settings Encryption Key</span>
