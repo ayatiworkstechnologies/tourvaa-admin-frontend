@@ -97,41 +97,22 @@ export default function CustomerTable({
                 </>
               )}
             </div>
+            <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] font-medium text-slate-500">
+              <span>Phone: {customer.phone || "-"}</span>
+              <span className="text-slate-300">|</span>
+              <span className={customer.auth_provider ? "text-violet-600" : customer.user_id ? "text-sky-600" : "text-slate-400"}>
+                Registration via: {signInMethod(customer)}
+              </span>
+            </div>
           </div>
         </div>
       ),
-    },
-    {
-      key: "registration_via",
-      header: "Registration via",
-      className: "whitespace-nowrap",
-      render: (customer) => {
-        const oauth = Boolean(customer.auth_provider);
-        const noLogin = !customer.user_id;
-        return (
-          <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${oauth ? "bg-violet-50 text-violet-700" : noLogin ? "bg-slate-100 text-slate-500" : "bg-sky-50 text-sky-700"}`}>
-            {signInMethod(customer)}
-          </span>
-        );
-      },
-    },
-    {
-      key: "phone",
-      header: "Phone",
-      className: "text-slate-600 font-mono text-xs whitespace-nowrap",
-      render: (customer) => customer.phone || "-",
     },
     {
       key: "country",
       header: "Country",
       className: "text-slate-700 whitespace-nowrap",
       render: (customer) => customer.country_name || customer.country || "-",
-    },
-    {
-      key: "status",
-      header: "Status",
-      className: "whitespace-nowrap",
-      render: (customer) => <StatusBadge value={customer.status} />,
     },
     {
       key: "tours",
@@ -164,6 +145,12 @@ export default function CustomerTable({
       header: "Pending",
       className: "font-bold text-amber-700 tabular-nums whitespace-nowrap",
       render: (customer) => amountText(customer, "pending"),
+    },
+    {
+      key: "status",
+      header: "Status",
+      className: "whitespace-nowrap",
+      render: (customer) => <StatusBadge value={customer.status} />,
     },
     {
       key: "created",
