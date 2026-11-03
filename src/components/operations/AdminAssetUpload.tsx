@@ -60,8 +60,8 @@ export default function AdminAssetUpload({ label, value, onChange, kind = "asset
   const isImageOnly = kind === "image";
   const isPdfLabel = /\bPDF\b/i.test(label);
   const isSupplierItinerary = /itinerary/i.test(label);
-  const accept = isVideoKind ? VIDEO_ACCEPT : isImageOnly ? IMAGE_ACCEPT : IMAGE_AND_PDF_ACCEPT;
-  const formatLabel = isVideoKind ? VIDEO_FORMAT_LABEL : isImageOnly ? IMAGE_FORMAT_LABEL : IMAGE_AND_PDF_FORMAT_LABEL;
+  const accept = imageVariant === "favicon" ? "image/png,image/webp,image/avif" : isVideoKind ? VIDEO_ACCEPT : isImageOnly ? IMAGE_ACCEPT : IMAGE_AND_PDF_ACCEPT;
+  const formatLabel = imageVariant === "favicon" ? "PNG, WEBP, or AVIF square icon" : isVideoKind ? VIDEO_FORMAT_LABEL : isImageOnly ? IMAGE_FORMAT_LABEL : IMAGE_AND_PDF_FORMAT_LABEL;
   const maxSizeLabel = isVideoKind ? "50MB" : "10MB";
   const maxBytes = (isVideoKind ? 50 : 10) * 1024 * 1024;
   const guidance = imageVariant === "logo"
@@ -81,6 +81,25 @@ export default function AdminAssetUpload({ label, value, onChange, kind = "asset
     if (file.size > maxBytes) {
       setError(`${isVideoKind ? "Video" : "File"} must be ${maxSizeLabel} or smaller.`);
       return;
+    }
+    if (imageVariant === "favicon") {
+      const dimensions = await new Promise<{ width: number; height: number } | null>((resolve) => {
+        const preview = new window.Image();
+        const objectUrl = URL.createObjectURL(file);
+        preview.onload = () => {
+          URL.revokeObjectURL(objectUrl);
+          resolve({ width: preview.naturalWidth, height: preview.naturalHeight });
+        };
+        preview.onerror = () => {
+          URL.revokeObjectURL(objectUrl);
+          resolve(null);
+        };
+        preview.src = objectUrl;
+      });
+      if (!dimensions || dimensions.width !== dimensions.height || dimensions.width < 64) {
+        setError("Favicon must be a square image at least 64 x 64 px. Upload a PNG, WEBP, or AVIF icon, not a logo.");
+        return;
+      }
     }
     setUploading(true);
     setError("");
@@ -125,9 +144,9 @@ export default function AdminAssetUpload({ label, value, onChange, kind = "asset
       <span className="mb-1 block text-xs font-bold uppercase text-dash-subtle">{label}</span>
 
       {value ? (
-        <div className="relative max-w-xs overflow-hidden rounded-xl border border-dash-border">
+        <div className={`relative overflow-hidden rounded-xl border border-dash-border ${imageVariant === "favicon" ? "w-40" : "max-w-xs"}`}>
           {showImagePreview ? (
-            <div className={`relative w-full bg-[#F0F3F8] ${imageVariant === "favicon" ? "aspect-square max-w-[160px]" : imageVariant === "logo" ? "h-36" : "aspect-video"}`}>
+            <div className={`relative w-full bg-[#F0F3F8] ${imageVariant === "favicon" ? "aspect-square" : imageVariant === "logo" ? "h-36" : "aspect-video"}`}>
               <Image src={value} alt={label} fill unoptimized className={imageVariant === "default" ? "object-cover" : "object-contain p-3"} />
             </div>
           ) : showVideoPreview ? (
@@ -185,7 +204,7 @@ export default function AdminAssetUpload({ label, value, onChange, kind = "asset
             setDragging(false);
             void upload(event.dataTransfer.files?.[0] || null);
           }}
-          className={`flex w-full max-w-xs cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed px-4 text-center transition-colors ${imageVariant === "favicon" ? "aspect-square max-w-[160px]" : imageVariant === "logo" ? "h-36" : "aspect-video"} ${
+          className={`flex w-full max-w-xs cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed px-4 text-center transition-colors ${imageVariant === "favicon" ? "aspect-square max-w-40" : imageVariant === "logo" ? "h-36" : "aspect-video"} ${
             dragging ? "border-dash-brand bg-[#EDF5FF]" : "border-dash-border bg-dash-bg hover:bg-[#F0F3F8]"
           }`}
         >
