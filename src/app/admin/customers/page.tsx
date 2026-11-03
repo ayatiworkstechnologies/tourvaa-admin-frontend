@@ -144,7 +144,7 @@ export default function CustomersPage() {
   const handleDelete = async (customer: Customer) => {
     const confirmed = await confirm({
       title: "Delete customer profile",
-      message: `Delete ${customer.full_name}? This cannot be undone. Customers with booking or payment history cannot be deleted.`,
+      message: `Delete ${customer.full_name}? This cannot be undone.${customer.user_id ? " Their linked Tourvaa portal account will also be deleted." : ""} Customers with booking or payment history cannot be deleted.`,
       confirmLabel: "Delete",
       danger: true,
     });

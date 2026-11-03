@@ -221,7 +221,7 @@ export default function CustomerTable({
                   <Lock size={14} />
                 </button>
               )}
-          {canDelete && !customer.user_id && (
+          {canDelete && (
             <button
               type="button"
               disabled={savingId === customer.id}
