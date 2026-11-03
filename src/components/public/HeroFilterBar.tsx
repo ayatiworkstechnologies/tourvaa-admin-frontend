@@ -225,8 +225,8 @@ export default function HeroFilterBar({
               <span className="block text-xs sm:text-sm font-semibold text-pub-accent">
                 Where to?
               </span>
-              <span className="inline-flex items-center gap-1">
-                <span className={`truncate text-sm sm:text-[15px] font-medium ${destination ? "text-slate-900" : "text-slate-600"}`}>
+              <span className="flex w-full items-center justify-between gap-1">
+                <span className={`min-w-0 flex-1 truncate text-sm sm:text-[15px] font-medium ${destination ? "text-slate-900" : "text-slate-600"}`}>
                   {displayDestination}
                 </span>
                 <ChevronDown
@@ -263,8 +263,8 @@ export default function HeroFilterBar({
               <span className="block text-xs sm:text-sm font-semibold text-pub-accent">
                 When?
               </span>
-              <span className="inline-flex items-center gap-1">
-                <span className={`truncate text-sm sm:text-[15px] font-medium ${travelDate ? "text-slate-900" : "text-slate-600"}`}>
+              <span className="flex w-full items-center justify-between gap-1">
+                <span className={`min-w-0 flex-1 truncate text-sm sm:text-[15px] font-medium ${travelDate ? "text-slate-900" : "text-slate-600"}`}>
                   {displayDate}
                 </span>
                 <ChevronDown
@@ -300,8 +300,8 @@ export default function HeroFilterBar({
               <span className="block text-xs sm:text-sm font-semibold text-pub-accent">
                 How Many Days?
               </span>
-              <span className="inline-flex items-center gap-1">
-                <span className={`truncate text-sm sm:text-[15px] font-medium ${duration ? "text-slate-900" : "text-slate-600"}`}>
+              <span className="flex w-full items-center justify-between gap-1">
+                <span className={`min-w-0 flex-1 truncate text-sm sm:text-[15px] font-medium ${duration ? "text-slate-900" : "text-slate-600"}`}>
                   {displayDuration}
                 </span>
                 <ChevronDown
@@ -341,8 +341,8 @@ export default function HeroFilterBar({
               <span className="block text-xs sm:text-sm font-semibold text-pub-accent">
                 Who&apos;s going?
               </span>
-              <span className="inline-flex items-center gap-1">
-                <span className={`truncate text-sm sm:text-[15px] font-medium ${adults !== 2 || children !== 0 ? "text-slate-900" : "text-slate-600"}`}>
+              <span className="flex w-full items-center justify-between gap-1">
+                <span className={`min-w-0 flex-1 truncate text-sm sm:text-[15px] font-medium ${adults !== 2 || children !== 0 ? "text-slate-900" : "text-slate-600"}`}>
                   {displayPassengers}
                 </span>
                 <ChevronDown
