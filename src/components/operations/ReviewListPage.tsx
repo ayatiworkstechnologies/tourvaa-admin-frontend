@@ -63,6 +63,33 @@ function MiniCheck({ ok, label }: { ok: boolean; label: string }) {
   );
 }
 
+function partnerIdentity(row: ReviewRecord, name: string, type: string) {
+  const code = row.supplier_code || row.agent_code || row.affiliate_code || row.id;
+  const detail = row.email || type || "Type not provided";
+  return (
+    <div className="min-w-0">
+      <p className="truncate font-bold text-dash-text">{name || "-"}</p>
+      <p className="mt-0.5 truncate text-xs text-dash-muted">ID: {code} · {detail}</p>
+      {row.phone && <p className="mt-1 text-xs font-medium text-dash-muted">Phone: {row.phone}</p>}
+    </div>
+  );
+}
+
+function partnerLocation(row: ReviewRecord) {
+  return (
+    <div className="w-36 max-w-36 whitespace-normal break-words text-sm leading-5">
+      <p className="font-semibold text-dash-text">{row.country_name || "Country missing"}</p>
+      <p className="text-xs text-dash-muted">{row.city_name || "City missing"}</p>
+    </div>
+  );
+}
+
+function partnerCreatedAt(value?: string) {
+  if (!value) return "-";
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? "-" : date.toLocaleDateString();
+}
+
 export default function ReviewListPage({ module, title, requiredPermission }: Props) {
   const toast = useToast();
   const { hasPermission } = useAuthContext();
@@ -279,26 +306,16 @@ export default function ReviewListPage({ module, title, requiredPermission }: Pr
           ),
         } as DataTableColumn<ReviewRecord>]
       : []),
-    { key: "code", header: "ID", className: "w-24", render: (row) => row.id },
     {
       key: "name",
       header: "Supplier",
-      render: (row) => (
-        <div>
-          <p className="font-bold text-dash-text">{row.supplier_name || row.name || "-"}</p>
-          <p className="mt-0.5 text-xs text-dash-muted">{row.supplier_type || row.type || "Type not provided"}</p>
-        </div>
-      ),
+      render: (row) => partnerIdentity(row, row.supplier_name || row.name || "", row.supplier_type || row.type || ""),
     },
     {
       key: "location",
       header: "Location",
-      render: (row) => (
-        <div className="text-sm">
-          <p className="font-semibold text-dash-text">{row.country_name || "Country missing"}</p>
-          <p className="text-xs text-dash-muted">{row.city_name || "City missing"}</p>
-        </div>
-      ),
+      className: "w-36 max-w-36 whitespace-normal",
+      render: partnerLocation,
     },
     {
       key: "registration",
@@ -315,7 +332,6 @@ export default function ReviewListPage({ module, title, requiredPermission }: Pr
         );
       },
     },
-    { key: "status", header: "Status", render: (row) => <StatusBadge value={row.status} /> },
     { key: "approval_status", header: "Approval", render: (row) => <StatusBadge value={row.approval_status} /> },
     {
       key: "activity",
@@ -335,6 +351,8 @@ export default function ReviewListPage({ module, title, requiredPermission }: Pr
         return <span className="font-bold text-dash-text">{resolved}%</span>;
       },
     },
+    { key: "status", header: "Status", render: (row) => <StatusBadge value={row.status} /> },
+    { key: "created", header: "Created", className: "whitespace-nowrap text-xs text-dash-muted", render: (row) => partnerCreatedAt(row.created_at) },
   ];
 
   const agentColumns: DataTableColumn<ReviewRecord>[] = [
@@ -355,26 +373,16 @@ export default function ReviewListPage({ module, title, requiredPermission }: Pr
           ),
         } as DataTableColumn<ReviewRecord>]
       : []),
-    { key: "code", header: "ID", className: "w-24", render: (row) => row.id },
     {
       key: "name",
       header: "Agent",
-      render: (row) => (
-        <div>
-          <p className="font-bold text-dash-text">{row.agent_name || row.name || "-"}</p>
-          <p className="mt-0.5 text-xs text-dash-muted">{row.agent_type || row.type || "Type not provided"}</p>
-        </div>
-      ),
+      render: (row) => partnerIdentity(row, row.agent_name || row.name || "", row.agent_type || row.type || ""),
     },
     {
       key: "location",
       header: "Location",
-      render: (row) => (
-        <div className="text-sm">
-          <p className="font-semibold text-dash-text">{row.country_name || "Country missing"}</p>
-          <p className="text-xs text-dash-muted">{row.city_name || "City missing"}</p>
-        </div>
-      ),
+      className: "w-36 max-w-36 whitespace-normal",
+      render: partnerLocation,
     },
     {
       key: "registration",
@@ -391,7 +399,6 @@ export default function ReviewListPage({ module, title, requiredPermission }: Pr
         );
       },
     },
-    { key: "status", header: "Status", render: (row) => <StatusBadge value={row.status} /> },
     { key: "approval_status", header: "Approval", render: (row) => <StatusBadge value={row.approval_status} /> },
     {
       key: "activity",
@@ -408,30 +415,22 @@ export default function ReviewListPage({ module, title, requiredPermission }: Pr
         return <span className="font-bold text-dash-text">{resolved}{suffix}</span>;
       },
     },
+    { key: "status", header: "Status", render: (row) => <StatusBadge value={row.status} /> },
+    { key: "created", header: "Created", className: "whitespace-nowrap text-xs text-dash-muted", render: (row) => partnerCreatedAt(row.created_at) },
   ];
 
   const affiliateColumns: DataTableColumn<ReviewRecord>[] = [
     serialColumn,
-    { key: "code", header: "ID", className: "w-24", render: (row) => row.affiliate_code || row.id },
     {
       key: "name",
       header: "Affiliate",
-      render: (row) => (
-        <div>
-          <p className="font-bold text-dash-text">{row.name || "-"}</p>
-          <p className="mt-0.5 text-xs text-dash-muted">{row.email || row.business_type || "Profile pending"}</p>
-        </div>
-      ),
+      render: (row) => partnerIdentity(row, row.name || "", row.business_type || "Profile pending"),
     },
     {
       key: "location",
       header: "Location",
-      render: (row) => (
-        <div className="text-sm">
-          <p className="font-semibold text-dash-text">{row.country_name || "Country missing"}</p>
-          <p className="text-xs text-dash-muted">{row.city_name || ""}</p>
-        </div>
-      ),
+      className: "w-36 max-w-36 whitespace-normal",
+      render: partnerLocation,
     },
     {
       key: "readiness",
@@ -448,7 +447,6 @@ export default function ReviewListPage({ module, title, requiredPermission }: Pr
         );
       },
     },
-    { key: "status", header: "Status", render: (row) => <StatusBadge value={row.status} /> },
     { key: "approval_status", header: "Approval", render: (row) => <StatusBadge value={row.approval_status} /> },
     {
       key: "commission",
@@ -458,6 +456,8 @@ export default function ReviewListPage({ module, title, requiredPermission }: Pr
         return <span className="font-bold text-dash-text">{resolved}%</span>;
       },
     },
+    { key: "status", header: "Status", render: (row) => <StatusBadge value={row.status} /> },
+    { key: "created", header: "Created", className: "whitespace-nowrap text-xs text-dash-muted", render: (row) => partnerCreatedAt(row.created_at) },
   ];
 
   const columns = module === "suppliers" ? supplierColumns : module === "agents" ? agentColumns : module === "affiliates" ? affiliateColumns : defaultColumns;
