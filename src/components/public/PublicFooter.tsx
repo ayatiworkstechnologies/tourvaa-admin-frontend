@@ -314,11 +314,11 @@ export default function PublicFooter({ contentBlockKey }: { contentBlockKey?: st
   return (
     <footer className="w-full bg-pub-primary text-white pt-12 sm:pt-16 pb-8 sm:pb-10 transition-colors">
       <div className="w-full max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10">
-        <div className="grid items-start gap-10 lg:grid-cols-[minmax(0,3fr)_minmax(360px,1fr)] lg:gap-14 xl:gap-20">
+        <div className="grid grid-cols-1 items-start gap-x-6 gap-y-8 min-[400px]:grid-cols-2 sm:gap-x-10 sm:gap-y-10 lg:grid-cols-[minmax(0,3fr)_minmax(360px,1fr)] lg:gap-14 xl:gap-20">
           {/* The CMS menu area is always independent from Tourvaa's utility
               column: three menu columns on desktop, then additional CMS
               sections wrap beneath them without shifting the right panel. */}
-          <div className="grid grid-cols-1 gap-x-6 gap-y-8 min-[400px]:grid-cols-2 sm:gap-x-10 sm:gap-y-10 lg:grid-cols-3 lg:gap-x-8 xl:gap-x-12">
+          <div className="contents lg:grid lg:grid-cols-3 lg:gap-x-8 lg:gap-y-10 xl:gap-x-12">
           {displayedFooterSections.map((section) => (
             <nav key={section.id} aria-label={`${section.title} footer links`} className="min-w-0">
               <h3 className="mb-3 text-lg font-bold tracking-tight text-white sm:mb-4 sm:text-xl">
@@ -352,7 +352,7 @@ export default function PublicFooter({ contentBlockKey }: { contentBlockKey?: st
           </div>
 
           {/* Fixed right column: CMS menu additions cannot move this block. */}
-          <div className="flex min-w-0 flex-col justify-between border-t border-white/10 pt-7 lg:border-l lg:border-t-0 lg:pl-10 lg:pt-0 xl:pl-14">
+          <div className="flex min-w-0 flex-col justify-between border-t border-white/10 pt-7 min-[400px]:border-t-0 min-[400px]:pt-0 lg:border-l lg:border-t-0 lg:pl-10 lg:pt-0 xl:pl-14">
             <div>
               <h3 className="text-lg sm:text-xl font-bold text-white mb-2 sm:mb-3 tracking-tight">
                 {siteName}
