@@ -469,7 +469,7 @@ export default function PublicFooter({ contentBlockKey }: { contentBlockKey?: st
             </div>
 
             {/* Social Media Icons */}
-            <div className="col-span-full flex flex-wrap items-center gap-2 text-white/90 sm:gap-3 lg:col-auto">
+            <div className="col-span-full flex flex-wrap items-center justify-center gap-2 text-white/90 sm:gap-3 lg:col-auto lg:justify-start">
               {activeSocialLinks.facebook && <a
                 href={activeSocialLinks.facebook}
                 target="_blank"
