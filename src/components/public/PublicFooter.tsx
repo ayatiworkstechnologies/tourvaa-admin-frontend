@@ -270,6 +270,23 @@ export default function PublicFooter({ contentBlockKey }: { contentBlockKey?: st
 
   const portalFooterSections = portalSections(portalContent?.sections);
   const activeFooterSections = portalFooterSections ?? footerSections;
+  const isPartnerFooter = contentBlockKey === "agent_portal_footer" || contentBlockKey === "supplier_portal_footer" || contentBlockKey === "affiliate_portal_footer";
+  // Partner landing pages use one dedicated legal/contact column instead of
+  // duplicating the generic traveller Support section.
+  const displayedFooterSections = isPartnerFooter
+    ? activeFooterSections.filter((section) => section.title.trim().toLowerCase() !== "support")
+    : activeFooterSections;
+  const partnerPolicyLinks = contentBlockKey === "supplier_portal_footer"
+    ? [
+        { label: "Supplier Terms & Conditions", href: "/supplier-terms" },
+        { label: "Supplier Privacy Policy", href: "/supplier-privacy" },
+        { label: "Contact Us", href: "/supplier-contact" },
+      ]
+    : [
+        { label: contentBlockKey === "affiliate_portal_footer" ? "Affiliate Terms & Conditions" : "Agent & Affiliate Terms & Conditions", href: "/partner-terms" },
+        { label: contentBlockKey === "affiliate_portal_footer" ? "Affiliate Privacy Policy" : "Agent & Affiliate Privacy Policy", href: "/partner-privacy" },
+        { label: "Contact Us", href: contentBlockKey === "agent_portal_footer" ? "/agent-contact" : "/contact" },
+      ];
   const activeSocialLinks = portalContent ? { ...socialLinks, ...portalContent } : socialLinks;
   const siteName = safePublicText(
     portalContent?.site_name || settings.site_name || settings.app_name,
@@ -292,7 +309,7 @@ export default function PublicFooter({ contentBlockKey }: { contentBlockKey?: st
               column: three menu columns on desktop, then additional CMS
               sections wrap beneath them without shifting the right panel. */}
           <div className="grid grid-cols-1 gap-x-10 gap-y-10 sm:grid-cols-2 lg:grid-cols-3 lg:gap-x-8 xl:gap-x-12">
-          {activeFooterSections.map((section) => (
+          {displayedFooterSections.map((section) => (
             <nav key={section.id} aria-label={`${section.title} footer links`} className="min-w-0">
               <h3 className="text-lg sm:text-xl font-bold text-white mb-4 tracking-tight">
                 {section.title}
@@ -316,16 +333,10 @@ export default function PublicFooter({ contentBlockKey }: { contentBlockKey?: st
               </ul>
             </nav>
           ))}
-          {(contentBlockKey === "agent_portal_footer" || contentBlockKey === "supplier_portal_footer" || contentBlockKey === "affiliate_portal_footer") && <nav aria-label="Partner legal policies" className="min-w-0">
+          {isPartnerFooter && <nav aria-label="Partner legal policies" className="min-w-0">
             <h3 className="mb-4 text-lg font-bold text-white sm:text-xl">Partner policies</h3>
             <ul className="space-y-3 text-xs text-slate-300 sm:text-sm">
-              {((contentBlockKey === "agent_portal_footer" || contentBlockKey === "affiliate_portal_footer") ? [
-                [contentBlockKey === "affiliate_portal_footer" ? "Affiliate Terms & Conditions" : "Agent & Affiliate Terms & Conditions", "/partner-terms"],
-                [contentBlockKey === "affiliate_portal_footer" ? "Affiliate Privacy Policy" : "Agent & Affiliate Privacy Policy", "/partner-privacy"],
-              ] : [
-                ["Supplier Terms & Conditions", "/supplier-terms"],
-                ["Supplier Privacy Policy", "/supplier-privacy"],
-              ]).map(([label, href]) => <li key={href}><Link className="hover:text-white hover:underline" href={href}>{label}</Link></li>)}
+              {partnerPolicyLinks.map(({ label, href }) => <li key={href}><Link className="hover:text-white hover:underline" href={href}>{label}</Link></li>)}
             </ul>
           </nav>}
           </div>
