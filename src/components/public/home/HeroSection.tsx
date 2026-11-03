@@ -248,29 +248,31 @@ export default function HeroSection({
           </div>
 
           {/* Hero Top & Center Content */}
-          <div className="relative z-10 w-full flex-1 flex flex-col items-center justify-center pt-2 sm:pt-4 pb-2">
-            <h1
-              key={heroTitle}
-              className="animate-fade-up max-w-4xl text-2xl sm:text-4xl md:text-[40px] font-semibold tracking-tight text-white leading-tight drop-shadow-[0_2px_12px_rgba(0,0,0,0.6)]"
-            >
-              {heroTitle}
-            </h1>
-
-            {banner?.subtitle && (
-              <p className="animate-fade-up delay-100 mx-auto mt-2 max-w-xl text-xs sm:text-sm text-white/90 drop-shadow">
-                {banner.subtitle}
-              </p>
-            )}
-
-            {banner?.cta_text && banner?.cta_url && (
-              <PrimaryCtaButton
-                href={banner.cta_url}
-                size="sm"
-                className="animate-fade-up delay-100 mt-3"
+          <div className="relative z-10 flex w-full flex-1 flex-col items-center justify-between pt-[22%] pb-2 sm:justify-center sm:pt-4">
+            <div>
+              <h1
+                key={heroTitle}
+                className="animate-fade-up max-w-4xl text-2xl sm:text-4xl md:text-[40px] font-semibold tracking-tight text-white leading-tight drop-shadow-[0_2px_12px_rgba(0,0,0,0.6)]"
               >
-                {banner.cta_text}
-              </PrimaryCtaButton>
-            )}
+                {heroTitle}
+              </h1>
+
+              {banner?.subtitle && (
+                <p className="animate-fade-up delay-100 mx-auto mt-2 max-w-xl text-xs sm:text-sm text-white/90 drop-shadow">
+                  {banner.subtitle}
+                </p>
+              )}
+
+              {banner?.cta_text && banner?.cta_url && (
+                <PrimaryCtaButton
+                  href={banner.cta_url}
+                  size="sm"
+                  className="animate-fade-up delay-100 mt-3"
+                >
+                  {banner.cta_text}
+                </PrimaryCtaButton>
+              )}
+            </div>
 
             {/* Filter Search Bar */}
             <div className="mt-4 sm:mt-5 w-full relative z-50 transition-all duration-300">
