@@ -3,6 +3,7 @@ import api from "@/lib/api/client";
 export type Customer = {
   id: number;
   user_id?: number | null;
+  auth_provider?: "google" | "facebook" | "apple" | null;
   customer_code: string;
   customer_type?: string;
   agent_id?: number | null;

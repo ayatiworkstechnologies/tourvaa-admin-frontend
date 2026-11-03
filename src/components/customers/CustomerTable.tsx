@@ -26,6 +26,15 @@ type Props = {
   onDelete: (customer: Customer) => void;
 };
 
+function signInMethod(customer: Customer) {
+  if (!customer.user_id) return "No login";
+  const provider = customer.auth_provider?.trim().toLowerCase();
+  if (provider === "google") return "Google";
+  if (provider === "facebook") return "Facebook";
+  if (provider === "apple") return "Apple";
+  return "Email / password";
+}
+
 export default function CustomerTable({
   customers,
   page,
@@ -97,6 +106,20 @@ export default function CustomerTable({
       header: "Phone",
       className: "text-slate-600 font-mono text-xs whitespace-nowrap",
       render: (customer) => customer.phone || "-",
+    },
+    {
+      key: "sign_in",
+      header: "Sign-in",
+      className: "whitespace-nowrap",
+      render: (customer) => {
+        const oauth = Boolean(customer.auth_provider);
+        const noLogin = !customer.user_id;
+        return (
+          <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${oauth ? "bg-violet-50 text-violet-700" : noLogin ? "bg-slate-100 text-slate-500" : "bg-sky-50 text-sky-700"}`}>
+            {signInMethod(customer)}
+          </span>
+        );
+      },
     },
     {
       key: "country",
