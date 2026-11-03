@@ -61,11 +61,11 @@ export default function AdminAssetUpload({ label, value, onChange, kind = "asset
   const isPdfLabel = /\bPDF\b/i.test(label);
   const isSupplierItinerary = /itinerary/i.test(label);
   const accept = imageVariant === "favicon" || imageVariant === "logo" ? "image/png,image/webp,image/avif" : isVideoKind ? VIDEO_ACCEPT : isImageOnly ? IMAGE_ACCEPT : IMAGE_AND_PDF_ACCEPT;
-  const formatLabel = imageVariant === "favicon" ? "PNG, WEBP, or AVIF icon (512 x 512 px)" : imageVariant === "logo" ? "PNG, WEBP, or AVIF logo (1200 x 400 px)" : isVideoKind ? VIDEO_FORMAT_LABEL : isImageOnly ? IMAGE_FORMAT_LABEL : IMAGE_AND_PDF_FORMAT_LABEL;
+  const formatLabel = imageVariant === "favicon" ? "PNG, WEBP, or AVIF icon (512 x 512 px)" : imageVariant === "logo" ? "PNG, WEBP, or AVIF logo (3:1 ratio, 1200 x 400 px recommended)" : isVideoKind ? VIDEO_FORMAT_LABEL : isImageOnly ? IMAGE_FORMAT_LABEL : IMAGE_AND_PDF_FORMAT_LABEL;
   const maxSizeLabel = isVideoKind ? "50MB" : "10MB";
   const maxBytes = (isVideoKind ? 50 : 10) * 1024 * 1024;
   const guidance = imageVariant === "logo"
-    ? "Exact size: 1200 x 400 px (3:1). Use a transparent PNG, WEBP, or AVIF logo, maximum 10 MB."
+    ? "Recommended: 1200 x 400 px (3:1). Smaller 3:1 logos are accepted from 300 x 100 px. Use PNG, WEBP, or AVIF, maximum 10 MB."
     : imageVariant === "favicon"
       ? "Exact size: 512 x 512 px. Use a square PNG, WEBP, or AVIF icon, maximum 10 MB."
     : isVideoKind
@@ -96,9 +96,12 @@ export default function AdminAssetUpload({ label, value, onChange, kind = "asset
         };
         preview.src = objectUrl;
       });
-      const expectedSize = imageVariant === "favicon" ? { width: 512, height: 512 } : { width: 1200, height: 400 };
-      if (!dimensions || dimensions.width !== expectedSize.width || dimensions.height !== expectedSize.height) {
-        setError(`${imageVariant === "favicon" ? "Favicon" : "Platform logo"} must be exactly ${expectedSize.width} x ${expectedSize.height} px.`);
+      const validFavicon = dimensions?.width === 512 && dimensions.height === 512;
+      const validLogo = dimensions && dimensions.width >= 300 && dimensions.height >= 100 && dimensions.width === dimensions.height * 3;
+      if (!dimensions || (imageVariant === "favicon" ? !validFavicon : !validLogo)) {
+        setError(imageVariant === "favicon"
+          ? "Favicon must be exactly 512 x 512 px."
+          : "Platform logo must use a 3:1 ratio and be at least 300 x 100 px. 1200 x 400 px is recommended.");
         return;
       }
     }
