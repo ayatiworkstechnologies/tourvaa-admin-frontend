@@ -10,6 +10,7 @@ export type User = {
   id: number;
   name: string;
   email: string;
+  auth_provider?: "google" | "facebook" | "apple" | null;
   phone: string;
   profile_image: string;
   address: string;

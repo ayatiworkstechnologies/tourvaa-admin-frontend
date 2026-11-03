@@ -60,6 +60,14 @@ function canDeleteUser(user: User) {
   return !protectedAdministrationRoleSlugs.has(user.role?.slug?.toLowerCase() ?? "");
 }
 
+function signInMethod(user: User) {
+  const provider = user.auth_provider?.trim().toLowerCase();
+  if (provider === "google") return "Google";
+  if (provider === "facebook") return "Facebook";
+  if (provider === "apple") return "Apple";
+  return "Email / password";
+}
+
 export default function UsersPage() {
   const { dashboard, loading: dashboardLoading } = useDashboard();
   const pagination = usePagination(10);
@@ -289,6 +297,18 @@ export default function UsersPage() {
       key: "email",
       header: "Email",
       render: (user) => <span className="text-gray-600">{user.email}</span>,
+    },
+    {
+      key: "sign_in",
+      header: "Sign-in",
+      render: (user) => {
+        const oauth = Boolean(user.auth_provider);
+        return (
+          <span className={`rounded-full px-3 py-1 text-xs font-semibold ${oauth ? "bg-violet-50 text-violet-700" : "bg-slate-100 text-slate-600"}`}>
+            {signInMethod(user)}
+          </span>
+        );
+      },
     },
     {
       key: "role",
@@ -743,7 +763,6 @@ export default function UsersPage() {
     </ModuleWrapper>
   );
 }
-
 
 
 
