@@ -352,8 +352,8 @@ export default function PublicFooter({ contentBlockKey }: { contentBlockKey?: st
           </div>
 
           {/* Fixed right column: CMS menu additions cannot move this block. */}
-          <div className="flex min-w-0 flex-col justify-between border-t border-white/10 pt-7 min-[400px]:border-t-0 min-[400px]:pt-0 lg:border-l lg:border-t-0 lg:pl-10 lg:pt-0 xl:pl-14">
-            <div>
+          <div className="contents lg:flex lg:min-w-0 lg:flex-col lg:justify-between lg:border-l lg:border-t-0 lg:pl-10 lg:pt-0 xl:pl-14">
+            <div className="min-w-0 border-t border-white/10 pt-7 min-[400px]:border-t-0 min-[400px]:pt-0 lg:border-t-0 lg:pt-0">
               <h3 className="text-lg sm:text-xl font-bold text-white mb-2 sm:mb-3 tracking-tight">
                 {siteName}
               </h3>
@@ -469,7 +469,7 @@ export default function PublicFooter({ contentBlockKey }: { contentBlockKey?: st
             </div>
 
             {/* Social Media Icons */}
-            <div className="flex flex-wrap items-center gap-2 text-white/90 sm:gap-3">
+            <div className="col-span-full flex flex-wrap items-center gap-2 text-white/90 sm:gap-3 lg:col-auto">
               {activeSocialLinks.facebook && <a
                 href={activeSocialLinks.facebook}
                 target="_blank"
