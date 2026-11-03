@@ -111,8 +111,12 @@ export default function CustomerTable({
     {
       key: "country",
       header: "Country",
-      className: "text-slate-700 whitespace-nowrap",
-      render: (customer) => customer.country_name || customer.country || "-",
+      className: "w-36 max-w-36 whitespace-normal break-words text-slate-700 leading-5",
+      render: (customer) => (
+        <span className="block max-w-36 whitespace-normal break-words leading-5">
+          {customer.country_name || customer.country || "-"}
+        </span>
+      ),
     },
     {
       key: "tours",
