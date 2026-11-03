@@ -32,7 +32,7 @@ function signInMethod(customer: Customer) {
   if (provider === "google") return "Google";
   if (provider === "facebook") return "Facebook";
   if (provider === "apple") return "Apple";
-  return "Email / password";
+  return "Tourvaa Portal";
 }
 
 export default function CustomerTable({
