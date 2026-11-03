@@ -12,6 +12,8 @@ type PublicSettingsContextValue = {
 };
 
 const PublicSettingsContext = createContext<PublicSettingsContextValue | null>(null);
+const BRANDING_UPDATED_EVENT = "tourvaa:branding-updated";
+const BRANDING_CHANNEL = "tourvaa-branding";
 
 const PLACEHOLDER_EMAILS = new Set(["hello@tourvaa.com", "support@tourvaa.com"]);
 const PLACEHOLDER_PHONES = new Set(["+910000000000", "+919876543210"]);
@@ -31,6 +33,25 @@ export function PublicSettingsProvider({ children }: { children: React.ReactNode
       .then((values) => { if (active) setSettings(values); })
       .catch(() => { /* Contact links stay hidden when settings are unavailable. */ });
     return () => { active = false; };
+  }, []);
+
+  // Branding is edited in the admin app, which can be open in another tab.
+  // Apply a saved logo/favicon immediately instead of waiting for a reload or
+  // the next provider mount.
+  useEffect(() => {
+    const applyUpdate = (update: Record<string, string>) => {
+      setSettings((current) => ({ ...current, ...update }));
+    };
+    const onBrandingUpdate = (event: Event) => {
+      applyUpdate((event as CustomEvent<Record<string, string>>).detail || {});
+    };
+    window.addEventListener(BRANDING_UPDATED_EVENT, onBrandingUpdate);
+    const channel = typeof BroadcastChannel === "undefined" ? null : new BroadcastChannel(BRANDING_CHANNEL);
+    if (channel) channel.onmessage = (event: MessageEvent<Record<string, string>>) => applyUpdate(event.data || {});
+    return () => {
+      window.removeEventListener(BRANDING_UPDATED_EVENT, onBrandingUpdate);
+      channel?.close();
+    };
   }, []);
 
   const value = useMemo(() => {

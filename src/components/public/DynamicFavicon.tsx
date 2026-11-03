@@ -13,14 +13,14 @@ export default function DynamicFavicon() {
   const faviconUrl = settings.favicon?.trim() || "";
 
   useEffect(() => {
-    if (!faviconUrl) return;
+    const iconUrl = faviconUrl || "/favicon.ico";
     const existing = document.querySelectorAll<HTMLLinkElement>("link[rel~='icon']");
     if (existing.length > 0) {
-      existing.forEach((link) => { link.href = faviconUrl; });
+      existing.forEach((link) => { link.href = iconUrl; });
     } else {
       const link = document.createElement("link");
       link.rel = "icon";
-      link.href = faviconUrl;
+      link.href = iconUrl;
       document.head.appendChild(link);
     }
   }, [faviconUrl]);

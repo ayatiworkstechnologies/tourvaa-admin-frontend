@@ -50,6 +50,29 @@ const imageSettingLabels: Record<string, string> = {
 const systemSettingHelpers: Record<string, string> = {
   support_email: "Shown to customers on the website and in transactional-email footers. This is separate from the SMTP sender address.",
 };
+const BRANDING_UPDATED_EVENT = "tourvaa:branding-updated";
+const BRANDING_CHANNEL = "tourvaa-branding";
+
+function applyBrowserFavicon(favicon: string) {
+  const iconUrl = favicon || "/favicon.ico";
+  const icons = document.querySelectorAll<HTMLLinkElement>("link[rel~='icon']");
+  if (icons.length) icons.forEach((icon) => { icon.href = iconUrl; });
+  else {
+    const icon = document.createElement("link");
+    icon.rel = "icon";
+    icon.href = iconUrl;
+    document.head.appendChild(icon);
+  }
+}
+
+function broadcastBrandingUpdate(update: Record<string, string>) {
+  window.dispatchEvent(new CustomEvent(BRANDING_UPDATED_EVENT, { detail: update }));
+  if (typeof BroadcastChannel !== "undefined") {
+    const channel = new BroadcastChannel(BRANDING_CHANNEL);
+    channel.postMessage(update);
+    channel.close();
+  }
+}
 
 // Two AppSetting rows whose values are fixed in Python code (money rounding
 // is hardcoded, not actually driven by these settings) -- the backend now
@@ -391,10 +414,29 @@ export default function SettingsPage() {
     try {
       await api.put("/settings/", { settings: form });
       invalidateCurrencyCache();
+      applyBrowserFavicon(form.favicon || "");
+      broadcastBrandingUpdate({ logo: form.logo || "", favicon: form.favicon || "" });
       setMessage("Settings updated successfully.");
       await fetchSettings();
     } catch {
       setMessage("Could not update settings.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const saveBrandingAsset = async (key: "logo" | "favicon", value: string) => {
+    setForm((current) => ({ ...current, [key]: value }));
+    setSaving(true);
+    setMessage("");
+    try {
+      await api.put("/settings/", { settings: { [key]: value } });
+      setSettings((current) => current.map((setting) => setting.key === key ? { ...setting, value } : setting));
+      if (key === "favicon") applyBrowserFavicon(value);
+      broadcastBrandingUpdate({ [key]: value });
+      setMessage(`${key === "favicon" ? "Favicon" : "Platform logo"} updated everywhere.`);
+    } catch {
+      setMessage(`Could not update the ${key === "favicon" ? "favicon" : "platform logo"}.`);
     } finally {
       setSaving(false);
     }
@@ -929,12 +971,7 @@ export default function SettingsPage() {
                         value={form[setting.key] || ""}
                         kind="image"
                         imageVariant={setting.key === "logo" ? "logo" : "favicon"}
-                        onChange={(value) =>
-                          setForm((current) => ({
-                            ...current,
-                            [setting.key]: value,
-                          }))
-                        }
+                        onChange={(value) => void saveBrandingAsset(setting.key as "logo" | "favicon", value)}
                       />
                     ) : setting.key === "force_site_currency" ? (
                       <>
