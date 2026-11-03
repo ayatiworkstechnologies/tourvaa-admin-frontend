@@ -211,7 +211,7 @@ export default function HeroFilterBar({
     <div ref={wrapperRef} className="hero-filter-enter relative z-50 mx-auto w-full max-w-[980px] lg:w-fit lg:max-w-[920px] text-slate-900">
       <form
         onSubmit={submit}
-        className="hero-filter-bar grid grid-cols-1 overflow-visible rounded-[18px] border border-white/90 bg-white/95 p-2 shadow-[0_18px_45px_rgba(15,23,42,0.2)] backdrop-blur-sm md:grid-cols-2 lg:flex lg:items-center"
+        className="hero-filter-bar grid grid-cols-2 overflow-visible rounded-[18px] border border-white/90 bg-white/95 p-2 shadow-[0_18px_45px_rgba(15,23,42,0.2)] backdrop-blur-sm lg:flex lg:items-center"
       >
         {/* 1. Where to? */}
         <div className={fieldWrapClass("destination")}>
@@ -366,7 +366,7 @@ export default function HeroFilterBar({
         </div>
 
         {/* 5. Search Button */}
-        <div className="p-1 md:col-span-2 lg:col-auto">
+        <div className="col-span-2 p-1 lg:col-auto">
           <button
             type="submit"
             className="hero-search-button relative flex h-12 min-w-[130px] w-full items-center justify-center gap-2 overflow-hidden rounded-[10px] bg-pub-primary px-7 text-sm font-extrabold text-white shadow-[0_8px_18px_rgba(11,31,58,0.2)] transition duration-200 hover:-translate-y-0.5 hover:bg-pub-primary-dark hover:shadow-[0_12px_24px_rgba(11,31,58,0.28)] active:scale-[0.98] md:h-14 lg:h-[56px] lg:min-w-[118px] lg:w-auto lg:px-5"
