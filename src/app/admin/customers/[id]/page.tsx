@@ -55,7 +55,7 @@ export default function CustomerDetailPage() {
   const toast = useToast();
   const { confirm, dialog } = useConfirm();
   const { hasPermission } = useAuthContext();
-  const { formatExact } = useCurrency();
+  const { code: displayCurrency, formatExact } = useCurrency();
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [bookings, setBookings] = useState<BookingHistory[]>([]);
   const [payments, setPayments] = useState<PaymentHistory[]>([]);
@@ -277,7 +277,10 @@ export default function CustomerDetailPage() {
   const summaryMoney = (field: "paid" | "pending", fallback: number) => {
     if (hasMixedCurrencies) return "Multiple currencies";
     const amounts = customer?.amounts_by_currency || [];
-    return formatExact(amounts[0]?.[field] ?? fallback, amounts[0]?.currency || customer?.currency || "USD");
+    // A recorded payment must retain its settlement currency. For a customer
+    // with no payment yet, use the active admin display currency instead of
+    // falsely labelling the zero balance as USD.
+    return formatExact(amounts[0]?.[field] ?? fallback, amounts[0]?.currency || customer?.currency || displayCurrency);
   };
 
   return (
