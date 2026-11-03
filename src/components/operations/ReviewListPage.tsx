@@ -282,7 +282,6 @@ export default function ReviewListPage({ module, title, requiredPermission }: Pr
   ];
 
   const supplierColumns: DataTableColumn<ReviewRecord>[] = [
-    serialColumn,
     ...(canBulkApprove || canBulkReject
       ? [{
           key: "select",
@@ -299,6 +298,7 @@ export default function ReviewListPage({ module, title, requiredPermission }: Pr
           ),
         } as DataTableColumn<ReviewRecord>]
       : []),
+    serialColumn,
     {
       key: "name",
       header: "Supplier Name",
@@ -342,7 +342,6 @@ export default function ReviewListPage({ module, title, requiredPermission }: Pr
   ];
 
   const agentColumns: DataTableColumn<ReviewRecord>[] = [
-    serialColumn,
     ...(canBulkApprove || canBulkReject
       ? [{
           key: "select",
@@ -359,6 +358,7 @@ export default function ReviewListPage({ module, title, requiredPermission }: Pr
           ),
         } as DataTableColumn<ReviewRecord>]
       : []),
+    serialColumn,
     {
       key: "name",
       header: "Agent Name",
