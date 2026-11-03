@@ -106,6 +106,7 @@ type PortalFooterContent = {
   site_name?: string;
   description?: string;
   sections?: { title?: string; link_lines?: string }[];
+  partner_links?: { label?: string; url?: string }[];
   facebook?: string; instagram?: string; youtube?: string; whatsapp?: string; twitter?: string; linkedin?: string;
   tiktok?: string;
 };
@@ -269,14 +270,16 @@ export default function PublicFooter({ contentBlockKey }: { contentBlockKey?: st
     "INDIA";
 
   const portalFooterSections = portalSections(portalContent?.sections);
-  const activeFooterSections = portalFooterSections ?? footerSections;
   const isPartnerFooter = contentBlockKey === "agent_portal_footer" || contentBlockKey === "supplier_portal_footer" || contentBlockKey === "affiliate_portal_footer";
+  // Agent, supplier and affiliate pages retain the public Company/Login
+  // columns. Their own CMS block controls only the policy/contact column.
+  const activeFooterSections = isPartnerFooter ? footerSections : portalFooterSections ?? footerSections;
   // Partner landing pages use one dedicated legal/contact column instead of
   // duplicating the generic traveller Support section.
   const displayedFooterSections = isPartnerFooter
     ? activeFooterSections.filter((section) => section.title.trim().toLowerCase() !== "support")
     : activeFooterSections;
-  const partnerPolicyLinks = contentBlockKey === "supplier_portal_footer"
+  const defaultPartnerPolicyLinks = contentBlockKey === "supplier_portal_footer"
     ? [
         { label: "Supplier Terms & Conditions", href: "/supplier-terms" },
         { label: "Supplier Privacy Policy", href: "/supplier-privacy" },
@@ -287,17 +290,21 @@ export default function PublicFooter({ contentBlockKey }: { contentBlockKey?: st
         { label: contentBlockKey === "affiliate_portal_footer" ? "Affiliate Privacy Policy" : "Agent & Affiliate Privacy Policy", href: "/partner-privacy" },
         { label: "Contact Us", href: contentBlockKey === "agent_portal_footer" ? "/agent-contact" : "/contact" },
       ];
+  const configuredPartnerLinks = portalContent?.partner_links
+    ?.map((link) => ({ label: link.label?.trim() || "", href: link.url?.trim() || "" }))
+    .filter((link) => link.label && link.href) || [];
+  const partnerPolicyLinks = configuredPartnerLinks.length ? configuredPartnerLinks : defaultPartnerPolicyLinks;
   // Partner portal footers intentionally share the public site's social
   // channels. Their CMS footer block controls only its copy/link columns,
   // so blank portal fields can never hide the configured public icons.
   const activeSocialLinks = isPartnerFooter ? socialLinks : portalContent ? { ...socialLinks, ...portalContent } : socialLinks;
   const siteName = safePublicText(
-    portalContent?.site_name || settings.site_name || settings.app_name,
+    (!isPartnerFooter ? portalContent?.site_name : "") || settings.site_name || settings.app_name,
     "Tourvaa",
     80,
   );
   const tagline = safePublicText(
-    portalContent?.description || settings.site_tagline || settings.footer_description,
+    (!isPartnerFooter ? portalContent?.description : "") || settings.site_tagline || settings.footer_description,
     "Explore more, travel better, and create memories with Tourvaa.",
     500,
   );

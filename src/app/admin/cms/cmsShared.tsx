@@ -1344,11 +1344,9 @@ export const CONTENT_BLOCK_TABS: ContentBlockTabConfig[] = [
   ...(["supplier", "agent"] as const).map((portal) => ({
     key: `${portal}-portal-footer`, label: "Portal Footer", blockKey: `${portal}_portal_footer`,
     fields: [
-      { key: "site_name", label: "Brand Heading", type: "text" as const },
-      { key: "description", label: "Brand Description", type: "textarea" as const },
-      { key: "sections", label: "Footer Link Columns", type: "records" as const, hint: "Each link goes on a separate line as: Link label | /link-url", subfields: [
-        { key: "title", label: "Column Heading", type: "text" as const },
-        { key: "link_lines", label: "Links", type: "textarea" as const },
+      { key: "partner_links", label: "Partner Policies & Contact Links", type: "records" as const, hint: "These are the only portal-specific footer links. Our Company, Login, brand copy, and social icons come from the public footer.", maxItems: 3, subfields: [
+        { key: "label", label: "Link Label", type: "text" as const },
+        { key: "url", label: "Link URL", type: "url" as const },
       ] },
     ],
   })),
@@ -1421,11 +1419,9 @@ export const CONTENT_BLOCK_TABS: ContentBlockTabConfig[] = [
   {
     key: "affiliate-portal-footer", label: "Portal Footer", blockKey: "affiliate_portal_footer",
     fields: [
-      { key: "site_name", label: "Brand Heading", type: "text" },
-      { key: "description", label: "Brand Description", type: "textarea" },
-      { key: "sections", label: "Footer Link Columns", type: "records", hint: "Each link goes on a separate line as: Link label | /link-url", subfields: [
-        { key: "title", label: "Column Heading", type: "text" },
-        { key: "link_lines", label: "Links", type: "textarea" },
+      { key: "partner_links", label: "Partner Policies & Contact Links", type: "records", hint: "These are the only portal-specific footer links. Our Company, Login, brand copy, and social icons come from the public footer.", maxItems: 3, subfields: [
+        { key: "label", label: "Link Label", type: "text" },
+        { key: "url", label: "Link URL", type: "url" },
       ] },
     ],
   },
