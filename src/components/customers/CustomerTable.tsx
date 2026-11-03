@@ -109,7 +109,7 @@ export default function CustomerTable({
     },
     {
       key: "sign_in",
-      header: "Sign-in",
+      header: "Registration via",
       className: "whitespace-nowrap",
       render: (customer) => {
         const oauth = Boolean(customer.auth_provider);
