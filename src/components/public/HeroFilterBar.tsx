@@ -190,6 +190,16 @@ export default function HeroFilterBar({
   const bookable = bookableCountries(countries);
   const countryList = bookable.length ? bookable : FALLBACK_COUNTRIES;
 
+  const togglePanel = (panel: typeof open) => {
+    const isOpening = open !== panel;
+    setOpen(isOpening ? panel : null);
+    if (isOpening && window.matchMedia("(max-width: 639px)").matches) {
+      requestAnimationFrame(() => {
+        wrapperRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      });
+    }
+  };
+
   // Tour lengths (number_of_days) for the chosen country - or all tours when
   // none is chosen - so the duration panel can show how many tours each
   // option matches instead of letting visitors pick a dead end.
@@ -217,7 +227,7 @@ export default function HeroFilterBar({
         <div className={fieldWrapClass("destination")}>
           <button
             type="button"
-            onClick={() => setOpen(open === "destination" ? null : "destination")}
+            onClick={() => togglePanel("destination")}
             className={fieldClass("destination")}
             aria-expanded={open === "destination"}
           >
@@ -255,7 +265,7 @@ export default function HeroFilterBar({
         <div className={fieldWrapClass("date")}>
           <button
             type="button"
-            onClick={() => setOpen(open === "date" ? null : "date")}
+            onClick={() => togglePanel("date")}
             className={fieldClass("date")}
             aria-expanded={open === "date"}
           >
@@ -292,7 +302,7 @@ export default function HeroFilterBar({
         <div className={fieldWrapClass("duration")}>
           <button
             type="button"
-            onClick={() => setOpen(open === "duration" ? null : "duration")}
+            onClick={() => togglePanel("duration")}
             className={fieldClass("duration")}
             aria-expanded={open === "duration"}
           >
@@ -333,7 +343,7 @@ export default function HeroFilterBar({
         <div className={fieldWrapClass("passengers")}>
           <button
             type="button"
-            onClick={() => setOpen(open === "passengers" ? null : "passengers")}
+            onClick={() => togglePanel("passengers")}
             className={fieldClass("passengers")}
             aria-expanded={open === "passengers"}
           >
