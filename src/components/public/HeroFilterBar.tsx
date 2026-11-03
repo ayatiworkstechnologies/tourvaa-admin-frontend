@@ -406,7 +406,7 @@ function DestinationPanel({
   }, [countries, search]);
 
   return (
-    <div className={`${basePanelClass} left-1/2 w-[calc(100vw-3rem)] max-w-[340px] -translate-x-1/2 sm:left-0 sm:w-[400px] sm:max-w-[calc(100vw-3rem)] sm:translate-x-0 lg:w-full lg:min-w-[360px] lg:max-w-sm`}>
+    <div className={`${basePanelClass} left-0 w-[calc(100vw-2rem)] max-w-[340px] translate-x-0 sm:w-[400px] sm:max-w-[calc(100vw-2rem)] lg:w-full lg:min-w-[360px] lg:max-w-sm`}>
       {/* Header & Search Bar */}
       <div className="relative mb-3">
         <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -545,7 +545,7 @@ function DatePanel({
   ];
 
   return (
-    <div className={`${basePanelClass} left-1/2 w-[calc(100vw-3rem)] max-w-[340px] -translate-x-1/2 md:left-auto md:right-0 md:w-[540px] md:max-w-[calc(100vw-3rem)] md:translate-x-0 lg:w-[540px] lg:max-w-[calc(100vw-3rem)]`}>
+    <div className={`${basePanelClass} left-auto right-0 w-[calc(100vw-2rem)] max-w-[340px] translate-x-0 md:w-[540px] md:max-w-[calc(100vw-2rem)] lg:w-[540px] lg:max-w-[calc(100vw-3rem)]`}>
       {/* Switcher Tabs */}
       <div className="mb-4 flex items-center justify-between gap-4 border-b border-slate-100 pb-3">
         <div className="flex rounded-xl bg-slate-100/90 p-1 text-xs font-bold">
@@ -870,7 +870,7 @@ function DurationPanel({
   const [sliderVal, setSliderVal] = useState(1);
 
   return (
-    <div className={`${basePanelClass} left-1/2 w-[calc(100vw-3rem)] max-w-[280px] -translate-x-1/2 sm:left-0 sm:w-[320px] sm:max-w-[calc(100vw-3rem)] sm:translate-x-0 lg:w-full lg:min-w-[300px] lg:max-w-xs`}>
+    <div className={`${basePanelClass} left-0 w-[calc(100vw-2rem)] max-w-[280px] translate-x-0 sm:w-[320px] sm:max-w-[calc(100vw-2rem)] lg:w-full lg:min-w-[300px] lg:max-w-xs`}>
       <div className="flex items-center justify-between mb-2.5 px-0.5">
         <h4 className="text-xs font-bold text-slate-900">Duration</h4>
         {selected && (
@@ -990,7 +990,7 @@ function PassengerPanel({
   onApply: () => void;
 }) {
   return (
-    <div className={`${basePanelClass} left-1/2 w-[calc(100vw-3rem)] max-w-[280px] -translate-x-1/2 md:left-auto md:right-0 md:w-[360px] md:max-w-[calc(100vw-3rem)] md:translate-x-0 lg:w-full lg:min-w-[330px] lg:max-w-sm`}>
+    <div className={`${basePanelClass} left-auto right-0 w-[calc(100vw-2rem)] max-w-[280px] translate-x-0 md:w-[360px] md:max-w-[calc(100vw-2rem)] lg:w-full lg:min-w-[330px] lg:max-w-sm`}>
       <div className="mb-2 px-1 md:mb-3">
         <h4 className="text-xs font-bold text-slate-900">Traveller Details</h4>
         <p className="text-[11px] text-slate-400">Select number of passengers</p>
