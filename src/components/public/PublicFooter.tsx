@@ -314,7 +314,7 @@ export default function PublicFooter({ contentBlockKey }: { contentBlockKey?: st
   return (
     <footer className="w-full bg-pub-primary text-white pt-12 sm:pt-16 pb-8 sm:pb-10 transition-colors">
       <div className="w-full max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10">
-        <div className="grid grid-cols-1 items-start gap-x-6 gap-y-8 min-[400px]:grid-cols-2 sm:gap-x-10 sm:gap-y-10 lg:grid-cols-[minmax(0,3fr)_minmax(360px,1fr)] lg:gap-14 xl:gap-20">
+        <div className="grid grid-cols-1 items-start gap-x-6 gap-y-8 min-[320px]:grid-cols-2 sm:gap-x-10 sm:gap-y-10 lg:grid-cols-[minmax(0,3fr)_minmax(360px,1fr)] lg:gap-14 xl:gap-20">
           {/* The CMS menu area is always independent from Tourvaa's utility
               column: three menu columns on desktop, then additional CMS
               sections wrap beneath them without shifting the right panel. */}
@@ -353,7 +353,7 @@ export default function PublicFooter({ contentBlockKey }: { contentBlockKey?: st
 
           {/* Fixed right column: CMS menu additions cannot move this block. */}
           <div className="contents lg:flex lg:min-w-0 lg:flex-col lg:justify-between lg:border-l lg:border-t-0 lg:pl-10 lg:pt-0 xl:pl-14">
-            <div className="min-w-0 border-t border-white/10 pt-7 min-[400px]:border-t-0 min-[400px]:pt-0 lg:border-t-0 lg:pt-0">
+            <div className="min-w-0 border-t border-white/10 pt-7 min-[320px]:border-t-0 min-[320px]:pt-0 lg:border-t-0 lg:pt-0">
               <h3 className="text-lg sm:text-xl font-bold text-white mb-2 sm:mb-3 tracking-tight">
                 {siteName}
               </h3>
