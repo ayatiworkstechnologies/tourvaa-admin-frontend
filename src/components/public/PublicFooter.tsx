@@ -287,7 +287,10 @@ export default function PublicFooter({ contentBlockKey }: { contentBlockKey?: st
         { label: contentBlockKey === "affiliate_portal_footer" ? "Affiliate Privacy Policy" : "Agent & Affiliate Privacy Policy", href: "/partner-privacy" },
         { label: "Contact Us", href: contentBlockKey === "agent_portal_footer" ? "/agent-contact" : "/contact" },
       ];
-  const activeSocialLinks = portalContent ? { ...socialLinks, ...portalContent } : socialLinks;
+  // Partner portal footers intentionally share the public site's social
+  // channels. Their CMS footer block controls only its copy/link columns,
+  // so blank portal fields can never hide the configured public icons.
+  const activeSocialLinks = isPartnerFooter ? socialLinks : portalContent ? { ...socialLinks, ...portalContent } : socialLinks;
   const siteName = safePublicText(
     portalContent?.site_name || settings.site_name || settings.app_name,
     "Tourvaa",

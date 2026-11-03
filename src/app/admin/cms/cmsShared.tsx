@@ -1350,10 +1350,6 @@ export const CONTENT_BLOCK_TABS: ContentBlockTabConfig[] = [
         { key: "title", label: "Column Heading", type: "text" as const },
         { key: "link_lines", label: "Links", type: "textarea" as const },
       ] },
-      { key: "facebook", label: "Facebook URL", type: "url" as const }, { key: "instagram", label: "Instagram URL", type: "url" as const },
-      { key: "youtube", label: "YouTube URL", type: "url" as const }, { key: "whatsapp", label: "WhatsApp URL", type: "url" as const },
-      { key: "twitter", label: "X URL", type: "url" as const }, { key: "linkedin", label: "LinkedIn URL", type: "url" as const },
-      { key: "tiktok", label: "TikTok URL", type: "url" as const },
     ],
   })),
   // ---- Affiliate Portal (see AffiliatePortalPageEditor) --------------------
@@ -1431,10 +1427,6 @@ export const CONTENT_BLOCK_TABS: ContentBlockTabConfig[] = [
         { key: "title", label: "Column Heading", type: "text" },
         { key: "link_lines", label: "Links", type: "textarea" },
       ] },
-      { key: "facebook", label: "Facebook URL", type: "url" }, { key: "instagram", label: "Instagram URL", type: "url" },
-      { key: "youtube", label: "YouTube URL", type: "url" }, { key: "whatsapp", label: "WhatsApp URL", type: "url" },
-      { key: "twitter", label: "X URL", type: "url" }, { key: "linkedin", label: "LinkedIn URL", type: "url" },
-      { key: "tiktok", label: "TikTok URL", type: "url" },
     ],
   },
 ];
