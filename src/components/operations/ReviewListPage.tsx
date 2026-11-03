@@ -65,14 +65,17 @@ function MiniCheck({ ok, label }: { ok: boolean; label: string }) {
 
 function partnerIdentity(row: ReviewRecord, name: string, type: string) {
   const code = row.supplier_code || row.agent_code || row.affiliate_code || row.id;
-  const detail = row.email || type || "Type not provided";
   return (
     <div className="min-w-0">
       <p className="truncate font-bold text-dash-text">{name || "-"}</p>
-      <p className="mt-0.5 truncate text-xs text-dash-muted">ID: {code} · {detail}</p>
+      <p className="mt-0.5 truncate text-xs text-dash-muted">ID: {code} · {type || "Type not provided"}</p>
       {row.phone && <p className="mt-1 text-xs font-medium text-dash-muted">Phone: {row.phone}</p>}
     </div>
   );
+}
+
+function partnerEmail(row: ReviewRecord) {
+  return <span className="block max-w-52 truncate text-sm text-dash-muted">{row.email || "-"}</span>;
 }
 
 function partnerLocation(row: ReviewRecord) {
@@ -308,9 +311,10 @@ export default function ReviewListPage({ module, title, requiredPermission }: Pr
       : []),
     {
       key: "name",
-      header: "Supplier",
+      header: "Supplier Name",
       render: (row) => partnerIdentity(row, row.supplier_name || row.name || "", row.supplier_type || row.type || ""),
     },
+    { key: "email", header: "Email", className: "max-w-52", render: partnerEmail },
     {
       key: "location",
       header: "Location",
@@ -375,9 +379,10 @@ export default function ReviewListPage({ module, title, requiredPermission }: Pr
       : []),
     {
       key: "name",
-      header: "Agent",
+      header: "Agent Name",
       render: (row) => partnerIdentity(row, row.agent_name || row.name || "", row.agent_type || row.type || ""),
     },
+    { key: "email", header: "Email", className: "max-w-52", render: partnerEmail },
     {
       key: "location",
       header: "Location",
@@ -423,9 +428,10 @@ export default function ReviewListPage({ module, title, requiredPermission }: Pr
     serialColumn,
     {
       key: "name",
-      header: "Affiliate",
+      header: "Affiliate Name",
       render: (row) => partnerIdentity(row, row.name || "", row.business_type || "Profile pending"),
     },
+    { key: "email", header: "Email", className: "max-w-52", render: partnerEmail },
     {
       key: "location",
       header: "Location",
