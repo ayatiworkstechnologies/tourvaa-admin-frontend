@@ -324,8 +324,8 @@ export default function ReviewListPage({ module, title, requiredPermission }: Pr
       header: "Tours",
       render: (row) => (
         <div className="flex gap-2 text-xs font-bold text-dash-muted">
-          <span className="inline-flex items-center gap-1 rounded-full bg-dash-bg px-2 py-1"><FileText size={12} /> {row.number_of_tours ?? 0} tours</span>
-          <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-1 text-amber-700"><FileText size={12} /> {row.draft_tours ?? 0} draft</span>
+          <span title="Published tours" aria-label={`Published tours: ${row.number_of_tours ?? 0}`} className="inline-flex items-center gap-1 rounded-full bg-dash-bg px-2 py-1"><FileText size={12} /> {row.number_of_tours ?? 0}</span>
+          <span title="Draft tours" aria-label={`Draft tours: ${row.draft_tours ?? 0}`} className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-1 text-amber-700"><FileText size={12} /> {row.draft_tours ?? 0}</span>
         </div>
       ),
     },
