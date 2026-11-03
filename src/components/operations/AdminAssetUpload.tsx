@@ -60,14 +60,14 @@ export default function AdminAssetUpload({ label, value, onChange, kind = "asset
   const isImageOnly = kind === "image";
   const isPdfLabel = /\bPDF\b/i.test(label);
   const isSupplierItinerary = /itinerary/i.test(label);
-  const accept = imageVariant === "favicon" ? "image/png,image/webp,image/avif" : isVideoKind ? VIDEO_ACCEPT : isImageOnly ? IMAGE_ACCEPT : IMAGE_AND_PDF_ACCEPT;
-  const formatLabel = imageVariant === "favicon" ? "PNG, WEBP, or AVIF square icon" : isVideoKind ? VIDEO_FORMAT_LABEL : isImageOnly ? IMAGE_FORMAT_LABEL : IMAGE_AND_PDF_FORMAT_LABEL;
+  const accept = imageVariant === "favicon" || imageVariant === "logo" ? "image/png,image/webp,image/avif" : isVideoKind ? VIDEO_ACCEPT : isImageOnly ? IMAGE_ACCEPT : IMAGE_AND_PDF_ACCEPT;
+  const formatLabel = imageVariant === "favicon" ? "PNG, WEBP, or AVIF icon (512 x 512 px)" : imageVariant === "logo" ? "PNG, WEBP, or AVIF logo (1200 x 400 px)" : isVideoKind ? VIDEO_FORMAT_LABEL : isImageOnly ? IMAGE_FORMAT_LABEL : IMAGE_AND_PDF_FORMAT_LABEL;
   const maxSizeLabel = isVideoKind ? "50MB" : "10MB";
   const maxBytes = (isVideoKind ? 50 : 10) * 1024 * 1024;
   const guidance = imageVariant === "logo"
-    ? "Use a transparent PNG, WEBP, or AVIF logo. Wide format recommended (for example 600 x 200 px), maximum 10 MB."
+    ? "Exact size: 1200 x 400 px (3:1). Use a transparent PNG, WEBP, or AVIF logo, maximum 10 MB."
     : imageVariant === "favicon"
-      ? "Use a square PNG, WEBP, or AVIF icon. 512 x 512 px recommended, maximum 10 MB."
+      ? "Exact size: 512 x 512 px. Use a square PNG, WEBP, or AVIF icon, maximum 10 MB."
     : isVideoKind
     ? "Recommended: 1920 x 1080 px (16:9). MP4 or WebM, maximum 50 MB."
     : isPdfLabel
@@ -82,7 +82,7 @@ export default function AdminAssetUpload({ label, value, onChange, kind = "asset
       setError(`${isVideoKind ? "Video" : "File"} must be ${maxSizeLabel} or smaller.`);
       return;
     }
-    if (imageVariant === "favicon") {
+    if (imageVariant === "favicon" || imageVariant === "logo") {
       const dimensions = await new Promise<{ width: number; height: number } | null>((resolve) => {
         const preview = new window.Image();
         const objectUrl = URL.createObjectURL(file);
@@ -96,8 +96,9 @@ export default function AdminAssetUpload({ label, value, onChange, kind = "asset
         };
         preview.src = objectUrl;
       });
-      if (!dimensions || dimensions.width !== dimensions.height || dimensions.width < 64) {
-        setError("Favicon must be a square image at least 64 x 64 px. Upload a PNG, WEBP, or AVIF icon, not a logo.");
+      const expectedSize = imageVariant === "favicon" ? { width: 512, height: 512 } : { width: 1200, height: 400 };
+      if (!dimensions || dimensions.width !== expectedSize.width || dimensions.height !== expectedSize.height) {
+        setError(`${imageVariant === "favicon" ? "Favicon" : "Platform logo"} must be exactly ${expectedSize.width} x ${expectedSize.height} px.`);
         return;
       }
     }
