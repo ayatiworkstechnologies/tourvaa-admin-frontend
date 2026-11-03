@@ -318,20 +318,20 @@ export default function PublicFooter({ contentBlockKey }: { contentBlockKey?: st
           {/* The CMS menu area is always independent from Tourvaa's utility
               column: three menu columns on desktop, then additional CMS
               sections wrap beneath them without shifting the right panel. */}
-          <div className="grid grid-cols-1 gap-x-10 gap-y-10 sm:grid-cols-2 lg:grid-cols-3 lg:gap-x-8 xl:gap-x-12">
+          <div className="grid grid-cols-1 gap-x-6 gap-y-8 min-[400px]:grid-cols-2 sm:gap-x-10 sm:gap-y-10 lg:grid-cols-3 lg:gap-x-8 xl:gap-x-12">
           {displayedFooterSections.map((section) => (
             <nav key={section.id} aria-label={`${section.title} footer links`} className="min-w-0">
-              <h3 className="text-lg sm:text-xl font-bold text-white mb-4 tracking-tight">
+              <h3 className="mb-3 text-lg font-bold tracking-tight text-white sm:mb-4 sm:text-xl">
                 {section.title}
               </h3>
-              <ul className="space-y-2.5 sm:space-y-3">
+              <ul className="space-y-2 sm:space-y-3">
                 {section.links.map((link) => (
                   <li key={link.id}>
                     <Link
                       href={link.url}
                       target={link.open_in_new_tab ? "_blank" : undefined}
                       rel={link.open_in_new_tab ? "noreferrer" : undefined}
-                      className="group flex items-start gap-2 text-xs sm:text-sm text-slate-300 transition-colors hover:text-white"
+                      className="group flex items-start gap-2 text-sm text-slate-300 transition-colors hover:text-white"
                     >
                       <span className="text-slate-400 group-hover:text-white transition-colors">
                         •
@@ -352,7 +352,7 @@ export default function PublicFooter({ contentBlockKey }: { contentBlockKey?: st
           </div>
 
           {/* Fixed right column: CMS menu additions cannot move this block. */}
-          <div className="flex min-w-0 flex-col justify-between border-t border-white/10 pt-8 lg:border-l lg:border-t-0 lg:pl-10 lg:pt-0 xl:pl-14">
+          <div className="flex min-w-0 flex-col justify-between border-t border-white/10 pt-7 lg:border-l lg:border-t-0 lg:pl-10 lg:pt-0 xl:pl-14">
             <div>
               <h3 className="text-lg sm:text-xl font-bold text-white mb-2 sm:mb-3 tracking-tight">
                 {siteName}
@@ -362,7 +362,7 @@ export default function PublicFooter({ contentBlockKey }: { contentBlockKey?: st
               </p>
 
               {/* Currency & Country Selectors */}
-              <div className="grid grid-cols-2 gap-3 mb-6">
+              <div className="mb-6 max-w-[190px]">
                 {/* Currency Selector Pill */}
                 <div ref={currencyRef} className="relative">
                   <button
@@ -469,13 +469,13 @@ export default function PublicFooter({ contentBlockKey }: { contentBlockKey?: st
             </div>
 
             {/* Social Media Icons */}
-            <div className="flex flex-wrap items-center gap-3.5 sm:gap-4 text-white/90">
+            <div className="flex flex-wrap items-center gap-2 text-white/90 sm:gap-3">
               {activeSocialLinks.facebook && <a
                 href={activeSocialLinks.facebook}
                 target="_blank"
                 rel="noreferrer"
                 aria-label="Facebook"
-                className="transition-transform duration-200 hover:scale-125 hover:text-white"
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 transition hover:bg-white/20 hover:text-white"
               >
                 <FaFacebookF size={16} />
               </a>}
@@ -484,7 +484,7 @@ export default function PublicFooter({ contentBlockKey }: { contentBlockKey?: st
                 target="_blank"
                 rel="noreferrer"
                 aria-label="Instagram"
-                className="transition-transform duration-200 hover:scale-125 hover:text-white"
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 transition hover:bg-white/20 hover:text-white"
               >
                 <FaInstagram size={16} />
               </a>}
@@ -493,7 +493,7 @@ export default function PublicFooter({ contentBlockKey }: { contentBlockKey?: st
                 target="_blank"
                 rel="noreferrer"
                 aria-label="YouTube"
-                className="transition-transform duration-200 hover:scale-125 hover:text-white"
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 transition hover:bg-white/20 hover:text-white"
               >
                 <FaYoutube size={16} />
               </a>}
@@ -502,7 +502,7 @@ export default function PublicFooter({ contentBlockKey }: { contentBlockKey?: st
                 target="_blank"
                 rel="noreferrer"
                 aria-label="WhatsApp"
-                className="transition-transform duration-200 hover:scale-125 hover:text-white"
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 transition hover:bg-white/20 hover:text-white"
               >
                 <FaWhatsapp size={16} />
               </a>}
@@ -511,7 +511,7 @@ export default function PublicFooter({ contentBlockKey }: { contentBlockKey?: st
                 target="_blank"
                 rel="noreferrer"
                 aria-label="X Twitter"
-                className="transition-transform duration-200 hover:scale-125 hover:text-white"
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 transition hover:bg-white/20 hover:text-white"
               >
                 <FaXTwitter size={16} />
               </a>}
@@ -520,7 +520,7 @@ export default function PublicFooter({ contentBlockKey }: { contentBlockKey?: st
                 target="_blank"
                 rel="noreferrer"
                 aria-label="LinkedIn"
-                className="transition-transform duration-200 hover:scale-125 hover:text-white"
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 transition hover:bg-white/20 hover:text-white"
               >
                 <FaLinkedinIn size={16} />
               </a>}
@@ -529,7 +529,7 @@ export default function PublicFooter({ contentBlockKey }: { contentBlockKey?: st
                 target="_blank"
                 rel="noreferrer"
                 aria-label="TikTok"
-                className="transition-transform duration-200 hover:scale-125 hover:text-white"
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 transition hover:bg-white/20 hover:text-white"
               >
                 <FaTiktok size={16} />
               </a>}
