@@ -82,9 +82,12 @@ export default function CustomerTable({
           <div className="min-w-0">
             <Link
               href={`/admin/customers/${customer.id}`}
-              className="font-bold text-slate-900 hover:text-blue-600 transition block truncate"
+              className="font-bold text-slate-900 hover:text-blue-600 transition"
             >
               {customer.full_name || "Unnamed"}
+              <span className={`mt-1 block text-[11px] font-semibold ${customer.auth_provider ? "text-violet-600" : customer.user_id ? "text-sky-600" : "text-slate-400"}`}>
+                Registration via: {signInMethod(customer)}
+              </span>
             </Link>
             <div className="flex items-center gap-1.5 mt-0.5 text-xs text-slate-500">
               <span className="font-mono text-[11px] text-slate-400 font-medium">
@@ -106,20 +109,6 @@ export default function CustomerTable({
       header: "Phone",
       className: "text-slate-600 font-mono text-xs whitespace-nowrap",
       render: (customer) => customer.phone || "-",
-    },
-    {
-      key: "sign_in",
-      header: "Registration via",
-      className: "whitespace-nowrap",
-      render: (customer) => {
-        const oauth = Boolean(customer.auth_provider);
-        const noLogin = !customer.user_id;
-        return (
-          <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${oauth ? "bg-violet-50 text-violet-700" : noLogin ? "bg-slate-100 text-slate-500" : "bg-sky-50 text-sky-700"}`}>
-            {signInMethod(customer)}
-          </span>
-        );
-      },
     },
     {
       key: "country",
