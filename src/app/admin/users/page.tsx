@@ -48,6 +48,18 @@ const emptyForm: UserFormData = {
   is_active: true,
 };
 
+// Bootstrap administration accounts are required for operating the platform.
+// They remain editable, but are not removable from the Users table.
+const protectedAdministrationRoleSlugs = new Set([
+  "super-admin",
+  "admin",
+  "sub-admin",
+]);
+
+function canDeleteUser(user: User) {
+  return !protectedAdministrationRoleSlugs.has(user.role?.slug?.toLowerCase() ?? "");
+}
+
 export default function UsersPage() {
   const { dashboard, loading: dashboardLoading } = useDashboard();
   const pagination = usePagination(10);
@@ -435,15 +447,17 @@ export default function UsersPage() {
                   <Edit size={15} />
                 </button>
 
-                <button
-                  type="button"
-                  onClick={() => handleDelete(user)}
-                  aria-label={`Delete ${user.name}`}
-                  title={`Delete ${user.name}`}
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-dash-border text-dash-muted transition-colors hover:bg-red-50 hover:text-red-600"
-                >
-                  <Trash2 size={15} />
-                </button>
+                {canDeleteUser(user) && (
+                  <button
+                    type="button"
+                    onClick={() => handleDelete(user)}
+                    aria-label={`Delete ${user.name}`}
+                    title={`Delete ${user.name}`}
+                    className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-dash-border text-dash-muted transition-colors hover:bg-red-50 hover:text-red-600"
+                  >
+                    <Trash2 size={15} />
+                  </button>
+                )}
               </div>
             )}
           />
@@ -729,7 +743,6 @@ export default function UsersPage() {
     </ModuleWrapper>
   );
 }
-
 
 
 
