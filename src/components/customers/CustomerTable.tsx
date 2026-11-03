@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { LuEye as Eye, LuKeyRound as KeyRound, LuLock as Lock, LuLockOpen as Unlock } from "react-icons/lu";
+import { LuEye as Eye, LuKeyRound as KeyRound, LuLock as Lock, LuLockOpen as Unlock, LuTrash2 as Trash2 } from "react-icons/lu";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
 import StatusBadge from "@/components/operations/StatusBadge";
 import { Customer } from "@/lib/api/services/customerService";
@@ -19,9 +19,11 @@ type Props = {
   canBlock?: boolean;
   canUnblock?: boolean;
   canReset?: boolean;
+  canDelete?: boolean;
   onBlock: (customer: Customer) => void;
   onUnblock: (customer: Customer) => void;
   onReset: (customer: Customer) => void;
+  onDelete: (customer: Customer) => void;
 };
 
 export default function CustomerTable({
@@ -36,9 +38,11 @@ export default function CustomerTable({
   canBlock,
   canUnblock,
   canReset,
+  canDelete,
   onBlock,
   onUnblock,
   onReset,
+  onDelete,
 }: Props) {
   const { format: money } = useCurrency();
   const amountText = (customer: Customer, field: "paid" | "pending") => {
@@ -207,6 +211,18 @@ export default function CustomerTable({
                   <Lock size={14} />
                 </button>
               )}
+          {canDelete && !customer.user_id && (
+            <button
+              type="button"
+              disabled={savingId === customer.id}
+              onClick={() => onDelete(customer)}
+              className="inline-flex h-8 w-8 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-400 shadow-2xs hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600 transition disabled:opacity-50"
+              aria-label="Delete customer profile"
+              title="Delete customer profile"
+            >
+              <Trash2 size={14} />
+            </button>
+          )}
         </div>
       )}
     />

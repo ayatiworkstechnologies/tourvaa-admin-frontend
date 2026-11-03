@@ -176,6 +176,10 @@ export async function resetCustomerPassword(customerId: string | number) {
   return response.data.data;
 }
 
+export async function deleteCustomer(customerId: string | number) {
+  await api.delete(`/customers/${customerId}`);
+}
+
 export async function getCustomerBookings(customerId: string | number) {
   const response = await api.get<Paginated<BookingHistory> & { status: string }>(`/customers/${customerId}/bookings`, {
     params: { limit: 1000 },

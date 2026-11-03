@@ -15,6 +15,7 @@ import { useConfirm } from "@/hooks/useConfirm";
 import {
   blockCustomer,
   Customer,
+  deleteCustomer,
   getCustomers,
   resetCustomerPassword,
   unblockCustomer,
@@ -46,6 +47,7 @@ export default function CustomersPage() {
   const canBlock = hasPermission("customers.block") || hasPermission("customers.edit");
   const canUnblock = hasPermission("customers.unblock") || hasPermission("customers.edit");
   const canReset = hasPermission("customers.reset_password") || hasPermission("customers.edit");
+  const canDelete = hasPermission("customers.delete") || hasPermission("delete-customers");
 
   const debouncedSearch = useDebounce(filters.search, 350);
 
@@ -139,6 +141,28 @@ export default function CustomersPage() {
     }
   };
 
+  const handleDelete = async (customer: Customer) => {
+    const confirmed = await confirm({
+      title: "Delete customer profile",
+      message: `Delete ${customer.full_name}? This cannot be undone. Customers with booking or payment history cannot be deleted.`,
+      confirmLabel: "Delete",
+      danger: true,
+    });
+    if (!confirmed) return;
+
+    setSavingId(customer.id);
+    try {
+      await deleteCustomer(customer.id);
+      toast.success("Customer profile deleted.");
+      await fetchCustomers();
+    } catch (error: unknown) {
+      const detail = (error as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
+      toast.error(detail || "Could not delete customer profile.");
+    } finally {
+      setSavingId(null);
+    }
+  };
+
   return (
     <ModuleWrapper title="Customers" requiredPermission="customers.view">
       <div className="space-y-6">
@@ -175,9 +199,11 @@ export default function CustomersPage() {
           canBlock={canBlock}
           canUnblock={canUnblock}
           canReset={canReset}
+          canDelete={canDelete}
           onBlock={handleBlock}
           onUnblock={handleUnblock}
           onReset={handleResetPassword}
+          onDelete={handleDelete}
         />
       </div>
       <ActionModal
