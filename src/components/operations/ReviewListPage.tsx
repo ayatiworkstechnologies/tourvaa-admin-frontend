@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { LuCircleCheckBig as CheckCircle2, LuDownload as Download, LuEye as Eye, LuFileText as FileText, LuPlus as Plus, LuRefreshCw as RefreshCw, LuTruck as Truck, LuCircleX as XCircle } from "react-icons/lu";
+import { LuCircleCheckBig as CheckCircle2, LuDownload as Download, LuEye as Eye, LuFileText as FileText, LuPlus as Plus, LuRefreshCw as RefreshCw, LuCircleX as XCircle } from "react-icons/lu";
 
 import ModuleWrapper from "@/components/common/ModuleWrapper";
 import DataTable, { DataTableColumn } from "@/components/ui/DataTable";
@@ -321,11 +321,11 @@ export default function ReviewListPage({ module, title, requiredPermission }: Pr
     },
     {
       key: "activity",
-      header: "Activity",
+      header: "Tours",
       render: (row) => (
         <div className="flex gap-2 text-xs font-bold text-dash-muted">
-          <span className="inline-flex items-center gap-1 rounded-full bg-dash-bg px-2 py-1"><FileText size={12} /> {row.documents?.length ?? 0}</span>
-          <span className="inline-flex items-center gap-1 rounded-full bg-dash-bg px-2 py-1"><Truck size={12} /> {row.vehicles?.length ?? 0}</span>
+          <span className="inline-flex items-center gap-1 rounded-full bg-dash-bg px-2 py-1"><FileText size={12} /> {row.number_of_tours ?? 0} tours</span>
+          <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-1 text-amber-700"><FileText size={12} /> {row.draft_tours ?? 0} draft</span>
         </div>
       ),
     },

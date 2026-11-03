@@ -49,6 +49,7 @@ export type ReviewRecord = {
   commission_reviewed_at?: string | null;
   api_link?: string;
   number_of_tours?: number;
+  draft_tours?: number;
   completed_tours?: number;
   cancelled_tours?: number;
   upcoming_tours?: number;
