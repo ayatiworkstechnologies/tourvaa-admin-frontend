@@ -581,6 +581,24 @@ export const FAVOURITE_COUNTRIES_HEADING_BLOCK: ContentBlockTabConfig = {
   ],
 };
 
+const PARTNER_FOOTER_LINK_DEFAULTS = {
+  supplier: [
+    { label: "Supplier Terms & Conditions", url: "/supplier-terms" },
+    { label: "Supplier Privacy Policy", url: "/supplier-privacy" },
+    { label: "Contact Us", url: "/supplier-contact" },
+  ],
+  agent: [
+    { label: "Agent & Affiliate Terms & Conditions", url: "/partner-terms" },
+    { label: "Agent & Affiliate Privacy Policy", url: "/partner-privacy" },
+    { label: "Contact Us", url: "/agent-contact" },
+  ],
+  affiliate: [
+    { label: "Affiliate Terms & Conditions", url: "/partner-terms" },
+    { label: "Affiliate Privacy Policy", url: "/partner-privacy" },
+    { label: "Contact Us", url: "/contact" },
+  ],
+} as const;
+
 export const CONTENT_BLOCK_TABS: ContentBlockTabConfig[] = [
   {
     key: "destinations-page",
@@ -1344,7 +1362,7 @@ export const CONTENT_BLOCK_TABS: ContentBlockTabConfig[] = [
   ...(["supplier", "agent"] as const).map((portal) => ({
     key: `${portal}-portal-footer`, label: "Portal Footer", blockKey: `${portal}_portal_footer`,
     fields: [
-      { key: "partner_links", label: "Partner Policies & Contact Links", type: "records" as const, hint: "These are the only portal-specific footer links. Our Company, Login, brand copy, and social icons come from the public footer.", maxItems: 3, subfields: [
+      { key: "partner_links", label: "Partner Policies & Contact Links", type: "records" as const, hint: "These are the only portal-specific footer links. Our Company, Login, brand copy, and social icons come from the public footer.", default: JSON.stringify(PARTNER_FOOTER_LINK_DEFAULTS[portal]), maxItems: 3, subfields: [
         { key: "label", label: "Link Label", type: "text" as const },
         { key: "url", label: "Link URL", type: "url" as const },
       ] },
@@ -1419,7 +1437,7 @@ export const CONTENT_BLOCK_TABS: ContentBlockTabConfig[] = [
   {
     key: "affiliate-portal-footer", label: "Portal Footer", blockKey: "affiliate_portal_footer",
     fields: [
-      { key: "partner_links", label: "Partner Policies & Contact Links", type: "records", hint: "These are the only portal-specific footer links. Our Company, Login, brand copy, and social icons come from the public footer.", maxItems: 3, subfields: [
+      { key: "partner_links", label: "Partner Policies & Contact Links", type: "records", hint: "These are the only portal-specific footer links. Our Company, Login, brand copy, and social icons come from the public footer.", default: JSON.stringify(PARTNER_FOOTER_LINK_DEFAULTS.affiliate), maxItems: 3, subfields: [
         { key: "label", label: "Link Label", type: "text" },
         { key: "url", label: "Link URL", type: "url" },
       ] },
@@ -1453,7 +1471,17 @@ export function ContentBlockPanel({ tab, onChanged }: { tab: ContentBlockTabConf
     try {
       const res = await api.get(`/cms/content-blocks/${tab.blockKey}`);
       const data = (res.data?.data?.data ?? {}) as Record<string, unknown>;
-      setValues(Object.fromEntries(tab.fields.map((f) => [f.key, Array.isArray(data[f.key]) && f.type === "list" ? JSON.stringify(data[f.key]) : Array.isArray(data[f.key]) && f.type === "records" ? JSON.stringify((data[f.key] as Record<string, unknown>[]).map((rec) => Object.fromEntries((f.subfields ?? []).map((sf) => [sf.key, Array.isArray(rec[sf.key]) ? (rec[sf.key] as string[]).join(", ") : String(rec[sf.key] ?? "")])))) : data[f.key] != null ? String(data[f.key]) : (f.default ?? "")])));
+      setValues(Object.fromEntries(tab.fields.map((f) => {
+        const fieldValue = data[f.key];
+        if (f.type === "list" && Array.isArray(fieldValue)) return [f.key, JSON.stringify(fieldValue)];
+        if (f.type === "records" && Array.isArray(fieldValue)) {
+          if (!fieldValue.length && f.default) return [f.key, f.default];
+          return [f.key, JSON.stringify((fieldValue as Record<string, unknown>[]).map((rec) => Object.fromEntries(
+            (f.subfields ?? []).map((sf) => [sf.key, Array.isArray(rec[sf.key]) ? (rec[sf.key] as string[]).join(", ") : String(rec[sf.key] ?? "")]),
+          )))];
+        }
+        return [f.key, fieldValue != null ? String(fieldValue) : (f.default ?? "")];
+      })));
     } catch {
       toast.error(`Could not load ${tab.label}.`);
     } finally {
