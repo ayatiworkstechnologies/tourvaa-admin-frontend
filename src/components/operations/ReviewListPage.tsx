@@ -69,20 +69,10 @@ function partnerIdentity(row: ReviewRecord, name: string, type: string) {
     <div className="min-w-0">
       <p className="truncate font-bold text-dash-text">{name || "-"}</p>
       <p className="mt-0.5 truncate text-xs text-dash-muted">ID: {code} · {type || "Type not provided"}</p>
+      <p className="mt-1 truncate text-xs text-dash-muted">Email: {row.email || "-"}</p>
       {row.phone && <p className="mt-1 text-xs font-medium text-dash-muted">Phone: {row.phone}</p>}
-    </div>
-  );
-}
-
-function partnerEmail(row: ReviewRecord) {
-  return <span className="block max-w-52 truncate text-sm text-dash-muted">{row.email || "-"}</span>;
-}
-
-function partnerLocation(row: ReviewRecord) {
-  return (
-    <div className="w-36 max-w-36 whitespace-normal break-words text-sm leading-5">
-      <p className="font-semibold text-dash-text">{row.country_name || "Country missing"}</p>
-      <p className="text-xs text-dash-muted">{row.city_name || "City missing"}</p>
+      <p className="mt-1 text-xs text-dash-muted">Location: {row.country_name || "Country missing"}{row.city_name ? ` · ${row.city_name}` : ""}</p>
+      <div className="mt-1.5"><StatusBadge value={row.approval_status} /></div>
     </div>
   );
 }
@@ -314,13 +304,6 @@ export default function ReviewListPage({ module, title, requiredPermission }: Pr
       header: "Supplier Name",
       render: (row) => partnerIdentity(row, row.supplier_name || row.name || "", row.supplier_type || row.type || ""),
     },
-    { key: "email", header: "Email", className: "max-w-52", render: partnerEmail },
-    {
-      key: "location",
-      header: "Location",
-      className: "w-36 max-w-36 whitespace-normal",
-      render: partnerLocation,
-    },
     {
       key: "registration",
       header: "Registration",
@@ -336,7 +319,6 @@ export default function ReviewListPage({ module, title, requiredPermission }: Pr
         );
       },
     },
-    { key: "approval_status", header: "Approval", render: (row) => <StatusBadge value={row.approval_status} /> },
     {
       key: "activity",
       header: "Activity",
@@ -382,13 +364,6 @@ export default function ReviewListPage({ module, title, requiredPermission }: Pr
       header: "Agent Name",
       render: (row) => partnerIdentity(row, row.agent_name || row.name || "", row.agent_type || row.type || ""),
     },
-    { key: "email", header: "Email", className: "max-w-52", render: partnerEmail },
-    {
-      key: "location",
-      header: "Location",
-      className: "w-36 max-w-36 whitespace-normal",
-      render: partnerLocation,
-    },
     {
       key: "registration",
       header: "Registration",
@@ -404,7 +379,6 @@ export default function ReviewListPage({ module, title, requiredPermission }: Pr
         );
       },
     },
-    { key: "approval_status", header: "Approval", render: (row) => <StatusBadge value={row.approval_status} /> },
     {
       key: "activity",
       header: "Bookings",
@@ -431,13 +405,6 @@ export default function ReviewListPage({ module, title, requiredPermission }: Pr
       header: "Affiliate Name",
       render: (row) => partnerIdentity(row, row.name || "", row.business_type || "Profile pending"),
     },
-    { key: "email", header: "Email", className: "max-w-52", render: partnerEmail },
-    {
-      key: "location",
-      header: "Location",
-      className: "w-36 max-w-36 whitespace-normal",
-      render: partnerLocation,
-    },
     {
       key: "readiness",
       header: "Readiness",
@@ -453,7 +420,6 @@ export default function ReviewListPage({ module, title, requiredPermission }: Pr
         );
       },
     },
-    { key: "approval_status", header: "Approval", render: (row) => <StatusBadge value={row.approval_status} /> },
     {
       key: "commission",
       header: "Commission",
