@@ -100,22 +100,14 @@ export default function CustomerTable({
             <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] font-medium text-slate-500">
               <span>Phone: {customer.phone || "-"}</span>
               <span className="text-slate-300">|</span>
+              <span>Country: {customer.country_name || customer.country || "-"}</span>
+              <span className="text-slate-300">|</span>
               <span className={customer.auth_provider ? "text-violet-600" : customer.user_id ? "text-sky-600" : "text-slate-400"}>
                 Registration via: {signInMethod(customer)}
               </span>
             </div>
           </div>
         </div>
-      ),
-    },
-    {
-      key: "country",
-      header: "Country",
-      className: "w-36 max-w-36 whitespace-normal break-words text-slate-700 leading-5",
-      render: (customer) => (
-        <span className="block max-w-36 whitespace-normal break-words leading-5">
-          {customer.country_name || customer.country || "-"}
-        </span>
       ),
     },
     {
