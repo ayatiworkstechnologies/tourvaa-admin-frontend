@@ -138,6 +138,7 @@ function PortalPublicHeaderInner({
               <img
                 src={logoUrl}
                 alt="Tourvaa"
+                fetchPriority="high"
                 className="h-8 w-auto object-contain sm:h-9"
               />
             ) : (

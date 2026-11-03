@@ -14,6 +14,7 @@ type PublicSettingsContextValue = {
 const PublicSettingsContext = createContext<PublicSettingsContextValue | null>(null);
 const BRANDING_UPDATED_EVENT = "tourvaa:branding-updated";
 const BRANDING_CHANNEL = "tourvaa-branding";
+const PUBLIC_SETTINGS_CACHE_KEY = "tourvaa:public-settings";
 
 const PLACEHOLDER_EMAILS = new Set(["hello@tourvaa.com", "support@tourvaa.com"]);
 const PLACEHOLDER_PHONES = new Set(["+910000000000", "+919876543210"]);
@@ -24,13 +25,35 @@ function configuredValue(value: string | undefined, placeholders: Set<string>) {
   return normalized && !placeholders.has(normalized.toLowerCase()) ? normalized : "";
 }
 
+function readCachedSettings(): Record<string, string> {
+  if (typeof window === "undefined") return {};
+  try {
+    const cached = JSON.parse(window.localStorage.getItem(PUBLIC_SETTINGS_CACHE_KEY) || "{}");
+    return cached && typeof cached === "object" && !Array.isArray(cached) ? cached as Record<string, string> : {};
+  } catch {
+    return {};
+  }
+}
+
+function cacheSettings(settings: Record<string, string>) {
+  try {
+    window.localStorage.setItem(PUBLIC_SETTINGS_CACHE_KEY, JSON.stringify(settings));
+  } catch {
+    // Private browsing or a full storage quota must not affect page rendering.
+  }
+}
+
 export function PublicSettingsProvider({ children }: { children: React.ReactNode }) {
-  const [settings, setSettings] = useState<Record<string, string>>({});
+  const [settings, setSettings] = useState<Record<string, string>>(readCachedSettings);
 
   useEffect(() => {
     let active = true;
     fetchPublicSettings()
-      .then((values) => { if (active) setSettings(values); })
+      .then((values) => {
+        if (!active) return;
+        setSettings(values);
+        cacheSettings(values);
+      })
       .catch(() => { /* Contact links stay hidden when settings are unavailable. */ });
     return () => { active = false; };
   }, []);
@@ -40,7 +63,11 @@ export function PublicSettingsProvider({ children }: { children: React.ReactNode
   // the next provider mount.
   useEffect(() => {
     const applyUpdate = (update: Record<string, string>) => {
-      setSettings((current) => ({ ...current, ...update }));
+      setSettings((current) => {
+        const next = { ...current, ...update };
+        cacheSettings(next);
+        return next;
+      });
     };
     const onBrandingUpdate = (event: Event) => {
       applyUpdate((event as CustomEvent<Record<string, string>>).detail || {});

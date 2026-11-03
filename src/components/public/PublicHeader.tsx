@@ -241,6 +241,7 @@ export default function PublicHeader() {
             <img
               src={logoUrl}
               alt="Tourvaa"
+              fetchPriority="high"
               className="h-9 w-auto object-contain sm:h-10 lg:h-12 xl:h-14"
             />
           ) : (
