@@ -21,6 +21,8 @@ type Props = {
   kind?: "asset" | "image" | "video";
   /** Public destination in Cloudinary. Private document endpoints do not use this component. */
   assetScope?: "tour" | "cms";
+  /** Presentation and guidance for a purpose-specific image field. */
+  imageVariant?: "default" | "logo" | "favicon";
 };
 
 // Admin assets are relayed through the API and Cloudinary before the browser
@@ -48,7 +50,7 @@ function storedFileName(value: string) {
   }
 }
 
-export default function AdminAssetUpload({ label, value, onChange, kind = "asset", assetScope = "cms" }: Props) {
+export default function AdminAssetUpload({ label, value, onChange, kind = "asset", assetScope = "cms", imageVariant = "default" }: Props) {
   const [uploading, setUploading] = useState(false);
   const [dragging, setDragging] = useState(false);
   const [error, setError] = useState("");
@@ -62,7 +64,11 @@ export default function AdminAssetUpload({ label, value, onChange, kind = "asset
   const formatLabel = isVideoKind ? VIDEO_FORMAT_LABEL : isImageOnly ? IMAGE_FORMAT_LABEL : IMAGE_AND_PDF_FORMAT_LABEL;
   const maxSizeLabel = isVideoKind ? "50MB" : "10MB";
   const maxBytes = (isVideoKind ? 50 : 10) * 1024 * 1024;
-  const guidance = isVideoKind
+  const guidance = imageVariant === "logo"
+    ? "Use a transparent PNG, WEBP, or AVIF logo. Wide format recommended (for example 600 x 200 px), maximum 10 MB."
+    : imageVariant === "favicon"
+      ? "Use a square PNG, WEBP, or AVIF icon. 512 x 512 px recommended, maximum 10 MB."
+    : isVideoKind
     ? "Recommended: 1920 x 1080 px (16:9). MP4 or WebM, maximum 50 MB."
     : isPdfLabel
       ? "PDF files: maximum 10 MB."
@@ -121,8 +127,8 @@ export default function AdminAssetUpload({ label, value, onChange, kind = "asset
       {value ? (
         <div className="relative max-w-xs overflow-hidden rounded-xl border border-dash-border">
           {showImagePreview ? (
-            <div className="relative aspect-video w-full bg-[#F0F3F8]">
-              <Image src={value} alt={label} fill unoptimized className="object-cover" />
+            <div className={`relative w-full bg-[#F0F3F8] ${imageVariant === "favicon" ? "aspect-square max-w-[160px]" : imageVariant === "logo" ? "h-36" : "aspect-video"}`}>
+              <Image src={value} alt={label} fill unoptimized className={imageVariant === "default" ? "object-cover" : "object-contain p-3"} />
             </div>
           ) : showVideoPreview ? (
             <video src={value} controls muted className="aspect-video w-full bg-black object-contain" />
@@ -179,7 +185,7 @@ export default function AdminAssetUpload({ label, value, onChange, kind = "asset
             setDragging(false);
             void upload(event.dataTransfer.files?.[0] || null);
           }}
-          className={`flex aspect-video w-full max-w-xs cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed px-4 text-center transition-colors ${
+          className={`flex w-full max-w-xs cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed px-4 text-center transition-colors ${imageVariant === "favicon" ? "aspect-square max-w-[160px]" : imageVariant === "logo" ? "h-36" : "aspect-video"} ${
             dragging ? "border-dash-brand bg-[#EDF5FF]" : "border-dash-border bg-dash-bg hover:bg-[#F0F3F8]"
           }`}
         >

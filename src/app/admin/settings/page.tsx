@@ -43,6 +43,13 @@ const booleanSettingKeys = new Set([
 ]);
 
 const imageSettingKeys = new Set(["logo", "favicon"]);
+const imageSettingLabels: Record<string, string> = {
+  logo: "Platform Logo",
+  favicon: "Browser Icon (Favicon)",
+};
+const systemSettingHelpers: Record<string, string> = {
+  support_email: "Shown to customers on the website and in transactional-email footers. This is separate from the SMTP sender address.",
+};
 
 // Two AppSetting rows whose values are fixed in Python code (money rounding
 // is hardcoded, not actually driven by these settings) -- the backend now
@@ -918,8 +925,10 @@ export default function SettingsPage() {
                       </>
                     ) : imageSettingKeys.has(setting.key) ? (
                       <AdminAssetUpload
-                        label={setting.label}
+                        label={imageSettingLabels[setting.key] || setting.label}
                         value={form[setting.key] || ""}
+                        kind="image"
+                        imageVariant={setting.key === "logo" ? "logo" : "favicon"}
                         onChange={(value) =>
                           setForm((current) => ({
                             ...current,
@@ -996,6 +1005,9 @@ export default function SettingsPage() {
                     )}
                     {override?.helper && setting.key !== "currency" && setting.key !== "force_site_currency" && (
                       <p className="mt-2 text-xs text-dash-subtle">{override.helper}</p>
+                    )}
+                    {systemSettingHelpers[setting.key] && (
+                      <p className="mt-2 text-xs text-dash-subtle">{systemSettingHelpers[setting.key]}</p>
                     )}
                   </div>
                   );
