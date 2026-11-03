@@ -231,7 +231,7 @@ export default function PublicHeader() {
 
       {/* On phones, keep the logo at the left and the two controls at the
           real right edge. The external language-widget lane is desktop-only. */}
-      <div className="mx-auto flex h-20 max-w-[1440px] min-w-0 items-center justify-between gap-6 px-4 sm:px-8 lg:pl-12 lg:pr-[164px]">
+      <div className="mx-auto flex h-20 max-w-[1480px] min-w-0 items-center justify-between gap-6 px-4 sm:px-8 lg:h-[88px] lg:px-10 xl:h-24 xl:px-12">
         <Link
           href="/"
           className="flex shrink-0 items-center text-2xl font-black tracking-tight text-pub-primary transition hover:opacity-90 sm:text-3xl"
@@ -241,7 +241,7 @@ export default function PublicHeader() {
             <img
               src={logoUrl}
               alt="Tourvaa"
-              className="h-9 w-auto object-contain sm:h-10"
+              className="h-9 w-auto object-contain sm:h-10 lg:h-12 xl:h-14"
             />
           ) : (
             "Tourvaa"
