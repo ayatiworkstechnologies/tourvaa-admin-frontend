@@ -150,9 +150,15 @@ export default function AgentBookingDetailPage({ params }: { params: Promise<{ i
   const { id } = use(params);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { formatExact: format } = useCurrency();
-  const money = (value: string | number | undefined, currency = "USD") =>
-    value || value === 0 ? format(value, currency) : "-";
+  const { format: displayMoney, formatExact: recordedMoney } = useCurrency();
+  const money = (value: string | number | undefined, currency = "USD") => {
+    if (value === undefined || value === null) return "-";
+    const displayed = displayMoney(value, currency);
+    const recorded = recordedMoney(value, currency);
+    return displayed === recorded
+      ? displayed
+      : <span title={`Recorded settlement amount: ${recorded}`}>{displayed}</span>;
+  };
   const [booking, setBooking] = useState<Booking | null>(null);
   const [invoice, setInvoice] = useState<Invoice | null>(null);
   const [loading, setLoading] = useState(true);

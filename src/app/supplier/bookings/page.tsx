@@ -95,7 +95,15 @@ function paymentColors(s: string) {
 }
 
 export default function SupplierBookingsPage() {
-  const { formatExact: format } = useCurrency();
+  const { format: displayMoney, formatExact: recordedMoney } = useCurrency();
+  const money = (value: string | number | undefined, currency = "USD") => {
+    if (value === undefined || value === null) return "-";
+    const displayed = displayMoney(value, currency);
+    const recorded = recordedMoney(value, currency);
+    return displayed === recorded
+      ? displayed
+      : <span title={`Recorded settlement amount: ${recorded}`}>{displayed}</span>;
+  };
   const toast = useToast();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [savingDueDateId, setSavingDueDateId] = useState<number | null>(null);
@@ -207,7 +215,7 @@ export default function SupplierBookingsPage() {
         );
       },
     },
-    { key: "amount", header: "Amount", className: "whitespace-nowrap font-semibold text-dash-text", render: (b) => format(b.final_amount ?? b.total_amount ?? 0, b.currency) },
+    { key: "amount", header: "Amount", className: "whitespace-nowrap font-semibold text-dash-text", render: (b) => money(b.final_amount ?? b.total_amount ?? 0, b.currency) },
   ];
 
   return (

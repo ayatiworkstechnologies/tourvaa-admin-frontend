@@ -114,7 +114,18 @@ function customerBookingStatus(status?: string, cancellationSource?: string | nu
 }
 
 export default function CustomerBookingsPage() {
-  const { formatExact: money } = useCurrency();
+  const { format: displayMoney, formatExact: recordedMoney } = useCurrency();
+  // Booking cards are browsing surfaces, so follow the currency selected in
+  // the header. The original settlement amount remains available on hover;
+  // it must not be silently replaced for reconciliation purposes.
+  const money = (value: string | number | undefined, currency = "USD") => {
+    if (value === undefined || value === null) return "-";
+    const displayed = displayMoney(value, currency);
+    const recorded = recordedMoney(value, currency);
+    return displayed === recorded
+      ? displayed
+      : <span title={`Recorded settlement amount: ${recorded}`}>{displayed}</span>;
+  };
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [dateFilter, setDateFilter] = useState("");
@@ -320,9 +331,13 @@ export default function CustomerBookingsPage() {
                       Paid {money(b.amount_paid || 0, b.currency)} • Due {money(b.amount_pending || 0, b.currency)}
                       {b.payment_due_date && ` by ${new Date(b.payment_due_date).toLocaleDateString("en-US", { day: "2-digit", month: "short", year: "numeric" })}`}
                     </p>
-                  ) : b.amount_paid !== undefined ? (
+                  ) : Number(b.amount_paid || 0) > 0 ? (
                     <p className="mt-1 text-[11px] font-semibold text-emerald-600">Paid in full</p>
-                  ) : null}
+                  ) : ["refunded", "partially_refunded", "refund_pending"].includes((b.payment_status || "").toLowerCase()) ? (
+                    <p className="mt-1 text-[11px] font-semibold text-slate-500">{(b.payment_status || "").replaceAll("_", " ")}</p>
+                  ) : (
+                    <p className="mt-1 text-[11px] font-semibold text-slate-500">No payment captured</p>
+                  )}
                 </div>
               </div>
 
@@ -343,14 +358,18 @@ export default function CustomerBookingsPage() {
                       && Number(b.authorized_amount || 0) >= Number(b.amount_pending || 0)
                       && Number(b.amount_pending || 0) > 0
                       ? "PAYMENT AUTHORIZED"
-                      : "TOTAL PAID"}
+                      : Number(b.amount_paid || 0) > 0
+                        ? "TOTAL PAID"
+                        : "BOOKING TOTAL"}
                   </p>
                   <p className="text-lg font-black text-[#0B1527] leading-tight">
                     {(b.payment_status || "").toLowerCase() === "authorized"
                       && Number(b.authorized_amount || 0) >= Number(b.amount_pending || 0)
                       && Number(b.amount_pending || 0) > 0
                       ? money(b.authorized_amount, b.currency || "USD")
-                      : money(b.total_amount, b.currency || "USD")}
+                      : Number(b.amount_paid || 0) > 0
+                        ? money(b.amount_paid, b.currency || "USD")
+                        : money(b.total_amount, b.currency || "USD")}
                   </p>
                 </div>
                 <Link

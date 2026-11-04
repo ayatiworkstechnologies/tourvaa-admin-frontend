@@ -93,6 +93,14 @@ export default function CustomerDashboardPage() {
   const { user } = useAuthContext();
   const { wishlist, toggleWishlist } = useTravelStore();
   const { format, formatExact } = useCurrency();
+  const bookingMoney = (value: string | number | undefined, currency = "USD") => {
+    if (value === undefined || value === null) return "-";
+    const displayed = format(value, currency);
+    const recorded = formatExact(value, currency);
+    return displayed === recorded
+      ? displayed
+      : <span title={`Recorded settlement amount: ${recorded}`}>{displayed}</span>;
+  };
   const toast = useToast();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -458,7 +466,7 @@ export default function CustomerDashboardPage() {
                       <div className="flex items-center justify-between gap-4 border-t border-slate-100 pt-3 sm:min-w-[145px] sm:flex-col sm:items-end sm:border-l sm:border-t-0 sm:py-1 sm:pl-5 sm:pt-1">
                         <div className="sm:text-right">
                           <p className="text-[9px] font-bold uppercase tracking-[0.14em] text-slate-400">{amountLabel}</p>
-                          <p className={`mt-1 text-lg font-black ${hasBalance ? "text-amber-600" : "text-slate-900"}`}>{formatExact(displayedAmount, b.currency || "USD")}</p>
+                          <p className={`mt-1 text-lg font-black ${hasBalance ? "text-amber-600" : "text-slate-900"}`}>{bookingMoney(displayedAmount, b.currency || "USD")}</p>
                         </div>
                         <Link href={`/customer/bookings/${b.id}${hasBalance ? "?action=pay" : ""}`} className={`inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-[11px] font-bold transition ${hasBalance ? "bg-amber-50 text-amber-700 hover:bg-amber-100" : "bg-blue-50 text-blue-700 hover:bg-blue-100"}`}>
                           {hasBalance ? "Pay now" : "View booking"} <ArrowRight size={12} />

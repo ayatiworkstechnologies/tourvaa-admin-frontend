@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { LuCircleAlert as AlertCircle, LuArrowLeft as ArrowLeft, LuBan as Ban, LuBed as Bed, LuBell as Bell, LuCalendarDays as CalendarDays, LuCalendarCheck as CalendarCheck, LuCircleCheckBig as CheckCircle2, LuClock as Clock, LuCompass as Compass, LuLoaderCircle as Loader2, LuMessageSquare as MessageSquare, LuPlay as Play, LuSend as Send, LuSparkles as Sparkles, LuTicket as Ticket, LuUser as User, LuCircleX as XCircle, LuX as X } from "react-icons/lu";
@@ -123,7 +123,7 @@ function timeStr(val?: string | null) {
   return isNaN(d.getTime()) ? "" : d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
 }
 
-function InfoRow({ label, value }: { label: string; value?: string | number | null }) {
+function InfoRow({ label, value }: { label: string; value?: ReactNode }) {
   return (
     <div className="flex justify-between border-b border-dash-bg-muted py-2.5 text-sm last:border-b-0">
       <span className="text-dash-muted">{label}</span>
@@ -453,7 +453,15 @@ export default function SupplierBookingDetailPage() {
   const params = useParams();
   const router = useRouter();
   const bookingId = params.id as string;
-  const { formatExact: format } = useCurrency();
+  const { format: displayMoney, formatExact: recordedMoney } = useCurrency();
+  const money = (value: string | number | undefined, currency = "USD") => {
+    if (value === undefined || value === null) return "-";
+    const displayed = displayMoney(value, currency);
+    const recorded = recordedMoney(value, currency);
+    return displayed === recorded
+      ? displayed
+      : <span title={`Recorded settlement amount: ${recorded}`}>{displayed}</span>;
+  };
 
   const [booking, setBooking] = useState<Booking | null>(null);
   const [history, setHistory] = useState<StatusHistory[]>([]);
@@ -745,10 +753,10 @@ export default function SupplierBookingDetailPage() {
             <span className="text-emerald-600 font-black text-lg">$</span>
             <h2 className="font-black text-dash-text">Supplier Gross Amount</h2>
           </div>
-          <InfoRow label="Supplier Gross Amount" value={format(booking.supplier_payment_summary?.gross_amount ?? 0, booking.supplier_payment_summary?.currency ?? booking.currency)} />
+          <InfoRow label="Supplier Gross Amount" value={money(booking.supplier_payment_summary?.gross_amount ?? 0, booking.supplier_payment_summary?.currency ?? booking.currency)} />
           <InfoRow label="Commission to Tourvaa" value={booking.supplier_payment_summary ? `${booking.supplier_payment_summary.commission_percentage}%` : "-"} />
-          <InfoRow label="Commission Amount" value={format(booking.supplier_payment_summary?.commission_amount ?? 0, booking.supplier_payment_summary?.currency ?? booking.currency)} />
-          <InfoRow label="Supplier Net Payable" value={format(booking.supplier_payment_summary?.net_payable ?? 0, booking.supplier_payment_summary?.currency ?? booking.currency)} />
+          <InfoRow label="Commission Amount" value={money(booking.supplier_payment_summary?.commission_amount ?? 0, booking.supplier_payment_summary?.currency ?? booking.currency)} />
+          <InfoRow label="Supplier Net Payable" value={money(booking.supplier_payment_summary?.net_payable ?? 0, booking.supplier_payment_summary?.currency ?? booking.currency)} />
           <InfoRow label="Supplier Payment Status" value={booking.supplier_payment_summary?.payment_status.replace(/_/g, " ") ?? "pending"} />
           <InfoRow label="Supplier Payment Date" value={dateStr(booking.supplier_payment_summary?.payment_date)} />
           {booking.cancellation_reason && (

@@ -381,7 +381,7 @@ export default function CustomerBookingDetailPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { formatExact: format } = useCurrency();
+  const { format } = useCurrency();
   const [booking, setBooking] = useState<Booking | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
