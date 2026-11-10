@@ -64,7 +64,10 @@ export default function SmtpSettingsSection() {
       setFromEmail(data.from_email || "");
       setReplyTo(data.reply_to || "");
       setUseSsl(data.use_ssl);
-      setUseStarttls(data.use_starttls);
+      // Implicit TLS (SSL, typically port 465) and STARTTLS (typically port
+      // 587) are alternate connection modes. Preserve SSL as the safe
+      // choice for any old record that incorrectly has both enabled.
+      setUseStarttls(data.use_ssl ? false : data.use_starttls);
       setTimeoutSeconds(String(data.timeout_seconds ?? 20));
     } catch {
       setSummary(null);
@@ -200,7 +203,10 @@ export default function SmtpSettingsSection() {
             <input
               type="checkbox"
               checked={useSsl}
-              onChange={(e) => setUseSsl(e.target.checked)}
+              onChange={(e) => {
+                setUseSsl(e.target.checked);
+                if (e.target.checked) setUseStarttls(false);
+              }}
               className="h-4 w-4 rounded border-slate-300 text-dash-brand accent-dash-brand focus:ring-dash-brand transition cursor-pointer"
             />
             Use SSL
@@ -209,7 +215,10 @@ export default function SmtpSettingsSection() {
             <input
               type="checkbox"
               checked={useStarttls}
-              onChange={(e) => setUseStarttls(e.target.checked)}
+              onChange={(e) => {
+                setUseStarttls(e.target.checked);
+                if (e.target.checked) setUseSsl(false);
+              }}
               className="h-4 w-4 rounded border-slate-300 text-dash-brand accent-dash-brand focus:ring-dash-brand transition cursor-pointer"
             />
             Use STARTTLS
