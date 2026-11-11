@@ -10,14 +10,19 @@ import { useToast } from "@/hooks/useToast";
 import { getApiErrorMessage } from "@/lib/utils/errorHandler";
 
 type Document = { id: number; document_type: string; file_url: string; status: string; uploaded_at?: string; notes?: string };
-type DocRequirement = { key: string; label: string; required: boolean };
+type DocRequirement = { key: string; label: string; description?: string; required: boolean };
 
 // Fallback only - the source of truth is GET /suppliers/document-requirements
 // (app/services/suppliers.py SUPPLIER_DOCUMENT_TYPES), used if that call fails.
 const FALLBACK_DOC_TYPES: DocRequirement[] = [
   { key: "company_registration", label: "Business Registration Certificate", required: true },
-  { key: "operating_licence", label: "Relevant Operating Licence", required: true },
-  { key: "public_liability_insurance", label: "Public Liability Insurance Certificate", required: true },
+  {
+    key: "operating_licence",
+    label: "Relevant Operating Licence",
+    description: "Upload an applicable operating licence, such as a Transport Authority Licence or Passenger Service Licence.",
+    required: false,
+  },
+  { key: "public_liability_insurance", label: "Public Liability Insurance Certificate", required: false },
   { key: "tourism_accreditation", label: "Tourism Accreditation", required: false },
   { key: "industry_certification", label: "Industry Certification", required: false },
   { key: "safety_certification", label: "Safety Certification", required: false },
@@ -62,7 +67,7 @@ export default function DocumentsTab({ onVerificationSubmitted }: { onVerificati
       .then(res => {
         const requirements = res.data?.data;
         if (Array.isArray(requirements) && requirements.length) {
-          setDocTypes(requirements.map((item: { document_type: string; label: string; required?: boolean }) => ({ key: item.document_type, label: item.label, required: Boolean(item.required) })));
+          setDocTypes(requirements.map((item: { document_type: string; label: string; description?: string; required?: boolean }) => ({ key: item.document_type, label: item.label, description: item.description, required: Boolean(item.required) })));
         }
       })
       .catch(() => {});
@@ -160,7 +165,7 @@ export default function DocumentsTab({ onVerificationSubmitted }: { onVerificati
         <div className="space-y-3">{Array.from({ length: 5 }).map((_, i) => <div key={i} className="animate-pulse h-20 rounded-xl border border-dash-border bg-white" />)}</div>
       ) : (
         <div className="space-y-4">
-          {docTypes.map(({ key, label, required }) => {
+          {docTypes.map(({ key, label, description, required }) => {
             const doc = docMap[key];
             return (
               <div key={key} className="rounded-xl border border-dash-border bg-white p-4 shadow-sm transition-shadow hover:shadow-md sm:p-5">
@@ -175,6 +180,7 @@ export default function DocumentsTab({ onVerificationSubmitted }: { onVerificati
                           ({required ? "Mandatory" : "Optional"})
                         </span>
                       </p>
+                      {description && <p className="mt-1 max-w-2xl text-xs text-dash-muted">{description}</p>}
                       {doc ? (
                         <div className="mt-0.5 flex flex-wrap items-center gap-2">
                           <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${statusCls(doc.status)}`}>{doc.status}</span>

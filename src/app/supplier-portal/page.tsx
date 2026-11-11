@@ -106,20 +106,20 @@ const DEFAULT_VERIFICATION_DOCUMENTS = [
     footer: "Mandatory - accepted: PDF, JPG, PNG",
   },
   {
-    badge: "MANDATORY",
-    badgeColor: "bg-red-50 text-red-700 border-red-300",
+    badge: "OPTIONAL",
+    badgeColor: "bg-emerald-50 text-emerald-700 border-emerald-300",
     title: "Relevant Operating Licence",
     description:
-      "Current licence authorising your tourism, guiding, transport, or tour-operating activities, where applicable.",
-    footer: "Mandatory - accepted: PDF, JPG, PNG",
+      "Upload an applicable operating licence, such as a Transport Authority Licence or Passenger Service Licence.",
+    footer: "Optional - accepted: PDF, JPG, PNG",
   },
   {
-    badge: "MANDATORY",
-    badgeColor: "bg-red-50 text-red-700 border-red-300",
+    badge: "OPTIONAL",
+    badgeColor: "bg-emerald-50 text-emerald-700 border-emerald-300",
     title: "Public Liability Insurance Certificate",
     description:
       "Evidence of active public liability cover, where required for your business or local operations.",
-    footer: "Mandatory - accepted: PDF, JPG, PNG",
+    footer: "Optional - accepted: PDF, JPG, PNG",
   },
   {
     badge: "OPTIONAL",
@@ -247,8 +247,6 @@ type CtaBlock = { heading?: string; subtitle?: string; cta_text?: string };
 const CAPABILITY_ICONS = DEFAULT_CAPABILITIES.map((c) => c.icon);
 const REQUIRED_SUPPLIER_DOCUMENT_TITLES = new Set([
   "Business Registration Certificate",
-  "Relevant Operating Licence",
-  "Public Liability Insurance Certificate",
 ]);
 const MANDATORY_DOCUMENT_BADGE_COLOR = "bg-red-50 text-red-700 border-red-300";
 const OPTIONAL_DOCUMENT_BADGE_COLOR = "bg-emerald-50 text-emerald-700 border-emerald-300";

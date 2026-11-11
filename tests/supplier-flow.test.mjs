@@ -126,6 +126,7 @@ check(
 check(
   "supplier verification checklist marks required documents red and optional documents green",
   ["Business Registration Certificate", "Relevant Operating Licence", "Public Liability Insurance Certificate", "Tourism Accreditation", "Industry Certification", "Safety Certification", "Other Licences", "Additional Supporting Documents"].every((label) => supplierLanding.includes(label)) &&
+    supplierLanding.includes('const REQUIRED_SUPPLIER_DOCUMENT_TITLES = new Set([\n  "Business Registration Certificate",\n]);') &&
     ["REQUIRED_SUPPLIER_DOCUMENT_TITLES", 'badge: required ? "MANDATORY" : "OPTIONAL"', '"bg-red-50 text-red-700 border-red-300"', '"bg-emerald-50 text-emerald-700 border-emerald-300"'].every((value) => supplierLanding.includes(value)) &&
     supplierLanding.includes('href="/supplier-contact#contact-form-section"'),
 );
@@ -141,6 +142,7 @@ const supplierDocuments = read("src/components/supplier/profile/DocumentsTab.tsx
 check(
   "supplier document uploads clearly identify mandatory and optional requirements",
   supplierDocuments.includes("required: false") &&
+    supplierDocuments.includes("Transport Authority Licence or Passenger Service Licence") &&
     supplierDocuments.includes("docTypes.filter((type) => type.required)") &&
     supplierDocuments.includes('required ? "Mandatory" : "Optional"') &&
     supplierDocuments.includes("Upload every document marked"),
