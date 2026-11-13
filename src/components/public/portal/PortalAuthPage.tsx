@@ -401,8 +401,9 @@ function RegisterPanel({ config, safeRedirect, onSwitchToLogin }: { config: Port
     setLoading(true);
     try {
       const email = normalizeEmail(form.email);
+      const registrationRedirect = safeRedirect ?? (config.accountType === "SUPPLIER" ? "/supplier/dashboard" : null);
       if (changeToken) {
-        await api.post("/auth/change-registration-email", { change_token: changeToken, email, redirect: safeRedirect });
+        await api.post("/auth/change-registration-email", { change_token: changeToken, email, redirect: registrationRedirect });
         startCooldown(email, changeToken);
       } else {
         const res = await api.post("/auth/register", {
@@ -411,7 +412,7 @@ function RegisterPanel({ config, safeRedirect, onSwitchToLogin }: { config: Port
           // not prevent a global supplier from starting registration.
           first_name: form.first_name, email, country_id: selectedCountry?.id,
           country_iso: phoneIso, country_code: dialCodeForIso(phoneIso), mobile_number: form.mobile_number,
-          accepted_terms: form.accepted_terms, account_type: config.accountType, redirect: safeRedirect,
+          accepted_terms: form.accepted_terms, account_type: config.accountType, redirect: registrationRedirect,
         });
         startCooldown(email, res.data.data.registration_change_token || "");
       }
@@ -422,7 +423,8 @@ function RegisterPanel({ config, safeRedirect, onSwitchToLogin }: { config: Port
   async function resend() {
     setResending(true); setError("");
     try {
-      await api.post("/auth/resend-verification", { email: sentEmail, redirect: safeRedirect });
+      const registrationRedirect = safeRedirect ?? (config.accountType === "SUPPLIER" ? "/supplier/dashboard" : null);
+      await api.post("/auth/resend-verification", { email: sentEmail, redirect: registrationRedirect });
       startCooldown(sentEmail, changeToken);
     } catch (err) { setError(registrationErrorMessage(err)); }
     finally { setResending(false); }

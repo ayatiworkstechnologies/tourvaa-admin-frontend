@@ -28,8 +28,8 @@ const NAV = [
   { href: "/supplier/reviews", icon: Star, label: "Reviews", section: "Operations" },
   { href: "/supplier/messages", icon: MessageSquare, label: "Messages", section: "Communication" },
   { href: "/supplier/notifications", icon: Bell, label: "Notifications", section: "Communication" },
-  { href: "/supplier-terms", icon: FileCheck, label: "Terms & Conditions", section: "Policies" },
-  { href: "/supplier-privacy", icon: FileCheck, label: "Privacy Policy", section: "Policies" },
+  { href: "/supplier-terms", icon: FileCheck, label: "Terms & Conditions", section: "Policies", target: "_blank", rel: "noopener noreferrer" },
+  { href: "/supplier-privacy", icon: FileCheck, label: "Privacy Policy", section: "Policies", target: "_blank", rel: "noopener noreferrer" },
   { href: "/supplier/profile?tab=documents", icon: FileCheck, label: "Documents", placement: "bottom" as const },
   { href: "/supplier/profile", icon: User, label: "My Profile", placement: "bottom" as const },
 ];

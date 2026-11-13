@@ -963,7 +963,7 @@ export default function TourFormPage({
 
         if (isSupplier) {
           const [categoryResponse, subcategoryResponse] = await Promise.all([
-            api.get("/tours/categories", { params: { limit: 200 } }),
+            api.get("/tours/categories", { params: { limit: 200, active_only: true } }),
             api.get("/public/subcategories"),
           ]);
           categoryItems = categoryResponse.data?.items ?? categoryResponse.data?.data ?? [];
@@ -1103,7 +1103,7 @@ export default function TourFormPage({
   };
 
   const visibleSubcategories = useMemo(() => {
-    if (!form.category_id) return subcategories;
+    if (!form.category_id) return [];
     const categoryId = Number(form.category_id);
     return subcategories.filter((subcategory) => subcategory.category_id === categoryId);
   }, [subcategories, form.category_id]);
@@ -1118,7 +1118,7 @@ export default function TourFormPage({
     const categoryId = Number(newCat);
     const validIds = selectedSubcategoryIds.filter((subId) => {
       const matched = subcategories.find((subcategory) => subcategory.id === subId);
-      return matched ? matched.category_id === categoryId : true;
+      return matched?.category_id === categoryId;
     });
     update("subcategory_ids", validIds.join(","));
   };
@@ -1179,7 +1179,7 @@ export default function TourFormPage({
       if (!form.country_id) {
         newErrors.country_id = "Please select a destination country.";
       }
-      if (!isSupplier && !form.category_id) {
+      if (!form.category_id) {
         newErrors.category_id = "Please select a tour category.";
       }
     }
@@ -1305,12 +1305,9 @@ export default function TourFormPage({
 
     if (showLocation || isEditingExistingTour) {
       payload.supplier_id = form.supplier_id ? Number(form.supplier_id) : null;
-      // Taxonomy is managed by Tourvaa.  Do not include it in a supplier
-      // update: the API preserves the tour's existing classification.
-      if (!isSupplier) {
-        payload.category_id = form.category_id ? Number(form.category_id) : null;
-        payload.subcategory_ids = selectedSubcategoryIds;
-      }
+      // Taxonomy is editable in the supplier Step 02 form.
+      payload.category_id = form.category_id ? Number(form.category_id) : null;
+      payload.subcategory_ids = selectedSubcategoryIds;
       payload.country_id = form.country_id ? Number(form.country_id) : null;
       const resolvedStateId = selectedStateId || form.state_id;
       payload.state_id = resolvedStateId ? Number(resolvedStateId) : null;
@@ -1426,7 +1423,9 @@ export default function TourFormPage({
         />
       )}
 
-      {tourId && (form.status === "pending_approval" || form.status === "repricing_required" || form.pending_review_kind) && (
+      {tourId &&
+        !(isSupplier && (sections.includes("basic-core") || sections.includes("location"))) &&
+        (form.status === "pending_approval" || form.status === "repricing_required" || form.pending_review_kind) && (
         <div className={`${embedded ? "" : "mt-4"} flex items-center gap-3 rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3`}>
           <p className="text-sm font-semibold text-amber-800">
             This tour has a submission awaiting admin review. Saving changes now will replace that pending version with a new one and restart the review - withdraw the current submission first if you want to keep it intact.
@@ -1968,8 +1967,6 @@ export default function TourFormPage({
 
           {showLocation && (
           <>
-          {!isSupplier && (
-          <>
           <FormSection
             role={role}
             icon={AlignLeft}
@@ -2327,8 +2324,6 @@ export default function TourFormPage({
               )}
             </div>
           </FormSection>
-          </>
-          )}
           </>
           )}
 

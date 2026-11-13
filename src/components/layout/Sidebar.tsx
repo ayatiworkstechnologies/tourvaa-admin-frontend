@@ -12,6 +12,8 @@ export type SidebarNavItem = {
   label: string;
   href: string;
   icon: LucideIcon | React.ElementType;
+  target?: React.HTMLAttributeAnchorTarget;
+  rel?: string;
   module?: string;
   section?: string;
   placement?: "main" | "bottom";
@@ -299,6 +301,8 @@ export default function Sidebar({
         key={`${item.module ?? index}-${item.href}`}
         ref={active && item.placement !== "bottom" ? activeNavigationItemRef : undefined}
         href={item.href}
+        target={item.target}
+        rel={item.rel}
         onMouseEnter={(e) => showTooltip(e, item.label)}
         onMouseLeave={hideTooltip}
         onClick={() => {

@@ -40,6 +40,14 @@ check(
 
 const supplierPortal = read("src/app/supplier-portal/login/page.tsx");
 const supplierLayout = read("src/app/supplier/layout.tsx");
+const sidebarComponent = read("src/components/layout/Sidebar.tsx");
+check(
+  "Supplier policy links open in protected new tabs",
+  supplierLayout.includes('{ href: "/supplier-terms", icon: FileCheck, label: "Terms & Conditions", section: "Policies", target: "_blank", rel: "noopener noreferrer" }') &&
+    supplierLayout.includes('{ href: "/supplier-privacy", icon: FileCheck, label: "Privacy Policy", section: "Policies", target: "_blank", rel: "noopener noreferrer" }') &&
+    sidebarComponent.includes("target={item.target}") &&
+    sidebarComponent.includes("rel={item.rel}"),
+);
 const supplierLanding = read("src/app/supplier-portal/page.tsx");
 check(
   "supplier earnings estimator calculates from the displayed currency amount",
@@ -202,12 +210,26 @@ check(
     sharedTourForm.includes("if (isSupplier)"),
 );
 check(
-  "supplier tour form hides optional taxonomy controls without requiring a category",
-  sharedTourForm.includes("{!isSupplier && (") &&
-    sharedTourForm.includes("!isSupplier && !form.category_id") &&
+  "supplier tour form exposes required taxonomy and saves the selected values",
+  sharedTourForm.includes('title="Overview & Descriptions"') &&
+    sharedTourForm.includes('title="Location & Destination"') &&
+    sharedTourForm.includes('title="Tour Category"') &&
+    sharedTourForm.includes('title="Subcategories"') &&
+    sharedTourForm.includes('payload[key] = form[key]?.trim() ?? ""') &&
+    sharedTourForm.includes('active_only: true') &&
+    sharedTourForm.includes('api.get("/public/subcategories")') &&
+    sharedTourForm.includes('subcategory.category_id === categoryId') &&
+    sharedTourForm.includes('newErrors.category_id = "Please select a tour category."') &&
+    sharedTourForm.includes('payload.category_id = form.category_id ? Number(form.category_id) : null') &&
+    sharedTourForm.includes('payload.subcategory_ids = selectedSubcategoryIds') &&
     sharedTourForm.includes("keepDirtyValues: true") &&
     !sharedTourForm.includes("hydratedInitialDataKeyRef") &&
     !sharedTourForm.includes("hasLocalEditsRef"),
+);
+check(
+  "supplier Steps 01 and 02 hide the long pending-review warning",
+  sharedTourForm.includes('!(isSupplier && (sections.includes("basic-core") || sections.includes("location")))') &&
+    tourWizard.includes('!(isSupplier && (activeKey === "basic" || activeKey === "location"))'),
 );
 check(
   "supplier edit reuses its loaded tour record in the shared form",

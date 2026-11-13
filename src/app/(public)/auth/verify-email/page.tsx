@@ -19,7 +19,9 @@ function VerifyEmailContent() {
   const token = useSearchParams().get("token") || "";
   const requestedRedirect = useSearchParams().get("redirect");
   const redirect = requestedRedirect?.startsWith("/") && !requestedRedirect.startsWith("//") ? requestedRedirect : null;
-  const loginHref = redirect ? `/login?redirect=${encodeURIComponent(redirect)}` : "/login";
+  const loginHref = redirect?.startsWith("/supplier/")
+    ? `/supplier-portal/login?redirect=${encodeURIComponent(redirect)}`
+    : redirect ? `/login?redirect=${encodeURIComponent(redirect)}` : "/login";
   const [linkError, setLinkError] = useState("");
   const [formError, setFormError] = useState("");
   const [password, setPassword] = useState("");
@@ -64,7 +66,7 @@ function VerifyEmailContent() {
         <Check className="mx-auto text-emerald-600" size={52} />
         <h1 className="mt-4 text-2xl font-black text-slate-950">Password created</h1>
         <p className="mt-3 text-sm leading-6 text-slate-500">Your email is verified and your account is active. Redirecting you to sign in.</p>
-        <Link href={loginHref} className="mt-6 inline-flex rounded-xl bg-blue-600 px-6 py-3 text-sm font-bold text-white">Go to sign in</Link>
+        <Link href={loginHref} className="mt-6 inline-flex rounded-xl bg-blue-600 px-6 py-3 text-sm font-bold text-white">{redirect?.startsWith("/supplier/") ? "Login to Supplier Portal" : "Go to sign in"}</Link>
       </div> : linkError ? <ErrorState text={linkError} /> : <form onSubmit={submit}>
         <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-blue-600"><Lock size={22} /></span>
         <h1 className="mt-4 text-2xl font-black text-slate-950">Create your password</h1>
