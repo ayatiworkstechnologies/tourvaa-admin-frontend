@@ -1666,6 +1666,23 @@ export default function TourFormPage({
             />
 
             <FormDropdownField
+              name="min_booking_size"
+              label="Min booking size"
+              error={errors.min_booking_size}
+              value={form.min_booking_size ?? "1"}
+              onChange={(val) => {
+                update("min_booking_size", val);
+                if (errors.min_booking_size) clearError("min_booking_size");
+              }}
+              options={MIN_BOOKING_SIZE_OPTIONS}
+              inputClass={getInputClass("min_booking_size")}
+              inputType="number"
+              min={1}
+              placeholder="e.g. 1"
+              helpText="Minimum passengers required per booking."
+            />
+
+            <FormDropdownField
               name="max_group_size"
               label="Max group size"
               error={errors.max_group_size}
@@ -1680,24 +1697,7 @@ export default function TourFormPage({
               inputType="number"
               min={1}
               placeholder="e.g. 16"
-              helpText="Maximum travellers per departure."
-            />
-
-            <FormDropdownField
-              name="min_booking_size"
-              label="Min booking size"
-              error={errors.min_booking_size}
-              value={form.min_booking_size ?? "1"}
-              onChange={(val) => {
-                update("min_booking_size", val);
-                if (errors.min_booking_size) clearError("min_booking_size");
-              }}
-              options={MIN_BOOKING_SIZE_OPTIONS}
-              inputClass={getInputClass("min_booking_size")}
-              inputType="number"
-              min={1}
-              placeholder="e.g. 1"
-              helpText="Minimum passengers required per single booking."
+              helpText="Maximum travellers allowed per departure."
             />
 
             <LanguageMultiSelect
