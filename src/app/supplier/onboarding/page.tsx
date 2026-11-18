@@ -8,12 +8,14 @@ import api from "@/lib/api/client";
 import { SupplierPageShell } from "@/components/supplier/SupplierPage";
 import Loader from "@/components/ui/Loader";
 
+type SupplierDocument = { document_type?: string; status?: string };
+
 type SupplierProfile = {
   supplier_name?: string;
   commission_percentage?: string | number | null;
   commission_accepted_at?: string | null;
   business_info?: Record<string, unknown> | null;
-  documents?: { document_type?: string; status?: string }[];
+  documents?: SupplierDocument[];
 };
 
 type DocRequirement = { document_type: string; label: string; required?: boolean };
@@ -67,7 +69,21 @@ export default function SupplierOnboardingPage() {
 
   if (loading) return <SupplierPageShell><Loader label="Loading your onboarding..." /></SupplierPageShell>;
 
-  const approvedDocTypes = new Set((profile?.documents ?? []).filter((d) => d.status === "approved").map((d) => d.document_type));
+  const documentByType = new Map((profile?.documents ?? []).map((document) => [
+    document.document_type,
+    (document.status ?? "").toLowerCase(),
+  ]));
+  const getDocumentStatus = (documentType: string, required?: boolean) => {
+    const status = documentByType.get(documentType);
+    if (status === "approved") return { label: "Approved", className: "text-emerald-700", Icon: CheckCircle2 };
+    if (status === "verified") return { label: "Verified", className: "text-emerald-700", Icon: CheckCircle2 };
+    if (status === "pending" || status === "submitted") return { label: "Uploaded", className: "text-blue-700", Icon: FileText };
+    if (status === "rejected") return { label: "Rejected", className: "text-red-700", Icon: FileText };
+    return { label: required ? "Required" : "Optional", className: required ? "text-amber-700" : "text-slate-500", Icon: FileText };
+  };
+  const approvedDocTypes = new Set((profile?.documents ?? [])
+    .filter((document) => ["approved", "verified"].includes((document.status ?? "").toLowerCase()))
+    .map((document) => document.document_type));
   const allRequiredDocumentsApproved = docRequirements
     .filter((document) => document.required)
     .every((document) => approvedDocTypes.has(document.document_type));
@@ -153,11 +169,11 @@ export default function SupplierOnboardingPage() {
                 {docRequirements.map((doc) => (
                   <div key={doc.document_type} className="flex items-center justify-between rounded-lg bg-[#F5FAF7] px-4 py-3">
                     <span className="text-sm font-semibold text-[#123024]">{doc.label}</span>
-                    {approvedDocTypes.has(doc.document_type) ? (
-                      <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700"><CheckCircle2 size={14} /> Approved</span>
-                    ) : (
-                      <span className="text-xs font-bold text-amber-700">{doc.required ? "Required" : "Optional"}</span>
-                    )}
+                    {(() => {
+                      const status = getDocumentStatus(doc.document_type, doc.required);
+                      const StatusIcon = status.Icon;
+                      return <span className={`inline-flex items-center gap-1 text-xs font-bold ${status.className}`}><StatusIcon size={14} /> {status.label}</span>;
+                    })()}
                   </div>
                 ))}
               </div>

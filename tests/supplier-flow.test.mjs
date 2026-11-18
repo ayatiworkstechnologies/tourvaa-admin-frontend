@@ -147,6 +147,7 @@ check(
     contactPage.includes("Send Message to Supplier Desk"),
 );
 const supplierDocuments = read("src/components/supplier/profile/DocumentsTab.tsx");
+const supplierOnboarding = read("src/app/supplier/onboarding/page.tsx");
 check(
   "supplier document uploads clearly identify mandatory and optional requirements",
   supplierDocuments.includes("required: false") &&
@@ -154,6 +155,15 @@ check(
     supplierDocuments.includes("docTypes.filter((type) => type.required)") &&
     supplierDocuments.includes('required ? "Mandatory" : "Optional"') &&
     supplierDocuments.includes("Upload every document marked"),
+);
+check(
+  "supplier onboarding checklist renders document review status from each uploaded record",
+  supplierOnboarding.includes('status === "approved"') &&
+    supplierOnboarding.includes('status === "verified"') &&
+    supplierOnboarding.includes('status === "pending" || status === "submitted"') &&
+    supplierOnboarding.includes('status === "rejected"') &&
+    supplierOnboarding.includes('required ? "Required" : "Optional"') &&
+    supplierOnboarding.includes('label: "Uploaded", className: "text-blue-700"'),
 );
 check("supplier portal mounts the shared language translator", supplierLayout.includes("ElfsightTranslator") && supplierLayout.includes("<ElfsightTranslator />"));
 check(
@@ -304,7 +314,6 @@ check(
     supplierVehicles.includes('api.post(`/suppliers/me/vehicles/${vehicleId}/photos`') &&
     supplierVehicles.includes("MAX_VEHICLE_PHOTOS"),
 );
-const supplierOnboarding = read("src/app/supplier/onboarding/page.tsx");
 check(
   "supplier onboarding excludes the obsolete business-info approval status",
   supplierOnboarding.includes('HIDDEN_BUSINESS_INFO_KEYS = new Set(["approval_status"])') &&
