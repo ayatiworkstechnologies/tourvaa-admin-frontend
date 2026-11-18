@@ -136,7 +136,7 @@ const nextConfig: NextConfig = {
           {
             key: "Content-Security-Policy",
             value:
-              `default-src 'self'; ${scriptSrc} style-src 'self' 'unsafe-inline' ${googleFontHosts} ${elfsightHosts}; img-src 'self' data: blob: https: ${apiProxyOrigin}; media-src 'self' blob: https: ${apiProxyOrigin}; ${connectSrc} font-src 'self' data: ${googleFontHosts} ${elfsightHosts}; frame-src 'self' ${elfsightHosts}; frame-ancestors 'self';`,
+              `default-src 'self'; ${scriptSrc} style-src 'self' 'unsafe-inline' ${googleFontHosts} ${elfsightHosts}; img-src 'self' data: blob: https: ${apiProxyOrigin}; media-src 'self' blob: https: ${apiProxyOrigin}; ${connectSrc} font-src 'self' data: ${googleFontHosts} ${elfsightHosts}; frame-src 'self' ${elfsightHosts} https://www.youtube-nocookie.com https://www.youtube.com; frame-ancestors 'self';`,
           },
           { key: "X-Frame-Options", value: "SAMEORIGIN" },
           { key: "X-Content-Type-Options", value: "nosniff" },

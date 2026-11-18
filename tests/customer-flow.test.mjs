@@ -59,11 +59,22 @@ check(
     cookieConsent.includes("Save Choices"),
 );
 check(
-  "public tour details do not add stock gallery media or repeat guide and pace in Travel Essentials",
-  detailExperience.includes("const mosaicItems = galleryItems") &&
+  "public tour gallery adds validated supplier YouTube media without stock photos or duplicated tour facts",
+  detailExperience.includes("getYouTubeVideoId(tour.tour_video_url)") &&
+    detailExperience.includes("const mosaicItems = galleryMediaItems") &&
+    detailExperience.includes("getYouTubeThumbnailUrl(youtubeVideoId)") &&
     !detailExperience.includes("fallbackPool") &&
     !detailExperience.includes("(tour.tour_language || tour.overview?.tour_type) && (") &&
     !detailExperience.includes("{tour.overview?.tour_pace && ("),
+);
+check(
+  "tour video iframe is generated from a validated ID and mounts only for a selected video item",
+  detailExperience.includes('getYouTubeEmbedUrl(current.videoId, true)') &&
+    detailExperience.includes('current?.kind === "youtube"'),
+);
+check(
+  "Content Security Policy permits the privacy-enhanced YouTube player",
+  read("next.config.ts").includes("frame-src 'self' ${elfsightHosts} https://www.youtube-nocookie.com https://www.youtube.com"),
 );
 check(
   "tour overview starts compact and can reveal its full content",
@@ -109,10 +120,10 @@ check(
 );
 check(
   "itinerary image clicks open only that day's carousel images",
-  detailExperience.includes("const [lightboxPhotos, setLightboxPhotos]") &&
-    detailExperience.includes("photos: { url: string; title?: string; caption?: string }[] = mosaicItems") &&
+  detailExperience.includes("const [lightboxMedia, setLightboxMedia]") &&
+    detailExperience.includes("photos?: GalleryPhoto[]") &&
     detailExperience.includes("day.photos.map((url)") &&
-    detailExperience.includes("photos={lightboxPhotos}"),
+    detailExperience.includes("media={lightboxMedia}"),
 );
 check("tour detail booking CTA has no cart actions", !detailExperience.includes("addToCart") && !detailExperience.includes("ShoppingCart"));
 check(

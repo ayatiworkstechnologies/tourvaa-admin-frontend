@@ -42,11 +42,17 @@ import {
   LuGauge as Gauge,
   LuActivity as Activity,
   LuCalendar as Calendar,
+  LuPlay as Play,
 } from "react-icons/lu";
 import publicApi, { PublicTourDetail } from "@/lib/api/publicClient";
 import { destinationUrl, slugifyTourSegment } from "@/lib/utils/tourUrl";
 import { useCurrency } from "@/hooks/useCurrency";
 import { mediaUrl } from "@/lib/utils/mediaUrl";
+import {
+  getYouTubeEmbedUrl,
+  getYouTubeThumbnailUrl,
+  getYouTubeVideoId,
+} from "@/lib/tours/youtubeVideo";
 import MarketingImage from "@/components/public/MarketingImage";
 import ExternalExperiencesSection from "@/components/public/external/ExternalExperiencesSection";
 import {
@@ -85,6 +91,11 @@ type PublicPriceQuote = {
   surcharge_amount: string;
   final_amount: string;
 };
+
+type GalleryPhoto = { url: string; title?: string; caption?: string };
+type GalleryMedia =
+  | ({ kind: "photo" } & GalleryPhoto)
+  | { kind: "youtube"; videoId: string; url: string; title?: string; caption?: string };
 
 function renderItemIcon(
   icon: string | null | undefined,
@@ -254,28 +265,50 @@ function parseItineraryDetail(
   });
 }
 
-// Fullscreen Lightbox Photo Modal
+// Fullscreen photo and YouTube gallery modal. The iframe is only mounted for
+// the selected video item, so closing the modal stops playback immediately.
 function LightboxModal({
-  photos,
+  media,
   initialIndex,
   onClose,
 }: {
-  photos: { url: string; title?: string; caption?: string }[];
+  media: GalleryMedia[];
   initialIndex: number;
   onClose: () => void;
 }) {
   const [index, setIndex] = useState(initialIndex);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
-      if (e.key === "ArrowRight") setIndex((i) => (i + 1) % photos.length);
+      if (e.key === "ArrowRight") setIndex((i) => (i + 1) % media.length);
       if (e.key === "ArrowLeft")
-        setIndex((i) => (i - 1 + photos.length) % photos.length);
+        setIndex((i) => (i - 1 + media.length) % media.length);
+      if (e.key === "Tab") {
+        const focusable = dialogRef.current?.querySelectorAll<HTMLElement>(
+          'button:not(:disabled), iframe, a[href], [tabindex]:not([tabindex="-1"])',
+        );
+        if (!focusable?.length) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [photos.length, onClose]);
+  }, [media.length, onClose]);
+
+  useEffect(() => {
+    closeButtonRef.current?.focus();
+  }, []);
 
   // While open: stop the page scrolling behind the gallery, and hide the
   // floating third-party widgets (Elfsight "EN" translator, chat) via
@@ -286,21 +319,24 @@ function LightboxModal({
     return () => document.body.classList.remove("lightbox-open");
   }, []);
 
-  const current = photos[index];
+  const current = media[index];
+  const isVideo = current?.kind === "youtube";
 
   // Portalled to <body> at the top z-index so no ancestor stacking context
   // or floating widget can cover the controls.
   return createPortal(
     <div
+      ref={dialogRef}
       role="dialog"
       aria-modal="true"
+      aria-label="Tour media gallery"
       className="fixed inset-0 z-[2147483000] flex flex-col bg-slate-950/95 backdrop-blur-md text-white animate-fade-in"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
         <div className="flex items-center gap-3">
           <span className="text-xs font-bold uppercase tracking-widest text-amber-400">
-            Photo {index + 1} of {photos.length}
+            Media {index + 1} of {media.length} · {isVideo ? "Video" : "Photo"}
           </span>
           {current?.title && (
             <span className="hidden sm:inline text-sm font-semibold text-white/90">
@@ -309,9 +345,10 @@ function LightboxModal({
           )}
         </div>
         <button
+          ref={closeButtonRef}
           type="button"
           onClick={onClose}
-          aria-label="Close photo gallery"
+          aria-label="Close media gallery"
           className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white transition cursor-pointer"
         >
           <X size={20} />
@@ -319,12 +356,12 @@ function LightboxModal({
       </div>
 
       <div className="relative flex-1 flex items-center justify-center p-4 sm:p-8">
-        {photos.length > 1 && (
+        {media.length > 1 && (
           <button
             type="button"
             aria-label="Previous photo"
             onClick={() =>
-              setIndex((i) => (i - 1 + photos.length) % photos.length)
+              setIndex((i) => (i - 1 + media.length) % media.length)
             }
             className="absolute left-4 z-10 flex h-12 w-12 items-center justify-center rounded-full bg-black/60 hover:bg-black/90 text-white border border-white/20 transition cursor-pointer"
           >
@@ -333,21 +370,32 @@ function LightboxModal({
         )}
 
         <div className="relative h-full w-full max-w-5xl flex items-center justify-center">
-          <MarketingImage
-            src={current?.url || ""}
-            alt={current?.title || `Tour photo ${index + 1}`}
-            fill
-            sizes="100vw"
-            className="object-contain"
-            priority
-          />
+          {isVideo && current?.kind === "youtube" ? (
+            <iframe
+              src={getYouTubeEmbedUrl(current.videoId, true)}
+              title={`YouTube video: ${current.title || "Tour video"}`}
+              className="h-full w-full rounded-xl bg-black"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowFullScreen
+              referrerPolicy="strict-origin-when-cross-origin"
+            />
+          ) : (
+            <MarketingImage
+              src={current?.url || ""}
+              alt={current?.title || `Tour photo ${index + 1}`}
+              fill
+              sizes="100vw"
+              className="object-contain"
+              priority
+            />
+          )}
         </div>
 
-        {photos.length > 1 && (
+        {media.length > 1 && (
           <button
             type="button"
             aria-label="Next photo"
-            onClick={() => setIndex((i) => (i + 1) % photos.length)}
+            onClick={() => setIndex((i) => (i + 1) % media.length)}
             className="absolute right-4 z-10 flex h-12 w-12 items-center justify-center rounded-full bg-black/60 hover:bg-black/90 text-white border border-white/20 transition cursor-pointer"
           >
             <ChevronRight size={24} />
@@ -361,13 +409,15 @@ function LightboxModal({
             {current.caption}
           </p>
         )}
-        {photos.length > 1 && (
+        {media.length > 1 && (
           <div className="flex items-center justify-center gap-2 overflow-x-auto py-1 scrollbar-none">
-            {photos.map((p, pIdx) => (
+            {media.map((item, pIdx) => (
               <button
                 key={pIdx}
                 type="button"
                 onClick={() => setIndex(pIdx)}
+                aria-label={`View ${item.kind === "youtube" ? "video" : "photo"}: ${item.title || `Media ${pIdx + 1}`}`}
+                aria-pressed={index === pIdx}
                 className={`relative h-14 w-20 shrink-0 overflow-hidden rounded-lg border-2 transition cursor-pointer ${
                   index === pIdx
                     ? "border-amber-400 ring-2 ring-amber-400/50 scale-105"
@@ -375,12 +425,17 @@ function LightboxModal({
                 }`}
               >
                 <MarketingImage
-                  src={p.url}
+                  src={item.url}
                   alt=""
                   fill
                   sizes="80px"
                   className="object-cover"
                 />
+                {item.kind === "youtube" && (
+                  <span className="absolute inset-0 flex items-center justify-center bg-black/25 text-white">
+                    <Play size={16} fill="currentColor" />
+                  </span>
+                )}
               </button>
             ))}
           </div>
@@ -900,24 +955,44 @@ export default function TourDetailExperience({
     tour.subtitle,
   ]);
 
-  // Never fill a tour gallery with unrelated stock media. The supplier's
-  // uploaded images are the only images shown on the public tour page.
-  const mosaicItems = galleryItems;
+  const youtubeVideoId = getYouTubeVideoId(tour.tour_video_url);
+  const galleryMediaItems = useMemo<GalleryMedia[]>(() => {
+    const items: GalleryMedia[] = galleryItems.map((photo) => ({ kind: "photo", ...photo }));
+    if (youtubeVideoId) {
+      const video: GalleryMedia = {
+        kind: "youtube",
+        videoId: youtubeVideoId,
+        url: getYouTubeThumbnailUrl(youtubeVideoId),
+        title: `${title} video`,
+      };
+      // Keep the video visible in the existing five-tile mosaic whenever
+      // there is at least one tour photo, while preserving the lead photo.
+      items.splice(Math.min(1, items.length), 0, video);
+    }
+    return items;
+  }, [galleryItems, title, youtubeVideoId]);
+
+  // Keep itinerary image carousels photo-only; the tour gallery uses the
+  // mixed media list above.
+  const mosaicItems = galleryMediaItems;
 
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
-  const [lightboxPhotos, setLightboxPhotos] = useState<{ url: string; title?: string; caption?: string }[]>([]);
+  const [lightboxMedia, setLightboxMedia] = useState<GalleryMedia[]>([]);
 
   const openLightbox = (
     idx = 0,
-    photos: { url: string; title?: string; caption?: string }[] = mosaicItems,
+    photos?: GalleryPhoto[],
   ) => {
     // A day itinerary's carousel is intentionally separate from the tour's
     // complete gallery. Clicking a day image must only browse that day's
     // supplied images, not every tour/gallery photo.
-    if (photos.length === 0) return;
-    setLightboxPhotos(photos);
-    setLightboxIndex(Math.max(0, Math.min(idx, photos.length - 1)));
+    const media = photos
+      ? photos.map((photo) => ({ kind: "photo" as const, ...photo }))
+      : mosaicItems;
+    if (media.length === 0) return;
+    setLightboxMedia(media);
+    setLightboxIndex(Math.max(0, Math.min(idx, media.length - 1)));
     setLightboxOpen(true);
   };
 
@@ -1711,9 +1786,9 @@ export default function TourDetailExperience({
       {modal}
 
       {/* Fullscreen Lightbox Modal */}
-      {lightboxOpen && lightboxPhotos.length > 0 && (
+      {lightboxOpen && lightboxMedia.length > 0 && (
         <LightboxModal
-          photos={lightboxPhotos}
+          media={lightboxMedia}
           initialIndex={lightboxIndex}
           onClose={() => setLightboxOpen(false)}
         />
@@ -1927,14 +2002,16 @@ export default function TourDetailExperience({
           )}
         </section>
 
-        {/* ── 3. DYNAMIC PHOTO GALLERY (Unified 5-Photo Mosaic Layout for ALL Tours) ── */}
+        {/* ── 3. DYNAMIC TOUR MEDIA GALLERY (Unified 5-Item Mosaic Layout) ── */}
         {mosaicItems.length > 0 && (
         <section className="mt-5">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-2.5 h-[340px] sm:h-[420px] md:h-[460px]">
-            {/* Slot 1: Large Feature Photo (Spans 2 columns on desktop) */}
-            <div
+            {/* Slot 1: Large Feature Media (Spans 2 columns on desktop) */}
+            <button
+              type="button"
               onClick={() => openLightbox(0)}
-              className="group relative md:col-span-2 h-full overflow-hidden rounded-2xl sm:rounded-3xl bg-slate-900 cursor-pointer shadow-sm"
+              aria-label={`Open ${mosaicItems[0].kind === "youtube" ? "video" : "photo"}: ${mosaicItems[0].title || title}`}
+              className="group relative md:col-span-2 h-full overflow-hidden rounded-2xl sm:rounded-3xl bg-slate-900 cursor-pointer shadow-sm text-left"
             >
               <MarketingImage
                 src={mosaicItems[0].url}
@@ -1945,12 +2022,20 @@ export default function TourDetailExperience({
                 className="object-cover transition duration-700 group-hover:scale-105"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+              {mosaicItems[0].kind === "youtube" && (
+                <span className="absolute inset-0 flex items-center justify-center text-white">
+                  <span className="flex h-16 w-16 items-center justify-center rounded-full bg-white/95 text-slate-950 shadow-xl transition group-hover:scale-105">
+                    <Play size={28} fill="currentColor" />
+                  </span>
+                  <span className="sr-only">Play tour video</span>
+                </span>
+              )}
               <div className="absolute bottom-4 left-4 right-4 sm:bottom-6 sm:left-6 sm:right-6">
                 <p className="text-base sm:text-xl font-bold text-white line-clamp-1 drop-shadow-md">
-                  {title}
+                  {mosaicItems[0].kind === "youtube" ? "Tour video" : title}
                 </p>
               </div>
-            </div>
+            </button>
 
             {/* Slots 2 to 5: 2x2 Grid on desktop */}
             <div className="hidden md:grid md:col-span-2 grid-cols-2 gap-2.5 h-full">
@@ -1972,6 +2057,22 @@ export default function TourDetailExperience({
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
 
+                    {item.kind === "youtube" && (
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          openLightbox(actualIndex);
+                        }}
+                        aria-label={`Play ${item.title || "tour video"}`}
+                        className="absolute inset-0 z-10 flex items-center justify-center bg-black/25 text-white transition hover:bg-black/40 focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-white"
+                      >
+                        <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white/95 text-slate-950 shadow-lg">
+                          <Play size={21} fill="currentColor" />
+                        </span>
+                      </button>
+                    )}
+
                     {isLast && (
                       <button
                         type="button"
@@ -1983,7 +2084,7 @@ export default function TourDetailExperience({
                       >
                         <Camera size={18} />
                         <span>
-                          View All {galleryItems.length} Photos
+                          View All {mosaicItems.length} {youtubeVideoId ? "Media" : "Photos"}
                         </span>
                       </button>
                     )}
@@ -1993,7 +2094,7 @@ export default function TourDetailExperience({
             </div>
           </div>
 
-          {/* View all photos button on mobile */}
+          {/* View all media button on mobile */}
           <div className="mt-2.5 flex justify-end md:hidden">
             <button
               type="button"
@@ -2001,7 +2102,7 @@ export default function TourDetailExperience({
               className="inline-flex items-center gap-1.5 rounded-full border border-slate-300 bg-white px-4 py-2 text-xs font-bold text-slate-800 shadow-sm cursor-pointer"
             >
               <Camera size={14} />
-              <span>View All {galleryItems.length} Photos</span>
+              <span>View All {mosaicItems.length} {youtubeVideoId ? "Media" : "Photos"}</span>
             </button>
           </div>
         </section>
