@@ -3024,12 +3024,21 @@ export default function TourDetailExperience({
                     </div>
                     <div className="overflow-hidden rounded-2xl border border-blue-100 bg-blue-50/40">
                       <div className="border-b border-blue-100 bg-white/55 px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-blue-700">Refund schedule</div>
-                      {tour.cancellation_policy.map((rule, index) => (
-                        <div key={index} className="flex items-center justify-between gap-4 border-b border-blue-100 px-4 py-3.5 last:border-0">
-                          <div><p className="text-sm font-semibold text-slate-800">{rule.days_before_max == null ? `${rule.days_before_min}+ days before departure` : `${rule.days_before_min}–${rule.days_before_max} days before departure`}</p><p className="mt-0.5 text-xs text-slate-500">Cancellation window</p></div>
-                          <span className="shrink-0 rounded-full bg-emerald-100 px-3 py-1.5 text-xs font-extrabold text-emerald-700">{rule.refund_percentage}% refund</span>
-                        </div>
-                      ))}
+                      {tour.cancellation_policy.map((rule, index) => {
+                        const description = rule.description?.trim();
+                        return (
+                          <div key={index} className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-3 gap-y-2 border-b border-blue-100 px-4 py-3.5 last:border-0">
+                            <div className="min-w-0">
+                              <p className="text-sm font-semibold text-slate-800">{rule.days_before_max == null ? `${rule.days_before_min}+ days before departure` : `${rule.days_before_min}–${rule.days_before_max} days before departure`}</p>
+                              <p className="mt-0.5 text-xs text-slate-500">Cancellation window</p>
+                              {description && (
+                                <p className="mt-2 break-words whitespace-pre-line text-xs leading-5 text-slate-600">{description}</p>
+                              )}
+                            </div>
+                            <span className="shrink-0 rounded-full bg-emerald-100 px-3 py-1.5 text-xs font-extrabold text-emerald-700">{rule.refund_percentage}% refund</span>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 )}

@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { LuBell as Bell, LuCalendarCheck as CalendarCheck, LuCompass as Compass, LuFileCheck2 as FileCheck, LuHandCoins as HandCoins, LuLayoutDashboard as LayoutDashboard, LuMessageSquare as MessageSquare, LuPercent as Percent, LuPlus as Plus, LuStar as Star, LuStore as Store, LuUser as User, LuWallet as Wallet } from "react-icons/lu";
 import { useAuthContext } from "@/providers/AuthProvider";
-import { getDashboardPath } from "@/lib/utils/dashboardPath";
 import Sidebar from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
 import ElfsightTranslator from "@/components/public/ElfsightTranslator";
@@ -80,15 +79,21 @@ export default function SupplierLayout({ children }: { children: React.ReactNode
   }, []);
 
   useEffect(() => {
-    if (!loading && !isLoggedIn) router.replace(`/login?redirect=${pathname}`);
+    if (!loading && !isLoggedIn) {
+      const returnPath = `${pathname}${window.location.search}`;
+      router.replace(`/supplier-portal/login?redirect=${encodeURIComponent(returnPath)}`);
+    }
   }, [loading, isLoggedIn, pathname, router]);
 
   useEffect(() => {
     if (!loading && isLoggedIn && dashboard) {
       const slug = (dashboard.user?.role as { slug?: string })?.slug ?? "";
-      if (slug && slug !== "supplier") router.replace(getDashboardPath(slug));
+      if (slug && slug !== "supplier") {
+        const returnPath = `${pathname}${window.location.search}`;
+        router.replace(`/supplier-portal/login?redirect=${encodeURIComponent(returnPath)}`);
+      }
     }
-  }, [loading, isLoggedIn, dashboard, router]);
+  }, [loading, isLoggedIn, dashboard, pathname, router]);
 
   useEffect(() => {
     if (loading || !isLoggedIn) { setCommissionAccepted(null); setConsentCheckFailed(false); return; }

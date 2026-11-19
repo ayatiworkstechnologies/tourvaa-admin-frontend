@@ -73,6 +73,13 @@ check(
     detailExperience.includes('current?.kind === "youtube"'),
 );
 check(
+  "public cancellation rules display saved notes as escaped text and preserve line breaks",
+  detailExperience.includes("const description = rule.description?.trim()") &&
+    detailExperience.includes("{description && (") &&
+    detailExperience.includes("break-words whitespace-pre-line") &&
+    detailExperience.includes("{description}</p>"),
+);
+check(
   "Content Security Policy permits the privacy-enhanced YouTube player",
   read("next.config.ts").includes("frame-src 'self' ${elfsightHosts} https://www.youtube-nocookie.com https://www.youtube.com"),
 );

@@ -58,9 +58,14 @@ export function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const loginPath = pathname.startsWith("/admin") ? "/admin/login" : "/login";
+  const loginPath = pathname.startsWith("/admin") ? "/admin/login"
+    : pathname.startsWith("/supplier") ? "/supplier-portal/login"
+    : "/login";
   const url = new URL(loginPath, request.url);
-  url.searchParams.set("redirect", pathname);
+  const returnPath = pathname.startsWith("/supplier")
+    ? `${pathname}${request.nextUrl.search}`
+    : pathname;
+  url.searchParams.set("redirect", returnPath);
   return NextResponse.redirect(url);
 }
 

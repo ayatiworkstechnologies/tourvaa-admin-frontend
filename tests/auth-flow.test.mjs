@@ -80,7 +80,21 @@ check("admin guard sends signed-out users to the dedicated admin login", adminGu
 const supplierPolicy = read("src/lib/auth/supplierAccess.ts");
 const supplierLayout = read("src/app/supplier/layout.tsx");
 const supplierDashboard = read("src/app/supplier/dashboard/page.tsx");
+const routeProxy = read("src/proxy.ts");
 check("supplier operational routes are centralized", supplierPolicy.includes("SUPPLIER_OPERATIONAL_ROUTES") && supplierPolicy.includes("isSupplierOperationalRoute"));
+check(
+  "unauthenticated supplier routes go to supplier login with their return path",
+  routeProxy.includes('pathname.startsWith("/supplier") ? "/supplier-portal/login"') &&
+    routeProxy.includes("`${pathname}${request.nextUrl.search}`") &&
+    supplierLayout.includes("/supplier-portal/login?redirect=${encodeURIComponent(returnPath)}") &&
+    supplierLayout.includes("slug !== \"supplier\""),
+);
+check(
+  "expired supplier sessions preserve the requested route after login",
+  client.includes("const supplierReturn = path.startsWith(\"/supplier\")") &&
+    client.includes("encodeURIComponent(`${path}${window.location.search}`)") &&
+    client.includes("window.location.assign(`${loginPath}${supplierReturn}`)"),
+);
 check("pending supplier direct URLs return to the safe dashboard", supplierLayout.includes('router.replace("/supplier/dashboard")'));
 check("pending supplier navigation exposes an approval-required dialog", supplierLayout.includes("Admin approval required"));
 check("pending supplier dashboard shows completion, documents, support and locked modules", supplierDashboard.includes("Complete your supplier profile") && supplierDashboard.includes("Upload documents") && supplierDashboard.includes("Contact support") && supplierDashboard.includes("Operational modules"));

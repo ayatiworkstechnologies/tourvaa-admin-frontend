@@ -143,7 +143,10 @@ function hardLogout(message = "Your session has expired. Please log in again.") 
       : path.startsWith("/agent") ? "/agent-portal/login"
       : path.startsWith("/affiliate") ? "/affiliate-portal/login"
       : "/login";
-    window.location.assign(loginPath);
+    const supplierReturn = path.startsWith("/supplier")
+      ? `?redirect=${encodeURIComponent(`${path}${window.location.search}`)}`
+      : "";
+    window.location.assign(`${loginPath}${supplierReturn}`);
   }
 }
 
