@@ -51,34 +51,41 @@ const mapScale = Math.min(732 / map.image.width, 362 / map.image.height);
 const offsetX = (780 - map.image.width * mapScale) / 2;
 const offsetY = (410 - map.image.height * mapScale) / 2;
 const landPoints = map.getPoints().map(({ x, y }) => ({ x: offsetX + x * mapScale, y: offsetY + y * mapScale }));
-const projectedOffices = OFFICES.map((office) => {
-  const point = map.getPin({ lat: office.lat, lng: office.lng });
-  if (!point) throw new Error(`Cannot project office: ${office.id}`);
-  return { ...office, x: offsetX + point.x * mapScale, y: offsetY + point.y * mapScale };
-});
-
 export interface OfficesWorldMapProps {
   activeOfficeId: string;
   selectionVersion?: number;
   onSelectOffice: (id: string) => void;
+  offices: { id: string; location: string; lat: number; lng: number }[];
 }
 
-// Add an OFFICES entry to extend the office list and flat map markers.
-export default function OfficesWorldMap({ activeOfficeId, onSelectOffice, selectionVersion = 0 }: OfficesWorldMapProps) {
+export default function OfficesWorldMap({ activeOfficeId, onSelectOffice, selectionVersion = 0, offices }: OfficesWorldMapProps) {
+  const projectedOffices = offices.flatMap((office) => {
+    if (!Number.isFinite(office.lat) || !Number.isFinite(office.lng) || office.lat < -90 || office.lat > 90 || office.lng < -180 || office.lng > 180) return [];
+    const point = map.getPin({ lat: office.lat, lng: office.lng });
+    return point ? [{ ...office, x: offsetX + point.x * mapScale, y: offsetY + point.y * mapScale }] : [];
+  });
   const selected = projectedOffices.find((office) => office.id === activeOfficeId) ?? projectedOffices[0];
+  const selectedX = selected?.x;
+  const selectedY = selected?.y;
   const [overviewOfficeId, setOverviewOfficeId] = useState<string | null>(null);
-  const selectionKey = `${selected.id}-${selectionVersion}`;
+  const selectionKey = selected ? `${selected.id}-${selectionVersion}` : `none-${selectionVersion}`;
   const overview = overviewOfficeId === selectionKey;
   const [camera, setCamera] = useState({ x: 0, y: 0, scale: 1 });
   const cameraRef = useRef(camera);
 
   useEffect(() => {
+    if (selectedX == null || selectedY == null) {
+      const next = { x: 0, y: 0, scale: 1 };
+      cameraRef.current = next;
+      setCamera(next);
+      return;
+    }
     const scale = overview ? 1 : 2.1;
     // Keep the map within the viewport while bringing edge locations into view.
     const target = {
       scale,
-      x: overview ? 0 : Math.max(780 * (1 - scale), Math.min(0, 390 - selected.x * scale)),
-      y: overview ? 0 : Math.max(410 * (1 - scale), Math.min(0, 205 - selected.y * scale)),
+      x: overview ? 0 : Math.max(780 * (1 - scale), Math.min(0, 390 - selectedX * scale)),
+      y: overview ? 0 : Math.max(410 * (1 - scale), Math.min(0, 205 - selectedY * scale)),
     };
     const start = cameraRef.current;
     let frame: number;
@@ -98,7 +105,7 @@ export default function OfficesWorldMap({ activeOfficeId, onSelectOffice, select
     }
     frame = requestAnimationFrame(animate);
     return () => cancelAnimationFrame(frame);
-  }, [selected.x, selected.y, overview]);
+  }, [selectedX, selectedY, overview]);
 
 
   return (
@@ -107,7 +114,7 @@ export default function OfficesWorldMap({ activeOfficeId, onSelectOffice, select
       <div className="flex-1 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">
         <span className="h-1.5 w-1.5 rounded-full bg-sky-500" /> Our global presence
       </div>
-      <button type="button" onClick={() => setOverviewOfficeId(overview ? null : selectionKey)} className="rounded-full border border-slate-200 bg-white/90 px-3 py-2 text-xs font-semibold text-slate-700 shadow-sm hover:bg-sky-50 focus-visible:outline-2 focus-visible:outline-sky-600">
+      <button type="button" disabled={!selected} onClick={() => setOverviewOfficeId(overview ? null : selectionKey)} className="rounded-full border border-slate-200 bg-white/90 px-3 py-2 text-xs font-semibold text-slate-700 shadow-sm hover:bg-sky-50 focus-visible:outline-2 focus-visible:outline-sky-600 disabled:cursor-not-allowed disabled:opacity-50">
         {overview ? 'Zoom to office' : 'Show full map'}
       </button>
       </div>
@@ -121,10 +128,10 @@ export default function OfficesWorldMap({ activeOfficeId, onSelectOffice, select
           const active = office.id === selected.id;
           const labelX = Math.max(52, Math.min(728, position.x));
           return (
-            <g key={office.id} role="button" tabIndex={0} aria-label={`Show ${office.city}, ${office.country}`} aria-pressed={active} className="cursor-pointer outline-none focus:stroke-sky-600" onClick={() => { onSelectOffice(office.id); setOverviewOfficeId(null); }} onKeyDown={(event) => {
+            <g key={office.id} role="button" tabIndex={0} aria-label={`Show ${office.location}`} aria-pressed={active} className="cursor-pointer outline-none focus:stroke-sky-600" onClick={() => { onSelectOffice(office.id); setOverviewOfficeId(null); }} onKeyDown={(event) => {
               if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); onSelectOffice(office.id); setOverviewOfficeId(null); }
             }}>
-              <title>{office.city}, {office.country}</title>
+              <title>{office.location}</title>
               <circle className={styles.ripple} cx={position.x} cy={position.y} r="10" fill="none" stroke={active ? '#e97548' : '#0284c7'} strokeWidth="1.5" pointerEvents="none" />
               <circle cx={position.x} cy={position.y} r="16" fill={active ? '#e97548' : '#0284c7'} fillOpacity=".13" />
               <circle cx={position.x} cy={position.y} r="11" fill="none" stroke={active ? '#e97548' : '#0284c7'} strokeOpacity=".5" />
@@ -132,15 +139,15 @@ export default function OfficesWorldMap({ activeOfficeId, onSelectOffice, select
               {active && <g pointerEvents="none">
                 <path d={`M${position.x},${position.y - 17} v-18`} stroke="#e97548" />
                 <rect x={labelX - 49} y={position.y - 63} width="98" height="28" rx="14" fill="#102c43" />
-                <text x={labelX} y={position.y - 45} textAnchor="middle" fill="white" fontSize="11" fontWeight="600">{office.city}</text>
+                <text x={labelX} y={position.y - 45} textAnchor="middle" fill="white" fontSize="11" fontWeight="600">{office.location.length > 15 ? `${office.location.slice(0, 13)}…` : office.location}</text>
               </g>}
             </g>
           );
         })}
       </svg>
       <div className="relative mx-4 mb-4 mt-2 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3" aria-live="polite">
-        <div><p className="text-[9px] font-bold uppercase tracking-[0.16em] text-slate-400">{overview ? 'Explore our offices' : 'Selected location'}</p><p className="mt-1 text-sm font-bold text-slate-800">{selected.city}<span className="font-normal text-slate-500"> / {selected.country}</span></p></div>
-        <span className="rounded-full bg-sky-50 px-3 py-1.5 text-[10px] font-semibold text-sky-700">{OFFICES.length} offices worldwide</span>
+        <div><p className="text-[9px] font-bold uppercase tracking-[0.16em] text-slate-400">{overview ? 'Explore our offices' : selected ? 'Selected location' : 'Map pins'}</p><p className="mt-1 text-sm font-bold text-slate-800">{selected?.location ?? 'Add coordinates to show office pins'}</p></div>
+        <span className="rounded-full bg-sky-50 px-3 py-1.5 text-[10px] font-semibold text-sky-700">{projectedOffices.length} office{projectedOffices.length === 1 ? '' : 's'} on map</span>
       </div>
     </div>
   );

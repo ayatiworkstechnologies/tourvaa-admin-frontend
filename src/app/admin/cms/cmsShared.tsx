@@ -13,6 +13,7 @@ import { useConfirm } from "@/hooks/useConfirm";
 import PageSectionsBuilder from "@/components/admin/cms/PageSectionsBuilder";
 import type { CmsPageBlock } from "@/components/public/CmsPageSections";
 import Loader from "@/components/ui/Loader";
+import { validateEmail } from "@/lib/utils/validators";
 
 // ---- generic item type ---------------------------------------------------
 type CmsItem = Record<string, unknown> & { id: number };
@@ -214,7 +215,7 @@ export type TabConfig = {
 // A "block" tab edits a single key/JSON record (GET/PUT /cms/content-blocks/{blockKey})
 // instead of a list of rows - used for one-off homepage sections that don't
 // need their own table (hero extras, About Tourvaa, blog teaser, transfers banner).
-type BlockFieldType = "text" | "textarea" | "url" | "number" | "asset" | "boolean" | "list" | "records" | "countries";
+type BlockFieldType = "text" | "textarea" | "url" | "email" | "number" | "asset" | "boolean" | "list" | "records" | "countries";
 export type ContentBlockTabConfig = {
   key: string;
   label: string;
@@ -224,6 +225,7 @@ export type ContentBlockTabConfig = {
     label: string;
     type: BlockFieldType;
     hint?: string;
+    placeholder?: string;
     default?: string;
     /** Maximum number of repeated records allowed for this CMS field. */
     maxItems?: number;
@@ -232,8 +234,9 @@ export type ContentBlockTabConfig = {
     subfields?: {
       key: string;
       label: string;
-      type: "text" | "textarea" | "csv" | "asset" | "select" | "url";
+      type: "text" | "textarea" | "csv" | "asset" | "select" | "url" | "number";
       options?: FieldOption[];
+      placeholder?: string;
     }[];
   }[];
 };
@@ -1018,6 +1021,7 @@ export const CONTENT_BLOCK_TABS: ContentBlockTabConfig[] = [
       { key: "badge_text", label: "Badge (e.g. Verified Concierge Support)", type: "text" },
       { key: "heading", label: "Heading", type: "text" },
       { key: "subtitle", label: "Subtitle", type: "textarea" },
+      { key: "contact_email", label: "Contact Email Address", type: "email", placeholder: "Enter contact email address", hint: "Displayed on the public Contact Us page. Contact form notifications continue to use Settings → General." },
       { key: "phone_display", label: "Phone Number (displayed)", type: "text" },
       { key: "phone_href", label: "Phone Number (for the tel: link, digits only e.g. +6498879200)", type: "text" },
       { key: "phone_hint", label: "Phone Hint (e.g. Available 24/7 in English, French & Spanish)", type: "text" },
@@ -1083,26 +1087,18 @@ export const CONTENT_BLOCK_TABS: ContentBlockTabConfig[] = [
       { key: "subtitle", label: "Subtitle", type: "textarea" },
       {
         key: "items",
-        label: "Office Details (New Zealand, Sri Lanka, India, in order)",
+      label: "Office Details (displayed in this order)",
         type: "records",
-        hint: "Up to 3 offices, in this order. Save address, phone, hours and time zone for each office. City, country and map position stay fixed per office.",
-        maxItems: 3,
+      hint: "Add any number of offices. Enter a unique office name or location. Map pins appear only when both valid coordinates are provided.",
         subfields: [
-          {
-            key: "office_id",
-            label: "Office",
-            type: "select",
-            options: [
-              { value: "nz", label: "Auckland, New Zealand" },
-              { value: "lk", label: "Colombo, Sri Lanka" },
-              { value: "in", label: "Chennai, India" },
-            ],
-          },
+          { key: "location", label: "Office Name / Location", type: "text", placeholder: "Enter city, country (e.g. Auckland, New Zealand)" },
           { key: "address_line1", label: "Address Line 1", type: "text" },
           { key: "address_line2", label: "Address Line 2", type: "text" },
           { key: "phone", label: "Phone", type: "text" },
           { key: "hours", label: "Hours", type: "text" },
           { key: "timezone", label: "Time Zone", type: "text" },
+          { key: "latitude", label: "Map Latitude", type: "number" },
+          { key: "longitude", label: "Map Longitude", type: "number" },
         ],
       },
     ],
@@ -1476,9 +1472,19 @@ export function ContentBlockPanel({ tab, onChanged }: { tab: ContentBlockTabConf
         if (f.type === "list" && Array.isArray(fieldValue)) return [f.key, JSON.stringify(fieldValue)];
         if (f.type === "records" && Array.isArray(fieldValue)) {
           if (!fieldValue.length && f.default) return [f.key, f.default];
-          return [f.key, JSON.stringify((fieldValue as Record<string, unknown>[]).map((rec) => Object.fromEntries(
-            (f.subfields ?? []).map((sf) => [sf.key, Array.isArray(rec[sf.key]) ? (rec[sf.key] as string[]).join(", ") : String(rec[sf.key] ?? "")]),
-          )))];
+          const legacyOfficeLocations: Record<string, { location: string; latitude: number; longitude: number }> = {
+            nz: { location: "Auckland, New Zealand", latitude: -36.8485, longitude: 174.7633 },
+            lk: { location: "Colombo, Sri Lanka", latitude: 6.9271, longitude: 79.8612 },
+            in: { location: "Chennai, India", latitude: 13.0827, longitude: 80.2707 },
+          };
+          return [f.key, JSON.stringify((fieldValue as Record<string, unknown>[]).map((rec) => ({
+            ...(tab.blockKey === "contact_page_offices" ? { office_id: String(rec.office_id || crypto.randomUUID()) } : {}),
+            ...Object.fromEntries((f.subfields ?? []).map((sf) => {
+              const fallback = tab.blockKey === "contact_page_offices" ? legacyOfficeLocations[String(rec.office_id || "") ]?.[sf.key as "location" | "latitude" | "longitude"] : undefined;
+              const value = Object.prototype.hasOwnProperty.call(rec, sf.key) ? rec[sf.key] : fallback;
+              return [sf.key, Array.isArray(value) ? value.join(", ") : String(value ?? "")];
+            })),
+          })))];
         }
         return [f.key, fieldValue != null ? String(fieldValue) : (f.default ?? "")];
       })));
@@ -1492,6 +1498,28 @@ export function ContentBlockPanel({ tab, onChanged }: { tab: ContentBlockTabConf
   useEffect(() => { void fetchBlock(); }, [fetchBlock]);
 
   const save = async () => {
+    const emailField = tab.fields.find((field) => field.type === "email");
+    const emailValue = emailField ? (values[emailField.key] ?? "").trim() : "";
+    if (emailValue && !validateEmail(emailValue)) {
+      toast.error("Enter a valid contact email address.");
+      return;
+    }
+    if (tab.blockKey === "contact_page_offices") {
+      const records = safeJsonArray<Record<string, string>>(values.items);
+      const names = records.map((record) => (record.location ?? "").trim().toLocaleLowerCase());
+      if (records.some((record) => !record.location?.trim())) {
+        toast.error("Enter an office name or location for every office.");
+        return;
+      }
+      if (new Set(names).size !== names.length) {
+        toast.error("Office names or locations must be unique.");
+        return;
+      }
+      if (records.some((record) => Boolean(record.latitude) !== Boolean(record.longitude))) {
+        toast.error("Enter both map coordinates or leave both empty for each office.");
+        return;
+      }
+    }
     setSaving(true);
     try {
       // Every field is sent, blank or not - the PUT replaces the whole
@@ -1503,15 +1531,19 @@ export function ContentBlockPanel({ tab, onChanged }: { tab: ContentBlockTabConf
         const raw = values[f.key] ?? "";
         data[f.key] = f.type === "records"
           ? safeJsonArray<Record<string, string>>(raw)
-              .map((rec) => Object.fromEntries((f.subfields ?? []).map((sf) => [sf.key, sf.type === "csv" ? (rec[sf.key] ?? "").split(",").map((v) => v.trim()).filter(Boolean) : (rec[sf.key] ?? "").trim()])))
+              .map((rec) => ({
+                ...(tab.blockKey === "contact_page_offices" ? { office_id: rec.office_id || crypto.randomUUID() } : {}),
+                ...Object.fromEntries((f.subfields ?? []).map((sf) => [sf.key, sf.type === "csv" ? (rec[sf.key] ?? "").split(",").map((v) => v.trim()).filter(Boolean) : sf.type === "number" ? ((rec[sf.key] ?? "").trim() ? Number(rec[sf.key]) : null) : (rec[sf.key] ?? "").trim()])),
+              }))
               .filter((rec) => Object.values(rec).some((v) => (Array.isArray(v) ? v.length : v)))
-              .slice(0, f.maxItems)
+              .slice(0, f.maxItems ?? Number.MAX_SAFE_INTEGER)
           : f.type === "list"
           ? safeJsonArray<string>(raw).map((v) => v.trim()).filter(Boolean)
           : f.key === "features"
           ? raw.split(",").map((v) => v.trim()).filter(Boolean)
           : f.type === "number" ? (raw === "" ? "" : Number(raw))
           : f.type === "boolean" ? raw === "true"
+          : f.type === "email" ? raw.trim()
           : raw;
       }
       // Keep keys this form doesn't edit (e.g. a section's `enabled` flag,
@@ -1532,6 +1564,7 @@ export function ContentBlockPanel({ tab, onChanged }: { tab: ContentBlockTabConf
     }
   };
 
+  const { confirm, dialog } = useConfirm();
   return (
     <div className="space-y-5">
       <section className="rounded-xl border border-dash-border bg-white p-5">
@@ -1598,27 +1631,32 @@ export function ContentBlockPanel({ tab, onChanged }: { tab: ContentBlockTabConf
                                   </select>
                                 ) : (
                                   <input
-                                    type={sf.type === "url" ? "url" : "text"}
+                                    type={sf.type === "url" ? "url" : sf.type === "number" ? "number" : "text"}
                                     value={rec[sf.key] ?? ""}
+                                    placeholder={sf.placeholder}
                                     onChange={(e) => setAll(all.map((r, i) => (i === idx ? { ...r, [sf.key]: e.target.value } : r)))}
                                     className="w-full rounded-xl border border-dash-border bg-white px-3 py-2 text-sm outline-none focus:border-[#0284C7]"
                                   />
                                 )}
                               </div>
                             ))}
-                            <button type="button" onClick={() => setAll(all.filter((_, i) => i !== idx))} className="rounded-lg border border-dash-border px-3 py-1 text-xs font-bold text-red-600 hover:bg-red-50">Remove</button>
+                            <button type="button" onClick={async () => {
+                              const label = rec.location?.trim() || "this office";
+                              if (tab.blockKey === "contact_page_offices" && !(await confirm({ title: "Remove office", message: `Remove ${label} from the draft?`, confirmLabel: "Remove", danger: true }))) return;
+                              setAll(all.filter((_, i) => i !== idx));
+                            }} className="rounded-lg border border-dash-border px-3 py-1 text-xs font-bold text-red-600 hover:bg-red-50">Remove</button>
                           </div>
                         );
                       })}
                       <button
                         type="button"
                         disabled={typeof f.maxItems === "number" && safeJsonArray<Record<string, string>>(values[f.key]).length >= f.maxItems}
-                        onClick={() => setValues((v) => ({ ...v, [f.key]: JSON.stringify([...safeJsonArray<Record<string, string>>(v[f.key]), {}]) }))}
+                        onClick={() => setValues((v) => ({ ...v, [f.key]: JSON.stringify([...safeJsonArray<Record<string, string>>(v[f.key]), tab.blockKey === "contact_page_offices" ? { office_id: crypto.randomUUID() } : {}]) }))}
                         className="rounded-xl border border-dashed border-[#9CCFF0] px-3 py-2 text-xs font-bold text-[#0284C7] hover:bg-[#F7FBFF] disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-dash-subtle disabled:hover:bg-transparent"
                       >
                         {typeof f.maxItems === "number" && safeJsonArray<Record<string, string>>(values[f.key]).length >= f.maxItems
                           ? `Maximum ${f.maxItems} cards reached`
-                          : "+ Add"}
+                          : tab.blockKey === "contact_page_offices" ? "+ Add Office" : "+ Add"}
                       </button>
                     </div>
                   ) : f.type === "list" ? (
@@ -1674,8 +1712,9 @@ export function ContentBlockPanel({ tab, onChanged }: { tab: ContentBlockTabConf
                     />
                   ) : (
                     <input
-                      type={f.type === "url" ? "url" : f.type === "number" ? "number" : "text"}
+                      type={f.type === "url" || f.type === "email" ? f.type : f.type === "number" ? "number" : "text"}
                       value={values[f.key] ?? ""}
+                      placeholder={f.placeholder}
                       onChange={(e) => setValues((v) => ({ ...v, [f.key]: e.target.value }))}
                       className="w-full rounded-xl border border-dash-border px-3 py-2.5 text-sm outline-none focus:border-[#0284C7] focus:ring-4 focus:ring-[#0284C7]/10"
                     />
@@ -1697,6 +1736,7 @@ export function ContentBlockPanel({ tab, onChanged }: { tab: ContentBlockTabConf
           </>
         )}
       </section>
+      {dialog}
     </div>
   );
 }

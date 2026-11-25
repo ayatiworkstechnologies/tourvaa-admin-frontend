@@ -2388,7 +2388,6 @@ export default function TourDetailExperience({
                       icon={<Car size={19} />}
                       label="Transport / vehicle"
                       value={vehicleStyle}
-                      detail={tour.max_group_size ? `Up to ${tour.max_group_size} guests per vehicle` : undefined}
                     />
                   )}
                   {tourPace && (

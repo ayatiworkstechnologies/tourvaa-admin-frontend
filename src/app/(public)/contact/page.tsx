@@ -164,6 +164,7 @@ const DEFAULT_CHANNELS = {
   badge_text: "Verified Concierge Support",
   heading: "Get in Touch Directly",
   subtitle: "Whether you are planning an expedition or have questions regarding an existing booking, our specialists are ready to guide you.",
+  contact_email: "",
   phone_display: "+64 9 887 9200 (Global Toll-Free)",
   phone_href: "+6498879200",
   phone_hint: "Available 24/7 in English, French & Spanish",
@@ -186,11 +187,14 @@ const DEFAULT_PARTNERS_HEADING = { eyebrow: "PARTNERSHIP CHANNELS", heading: "De
 
 type OfficeItem = {
   office_id?: string;
+  location?: string;
   address_line1?: string;
   address_line2?: string;
   phone?: string;
   hours?: string;
   timezone?: string;
+  latitude?: number | string | null;
+  longitude?: number | string | null;
 };
 
 const DEFAULT_OFFICES_HEADING = { eyebrow: "GLOBAL FOOTPRINT", heading: "Our Regional Headquarters", subtitle: "Local knowledge. Worldwide coordination. Select an office below to inspect our regional headquarters and operational contact details." };
@@ -223,7 +227,7 @@ export default function ContactPage({ audience }: { audience?: "supplier" | "age
   const channels = useContactBlock("contact_page_channels", DEFAULT_CHANNELS);
   const faqHeading = useContactBlock("contact_page_faqs", { ...DEFAULT_FAQ_HEADING, items: [] as (Partial<FaqItem>)[] });
   const partnersBlock = useContactBlock("contact_page_partners", { ...DEFAULT_PARTNERS_HEADING, items: [] as PartnerItem[] });
-  const officesBlock = useContactBlock("contact_page_offices", { ...DEFAULT_OFFICES_HEADING, items: [] as OfficeItem[] });
+  const officesBlock = useContactBlock("contact_page_offices", { ...DEFAULT_OFFICES_HEADING } as typeof DEFAULT_OFFICES_HEADING & { items?: OfficeItem[] });
 
   const supportCards = supportCardsBlock.items?.length
     ? [0, 1, 2].map((i) => ({ ...DEFAULT_SUPPORT_CARDS[i], ...supportCardsBlock.items?.[i] }))
@@ -263,20 +267,48 @@ export default function ContactPage({ audience }: { audience?: "supplier" | "age
   const partners = partnersBlock.items?.length
     ? [0, 1, 2, 3].map((i) => ({ ...DEFAULT_PARTNERS[i], ...partnersBlock.items?.[i] }))
     : DEFAULT_PARTNERS;
-  const officeItems = officesBlock.items ?? [];
-  // CMS office details must identify their location explicitly. Never apply
-  // a row by list position: a single Chennai record must not become the
-  // Auckland card simply because it happens to be the first saved item.
-  const officeItemsById = new Map(
-    officeItems
-      .filter((item) => item.office_id === "nz" || item.office_id === "lk" || item.office_id === "in")
-      .map((item) => [item.office_id as string, item]),
-  );
+  const officeItems = officesBlock.items;
+  const legacyOfficesById = new Map(OFFICES.map((office) => [office.id, office]));
+  const displayOffices = Array.isArray(officeItems)
+    ? officeItems.map((item, index) => {
+        const legacy = legacyOfficesById.get(item.office_id || "");
+        const latitude = item.latitude == null || item.latitude === "" ? legacy?.lat : Number(item.latitude);
+        const longitude = item.longitude == null || item.longitude === "" ? legacy?.lng : Number(item.longitude);
+        return {
+          id: item.office_id || `office-${index + 1}`,
+          location: item.location?.trim() || (legacy ? `${legacy.city}, ${legacy.country}` : "Office location"),
+          addressLine1: item.address_line1 || legacy?.addressLine1 || "",
+          addressLine2: item.address_line2 || legacy?.addressLine2 || "",
+          phone: item.phone || OFFICE_CONTACT_META[item.office_id || ""]?.phone || "",
+          hours: item.hours || OFFICE_CONTACT_META[item.office_id || ""]?.hours || "",
+          timezone: item.timezone || OFFICE_CONTACT_META[item.office_id || ""]?.timeZone || "",
+          lat: latitude != null && Number.isFinite(latitude) && latitude >= -90 && latitude <= 90 ? latitude : null,
+          lng: longitude != null && Number.isFinite(longitude) && longitude >= -180 && longitude <= 180 ? longitude : null,
+        };
+      })
+    : OFFICES.map((office) => ({
+        id: office.id,
+        location: `${office.city}, ${office.country}`,
+        addressLine1: office.addressLine1,
+        addressLine2: office.addressLine2,
+        phone: OFFICE_CONTACT_META[office.id]?.phone || "",
+        hours: OFFICE_CONTACT_META[office.id]?.hours || "",
+        timezone: OFFICE_CONTACT_META[office.id]?.timeZone || "",
+        lat: office.lat,
+        lng: office.lng,
+      }));
 
   const { supportEmail } = usePublicSettings();
+  const contactDisplayEmail = audience ? supportEmail : (channels.contact_email || "").trim() || supportEmail;
   const [openFaqId, setOpenFaqId] = useState<string>("cancellation");
   const [activeOfficeId, setActiveOfficeId] = useState<string>("nz");
   const [officeSelectionVersion, setOfficeSelectionVersion] = useState(0);
+
+  useEffect(() => {
+    if (!displayOffices.some((office) => office.id === activeOfficeId)) {
+      setActiveOfficeId(displayOffices[0]?.id ?? "");
+    }
+  }, [activeOfficeId, displayOffices]);
 
   // Email copy state
   const [emailCopied, setEmailCopied] = useState(false);
@@ -361,7 +393,7 @@ export default function ContactPage({ audience }: { audience?: "supplier" | "age
   };
 
   const handleCopyEmail = () => {
-    navigator.clipboard.writeText(supportEmail);
+    navigator.clipboard.writeText(contactDisplayEmail);
     setEmailCopied(true);
     setTimeout(() => setEmailCopied(false), 2000);
   };
@@ -574,22 +606,23 @@ export default function ContactPage({ audience }: { audience?: "supplier" | "age
                     </div>
                   </div>
 
-                  {/* Direct Support Email (configured in Settings > General) */}
-                  {supportEmail && (
+                  {/* Public display email is managed in Website CMS > Contact Us. */}
+                  {contactDisplayEmail && (
                   <div className="flex items-start gap-4">
                     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/10 text-white backdrop-blur-xs">
                       <Mail size={18} />
                     </div>
                     <div>
                       <div className="text-xs font-semibold text-white/60">
-                        Official Concierge Email
+                        Email Support
                       </div>
                       <div className="flex items-center gap-2">
                         <a
-                          href={`mailto:${supportEmail}`}
+                          href={`mailto:${contactDisplayEmail}`}
+                          aria-label={`Email ${contactDisplayEmail}`}
                           className="text-sm font-bold text-white hover:text-sky-300 transition-colors"
                         >
-                          {supportEmail}
+                          {contactDisplayEmail}
                         </a>
                         <button
                           type="button"
@@ -1095,20 +1128,10 @@ export default function ContactPage({ audience }: { audience?: "supplier" | "age
         </div>
 
         <div className="mt-10 grid grid-cols-1 lg:grid-cols-[340px_1fr] gap-8 items-center">
-          {/* Left Column: Office Cards - city/country and map position stay fixed per office, contact details are CMS-editable */}
+          {/* Left Column: CMS-managed office cards */}
           <div className="space-y-3.5">
-            {OFFICES.map((office) => {
+            {displayOffices.length ? displayOffices.map((office) => {
               const isSelected = activeOfficeId === office.id;
-              const defaultMeta = OFFICE_CONTACT_META[office.id];
-              const cmsMeta = officeItemsById.get(office.id);
-              const meta = {
-                phone: cmsMeta?.phone || defaultMeta.phone,
-                hours: cmsMeta?.hours || defaultMeta.hours,
-                timezone: cmsMeta?.timezone || defaultMeta.timeZone,
-              };
-              const addressLine1 = cmsMeta?.address_line1 || office.addressLine1;
-              const addressLine2 = cmsMeta?.address_line2 || office.addressLine2;
-
               return (
                 <button
                   type="button"
@@ -1127,11 +1150,11 @@ export default function ContactPage({ audience }: { audience?: "supplier" | "age
                         isSelected ? "text-pub-secondary" : "text-slate-900"
                       }`}
                     >
-                      {office.city}, {office.country}
+                      {office.location}
                     </span>
                     {isSelected && (
                       <span className="rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-bold text-sky-700">
-                        Active Pin
+                        {office.lat !== null && office.lng !== null ? "Active Pin" : "Selected"}
                       </span>
                     )}
                   </div>
@@ -1139,24 +1162,21 @@ export default function ContactPage({ audience }: { audience?: "supplier" | "age
                   <div className="mt-2 text-xs text-slate-600 space-y-1">
                     <div className="flex items-center gap-1.5 font-medium">
                       <MapPin size={12} className="text-slate-400 shrink-0" />
-                      <span>{addressLine1}, {addressLine2}</span>
+                      <span>{[office.addressLine1, office.addressLine2].filter(Boolean).join(", ")}</span>
                     </div>
-                    {meta && (
+                    {(office.hours || office.timezone) && (
                       <>
                         <div className="flex items-center gap-1.5 text-[11px] text-slate-500">
                           <Clock size={12} className="text-slate-400 shrink-0" />
-                          <span>{meta.hours}{meta.timezone ? ` · ${meta.timezone}` : ""}</span>
-                        </div>
-                        <div className="flex items-center gap-1.5 text-[11px] text-slate-500 font-semibold pt-1 text-pub-secondary">
-                          <Phone size={12} className="shrink-0" />
-                          <span>{meta.phone}</span>
+                          <span>{office.hours}{office.timezone ? `${office.hours ? " · " : ""}${office.timezone}` : ""}</span>
                         </div>
                       </>
                     )}
+                    {office.phone && <div className="flex items-center gap-1.5 text-[11px] text-slate-500 font-semibold pt-1 text-pub-secondary"><Phone size={12} className="shrink-0" /><span>{office.phone}</span></div>}
                   </div>
                 </button>
               );
-            })}
+            }) : <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-6 text-sm text-slate-500">No offices are currently listed.</div>}
           </div>
 
           {/* Right Column: Dotted World Map Graphic */}
@@ -1165,6 +1185,7 @@ export default function ContactPage({ audience }: { audience?: "supplier" | "age
               activeOfficeId={activeOfficeId}
               onSelectOffice={selectOffice}
               selectionVersion={officeSelectionVersion}
+              offices={displayOffices.filter((office): office is typeof office & { lat: number; lng: number } => office.lat !== null && office.lng !== null).map((office) => ({ id: office.id, location: office.location, lat: office.lat, lng: office.lng }))}
             />
           </div>
         </div>

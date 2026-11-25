@@ -71,6 +71,9 @@ type LedgerEntry = {
   amount_pending?: string | number;
   currency?: string;
   status?: string;
+  booking_status?: string;
+  payout_eligible?: boolean;
+  payout_eligible_at?: string | null;
 };
 
 type Payout = {
@@ -120,13 +123,19 @@ function dateText(value?: string) {
   return date.toLocaleDateString("en-US", { day: "2-digit", month: "short", year: "numeric" });
 }
 
-function monthEndPayoutDate() {
-  const now = new Date();
-  return new Date(now.getFullYear(), now.getMonth() + 1, 0).toLocaleDateString("en-US", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
+function payoutEligibilityLabel(entries: LedgerEntry[]) {
+  const outstanding = entries.filter((entry) =>
+    ["pending", "partial"].includes((entry.status || "").toLowerCase()) && Number(entry.amount_pending || 0) > 0
+  );
+  if (outstanding.some((entry) => entry.payout_eligible)) return "Eligible now";
+  const upcoming = outstanding
+    .map((entry) => entry.payout_eligible_at ? new Date(entry.payout_eligible_at) : null)
+    .filter((date): date is Date => Boolean(date && !Number.isNaN(date.getTime()) && date.getTime() > Date.now()))
+    .sort((a, b) => a.getTime() - b.getTime())[0];
+  if (upcoming) return dateText(upcoming.toISOString());
+  if (outstanding.some((entry) => entry.booking_status === "completed" && !entry.payout_eligible_at)) return "Completion date unavailable";
+  if (outstanding.length) return "After tour completion";
+  return "No pending balance";
 }
 
 type PendingSupplierProfile = {
@@ -234,12 +243,12 @@ function PendingSupplierDashboard() {
 function ApprovedSupplierDashboard() {
   const { user } = useAuthContext();
   const { format: money } = useCurrency();
-  const nextPayoutDate = monthEndPayoutDate();
   const [summary, setSummary] = useState<Summary>({});
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [statusCounts, setStatusCounts] = useState<Record<string, number>>({});
   const [awaitingActionCount, setAwaitingActionCount] = useState(0);
   const [ledgers, setLedgers] = useState<LedgerEntry[]>([]);
+  const [ledgerDataLoaded, setLedgerDataLoaded] = useState(false);
   const [payouts, setPayouts] = useState<Payout[]>([]);
   const [tourCounts, setTourCounts] = useState({ total: 0, published: 0 });
   const [monthlyBookings, setMonthlyBookings] = useState<MonthRow[]>([]);
@@ -265,7 +274,7 @@ function ApprovedSupplierDashboard() {
     const results = await Promise.allSettled([
       api.get("/dashboard/summary", { params: summaryParams }),
       api.get("/bookings", { params: bookingParams }),
-      api.get("/supplier-ledgers", { params: { limit: 100 } }),
+      api.get("/supplier-ledgers", { params: { limit: 1000 } }),
       api.get("/supplier-payouts", { params: { limit: 20 } }),
       api.get("/tours", { params: { limit: 1 } }),
       api.get("/tours", { params: { limit: 1, status: "published" } }),
@@ -286,7 +295,12 @@ function ApprovedSupplierDashboard() {
       setStatusCounts(bookingResult.value.data?.status_counts ?? {});
       setAwaitingActionCount(Number(bookingData.awaiting_action_count ?? 0));
     }
-    if (ledgerResult.status === "fulfilled") setLedgers(ledgerResult.value.data?.items ?? ledgerResult.value.data?.data ?? []);
+    if (ledgerResult.status === "fulfilled") {
+      setLedgers(ledgerResult.value.data?.items ?? ledgerResult.value.data?.data ?? []);
+      setLedgerDataLoaded(true);
+    } else {
+      setLedgerDataLoaded(false);
+    }
     if (payoutResult.status === "fulfilled") setPayouts(payoutResult.value.data?.items ?? payoutResult.value.data?.data ?? []);
     if (toursResult.status === "fulfilled" || publishedToursResult.status === "fulfilled") {
       setTourCounts({
@@ -340,6 +354,7 @@ function ApprovedSupplierDashboard() {
       latestPayout: payouts[0] ?? null,
     };
   }, [ledgers, payouts]);
+  const nextPayoutDate = useMemo(() => ledgerDataLoaded ? payoutEligibilityLabel(ledgers) : "Eligibility unavailable", [ledgers, ledgerDataLoaded]);
 
   const visibleAwaitingAction = bookings.filter((booking) =>
     ["payment_authorized", "pending_supplier_acceptance"].includes(booking.booking_status || ""),
@@ -390,9 +405,9 @@ function ApprovedSupplierDashboard() {
       tone: "bg-violet-50 text-violet-700",
     },
     {
-      label: "Next Payout Date",
+      label: "Next Payout Eligibility",
       value: nextPayoutDate,
-      note: "Processed at month end",
+      note: "Admin review and manual payment follow eligibility",
       icon: CalendarCheck,
       href: "/supplier/payouts",
       tone: "bg-teal-50 text-teal-700",
@@ -436,7 +451,7 @@ function ApprovedSupplierDashboard() {
 
             <div className="grid min-w-0 gap-3 sm:grid-cols-2 lg:w-[390px]">
               <HeroMetric label="Needs attention" value={String(awaitingAction)} note="Booking decisions" icon={Clock3} />
-              <HeroMetric label="Next payout date" value={nextPayoutDate} note="Processed at month end" icon={CalendarCheck} />
+              <HeroMetric label="Next payout eligibility" value={nextPayoutDate} note="Eligible 7 days after tour completion" icon={CalendarCheck} />
             </div>
           </div>
         </section>
@@ -594,9 +609,9 @@ function ApprovedSupplierDashboard() {
                 <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/12"><Wallet size={20} /></span>
                 <span className="rounded-full bg-white/10 px-3 py-1 text-[9px] font-black uppercase tracking-wider text-emerald-50">Payout Centre</span>
               </div>
-              <p className="mt-5 text-[10px] font-bold uppercase tracking-[.12em] text-emerald-100/75">Next payout date</p>
+              <p className="mt-5 text-[10px] font-bold uppercase tracking-[.12em] text-emerald-100/75">Next payout eligibility</p>
               <p className="mt-1 text-2xl font-black tracking-tight">{nextPayoutDate}</p>
-              <p className="mt-2 text-[10px] leading-5 text-emerald-100/75">Payouts are scheduled for processing at the end of every month.</p>
+              <p className="mt-2 text-[10px] leading-5 text-emerald-100/75">Earnings become eligible 7 days after tour completion. Admin review and manual payment are still required.</p>
             </div>
 
             <div className="space-y-3 p-5">

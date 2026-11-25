@@ -25,6 +25,9 @@ type LedgerEntry = {
   created_at?: string;
   updated_at?: string;
   notes?: string;
+  booking_status?: string;
+  payout_eligible?: boolean;
+  payout_eligible_at?: string | null;
 };
 
 type CommissionBreakdown = {
@@ -240,7 +243,10 @@ export default function EarningsPage() {
     const net = currencyEntries.reduce((sum, e) => sum + Number(e.net_payable ?? 0), 0);
     const paid = currencyEntries.reduce((sum, e) => sum + Number(e.amount_paid ?? 0), 0);
     const available = currencyEntries
-      .filter((e) => ["pending", "partial"].includes((e.status || "").toLowerCase()))
+      .filter((e) => ["pending", "partial"].includes((e.status || "").toLowerCase()) && e.payout_eligible)
+      .reduce((sum, e) => sum + Number(e.amount_pending ?? 0), 0);
+    const holding = currencyEntries
+      .filter((e) => ["pending", "partial"].includes((e.status || "").toLowerCase()) && !e.payout_eligible)
       .reduce((sum, e) => sum + Number(e.amount_pending ?? 0), 0);
     const reserved = currencyEntries
       .filter((e) => (e.status || "").toLowerCase() === "reserved")
@@ -255,6 +261,7 @@ export default function EarningsPage() {
       net,
       paid,
       pending: available,
+      holding,
       reserved,
       avgCommission,
       pendingPayoutTotal: pendingPayouts.reduce((sum, p) => sum + Number(p.total_amount || 0), 0),
@@ -267,7 +274,8 @@ export default function EarningsPage() {
     { label: "Tourvaa Commission", value: money(summary.commission, summary.currency), icon: TrendingDown, color: "text-amber-600 bg-amber-50" },
     { label: "Net Payable", value: money(summary.net, summary.currency), icon: Wallet, color: "text-emerald-600 bg-emerald-50" },
     { label: "Paid", value: money(summary.paid, summary.currency), icon: Banknote, color: "text-purple-600 bg-purple-50" },
-    { label: "Pending Monthly Payout", value: money(summary.pending, summary.currency), icon: Clock3, color: "text-rose-600 bg-rose-50" },
+    { label: "Eligible for Payout", value: money(summary.pending, summary.currency), icon: Clock3, color: "text-rose-600 bg-rose-50" },
+    { label: "7-Day Holding Period", value: money(summary.holding, summary.currency), icon: Clock3, color: "text-amber-600 bg-amber-50" },
     { label: "Already Scheduled", value: money(summary.reserved, summary.currency), icon: ReceiptText, color: "text-indigo-600 bg-indigo-50" },
   ];
 
@@ -288,6 +296,11 @@ export default function EarningsPage() {
     { key: "commission", header: "Tourvaa Commission", className: "text-right font-semibold text-amber-600", render: (e) => `-${money(e.commission_amount, e.currency ?? summary.currency)}` },
     { key: "net", header: "Net Payable", className: "text-right font-black text-emerald-700", render: (e) => money(e.net_payable, e.currency ?? summary.currency) },
     { key: "pending", header: "Pending", className: "text-right font-bold text-rose-600", render: (e) => money(e.amount_pending, e.currency ?? summary.currency) },
+    { key: "eligibility", header: "Payout Eligibility", render: (e) => {
+      const status = (e.status || "").toLowerCase();
+      const label = status === "reserved" ? "Included in payout" : status === "paid" || status === "refunded" ? status : e.payout_eligible ? "Eligible now" : e.payout_eligible_at ? `Eligible ${dateText(e.payout_eligible_at)}` : e.booking_status === "completed" ? "Completion date unavailable" : "After tour completion";
+      return <span className="text-xs font-semibold text-dash-muted">{label}</span>;
+    } },
     { key: "status", header: "Status", render: (e) => <span className={`rounded-full px-2.5 py-1 text-xs font-bold capitalize ${statusColors(e.status ?? "")}`}>{e.status ?? "-"}</span> },
   ];
 

@@ -425,7 +425,9 @@ export async function fetchPublicBlogBySlug(slug: string) {
 }
 
 export async function fetchPublicSettings() {
-  const res = await axios.get("/api/settings/public");
+  // The maintenance gate runs before the entire app renders. A stalled API
+  // proxy must not leave visitors stuck on its loading screen indefinitely.
+  const res = await axios.get("/api/settings/public", { timeout: 10_000 });
   return (res.data.data || {}) as Record<string, string>;
 }
 
